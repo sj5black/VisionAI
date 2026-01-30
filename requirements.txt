@@ -1,0 +1,11 @@
+torch
+torchvision
+pillow
+
+fastapi
+uvicorn
+python-multipart
+jinja2
+
+# Optional (animal behavior/expression zero-shot)
+open_clip_torch

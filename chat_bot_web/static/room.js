@@ -9,6 +9,12 @@
   const roomMessages = document.getElementById('roomMessages');
   const roomInput = document.getElementById('roomInput');
   const roomSendBtn = document.getElementById('roomSendBtn');
+  const roomEmojiBtn = document.getElementById('roomEmojiBtn');
+  const roomEmojiPanel = document.getElementById('roomEmojiPanel');
+  const roomNickEditBtn = document.getElementById('roomNickEditBtn');
+  const roomLeaveBtn = document.getElementById('roomLeaveBtn');
+
+  var EMOJI_LIST = ['😀','😃','😄','😁','😅','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','👍','👎','👌','✌️','🤞','🤟','🤘','🤙','👋','🤚','🖐️','✋','🖖','👏','🙌','👐','🤲','🙏','❤️','🧡','💛','💚','💙','💜','🖤','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','✨','⭐','🌟','💫','🔥','💯'];
 
   let ws = null;
   let myNickname = '';
@@ -67,6 +73,26 @@
     menu.dataset.currentText = currentText || '';
   }
 
+  function isOnlyEmoji(text) {
+    var t = (text || '').trim();
+    if (!t.length || t.length > 48) return false;
+    var rest = t;
+    var listByLen = EMOJI_LIST.slice().sort(function (a, b) { return b.length - a.length; });
+    while (rest.length) {
+      var found = false;
+      for (var i = 0; i < listByLen.length; i++) {
+        var em = listByLen[i];
+        if (rest.indexOf(em) === 0) {
+          rest = rest.slice(em.length);
+          found = true;
+          break;
+        }
+      }
+      if (!found) return false;
+    }
+    return true;
+  }
+
   function setUnreadBadge(rowEl, unreadCount) {
     if (!rowEl) return;
     const badge = rowEl.querySelector('.unread-badge');
@@ -77,8 +103,7 @@
         const newBadge = document.createElement('span');
         newBadge.className = 'unread-badge';
         newBadge.textContent = unreadCount;
-        // 내 메시지는 배지가 말풍선 "바깥(왼쪽)"에 위치하도록 앞에 추가
-        rowEl.insertBefore(newBadge, rowEl.firstChild);
+        rowEl.appendChild(newBadge);
       }
     } else {
       if (badge) badge.remove();
@@ -99,35 +124,67 @@
     row.className = 'roomMsgRow ' + type;
     if (messageId) row.dataset.messageId = messageId;
 
-    const bubble = document.createElement('div');
-    bubble.className = 'roomBubble ' + type;
+    var isEmojiOnly = isOnlyEmoji(text);
 
-    if (type === 'me') {
-      bubble.textContent = text;
-      // 배지는 말풍선 바깥(왼쪽)에
-      if (unreadCount > 0) {
-        const badge = document.createElement('span');
-        badge.className = 'unread-badge';
-        badge.textContent = unreadCount;
-        row.appendChild(badge);
+    if (isEmojiOnly) {
+      if (type === 'me') {
+        var emojiDiv = document.createElement('div');
+        emojiDiv.className = 'roomMsgEmoji roomMsgEmoji--me';
+        emojiDiv.textContent = text;
+        row.appendChild(emojiDiv);
+        if (unreadCount > 0) {
+          var badge = document.createElement('span');
+          badge.className = 'unread-badge';
+          badge.textContent = unreadCount;
+          row.appendChild(badge);
+        }
+        emojiDiv.addEventListener('contextmenu', function (e) {
+          e.preventDefault();
+          if (!messageId) return;
+          showContextMenu(e.clientX, e.clientY, messageId, emojiDiv.textContent || '');
+        });
+      } else {
+        var wrap = document.createElement('div');
+        wrap.className = 'roomMsgOtherWrap';
+        var nickLabel = document.createElement('div');
+        nickLabel.className = 'roomMsgNickAbove';
+        nickLabel.textContent = nickname;
+        wrap.appendChild(nickLabel);
+        var emojiDiv = document.createElement('div');
+        emojiDiv.className = 'roomMsgEmoji roomMsgEmoji--other';
+        emojiDiv.textContent = text;
+        wrap.appendChild(emojiDiv);
+        row.appendChild(wrap);
       }
-      row.appendChild(bubble);
-
-      // 우클릭: 수정/삭제 메뉴
-      bubble.addEventListener('contextmenu', function (e) {
-        e.preventDefault();
-        if (!messageId) return;
-        showContextMenu(e.clientX, e.clientY, messageId, bubble.textContent || '');
-      });
     } else {
-      const nickSpan = document.createElement('div');
-      nickSpan.className = 'roomMsgNick';
-      nickSpan.textContent = nickname;
-      bubble.appendChild(nickSpan);
-      const textSpan = document.createElement('span');
-      textSpan.textContent = text;
-      bubble.appendChild(textSpan);
-      row.appendChild(bubble);
+      var bubble = document.createElement('div');
+      bubble.className = 'roomBubble ' + type;
+
+      if (type === 'me') {
+        bubble.textContent = text;
+        row.appendChild(bubble);
+        if (unreadCount > 0) {
+          var badge = document.createElement('span');
+          badge.className = 'unread-badge';
+          badge.textContent = unreadCount;
+          row.appendChild(badge);
+        }
+        bubble.addEventListener('contextmenu', function (e) {
+          e.preventDefault();
+          if (!messageId) return;
+          showContextMenu(e.clientX, e.clientY, messageId, bubble.textContent || '');
+        });
+      } else {
+        var wrap = document.createElement('div');
+        wrap.className = 'roomMsgOtherWrap';
+        var nickLabel = document.createElement('div');
+        nickLabel.className = 'roomMsgNickAbove';
+        nickLabel.textContent = nickname;
+        wrap.appendChild(nickLabel);
+        bubble.textContent = text;
+        wrap.appendChild(bubble);
+        row.appendChild(wrap);
+      }
     }
 
     roomMessages.appendChild(row);
@@ -148,6 +205,8 @@
         if (data.type === 'error') {
           nickSection.style.display = 'block';
           roomSection.style.display = 'none';
+          if (roomNickEditBtn) roomNickEditBtn.style.display = 'none';
+          if (roomLeaveBtn) roomLeaveBtn.style.display = 'none';
           showNickError(data.message || '오류');
           ws.close();
           return;
@@ -184,18 +243,46 @@
         if (data.type === 'edit') {
           const rowEl = roomMessages.querySelector('[data-message-id="' + data.message_id + '"]');
           if (rowEl) {
+            const newText = data.text || '';
             const bubble = rowEl.querySelector('.roomBubble');
+            const emojiDiv = rowEl.querySelector('.roomMsgEmoji');
             if (bubble) {
-              // other는 닉네임 라인이 있으니 유지하고 텍스트만 교체
-              if (rowEl.classList.contains('other')) {
-                const nickEl = bubble.querySelector('.roomMsgNick');
-                const textSpan = document.createElement('span');
-                textSpan.textContent = data.text || '';
-                bubble.textContent = '';
-                if (nickEl) bubble.appendChild(nickEl);
-                bubble.appendChild(textSpan);
+              if (isOnlyEmoji(newText)) {
+                var isMe = rowEl.classList.contains('me');
+                var newEmojiDiv = document.createElement('div');
+                newEmojiDiv.className = 'roomMsgEmoji roomMsgEmoji--' + (isMe ? 'me' : 'other');
+                newEmojiDiv.textContent = newText;
+                if (isMe) {
+                  rowEl.replaceChild(newEmojiDiv, bubble);
+                  newEmojiDiv.addEventListener('contextmenu', function (e) {
+                    e.preventDefault();
+                    if (!data.message_id) return;
+                    showContextMenu(e.clientX, e.clientY, data.message_id, newEmojiDiv.textContent || '');
+                  });
+                } else {
+                  bubble.parentNode.replaceChild(newEmojiDiv, bubble);
+                }
               } else {
-                bubble.textContent = data.text || '';
+                bubble.textContent = newText;
+              }
+            } else if (emojiDiv) {
+              if (isOnlyEmoji(newText)) {
+                emojiDiv.textContent = newText;
+              } else {
+                var isMe = rowEl.classList.contains('me');
+                var newBubble = document.createElement('div');
+                newBubble.className = 'roomBubble ' + (isMe ? 'me' : 'other');
+                newBubble.textContent = newText;
+                if (isMe) {
+                  rowEl.replaceChild(newBubble, emojiDiv);
+                  newBubble.addEventListener('contextmenu', function (e) {
+                    e.preventDefault();
+                    if (!data.message_id) return;
+                    showContextMenu(e.clientX, e.clientY, data.message_id, newBubble.textContent || '');
+                  });
+                } else {
+                  emojiDiv.parentNode.replaceChild(newBubble, emojiDiv);
+                }
               }
             }
           }
@@ -218,25 +305,83 @@
     };
   }
 
+  function enterRoom(nick) {
+    if (!nick || nick.length < 2 || nick.length > 32) return;
+    showNickError('');
+    myNickname = nick;
+    nickInput.value = nick;
+    nickSection.style.display = 'none';
+    roomSection.style.display = 'flex';
+    roomSection.style.flexDirection = 'column';
+    roomSection.style.flex = '1';
+    roomSection.style.minHeight = '0';
+    if (roomNickEditBtn) roomNickEditBtn.style.display = 'flex';
+    if (roomLeaveBtn) roomLeaveBtn.style.display = 'flex';
+    connect();
+    roomInput.focus();
+  }
+
+  function leaveRoom() {
+    if (ws) {
+      ws.close();
+      ws = null;
+    }
+    nickSection.style.display = 'block';
+    roomSection.style.display = 'none';
+    if (roomNickEditBtn) roomNickEditBtn.style.display = 'none';
+    if (roomLeaveBtn) roomLeaveBtn.style.display = 'none';
+    showNickError('');
+  }
+
   enterBtn.addEventListener('click', function () {
     const nick = (nickInput.value || '').trim();
     if (nick.length < 2 || nick.length > 32) {
       showNickError('닉네임은 2~32자로 입력해 주세요.');
       return;
     }
-    showNickError('');
-    myNickname = nick;
-    nickSection.style.display = 'none';
-    roomSection.style.display = 'flex';
-    roomSection.style.flexDirection = 'column';
-    roomSection.style.flex = '1';
-    roomSection.style.minHeight = '0';
-    connect();
-    roomInput.focus();
+    enterRoom(nick);
   });
 
   nickInput.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') enterBtn.click();
+  });
+
+  // 저장된 닉네임이 있으면 해당 IP에서 자동 입장
+  fetch('/api/room/saved-nickname')
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      var nick = (data.nickname || '').trim();
+      if (nick.length >= 2 && nick.length <= 32) {
+        enterRoom(nick);
+      }
+    })
+    .catch(function () {});
+
+  if (roomNickEditBtn) {
+    roomNickEditBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      var newNick = window.prompt('새 닉네임 (2~32자)', myNickname);
+      if (newNick == null) return;
+      newNick = (newNick || '').trim();
+      if (newNick.length < 2 || newNick.length > 32) {
+        window.alert('닉네임은 2~32자로 입력해 주세요.');
+        return;
+      }
+      myNickname = newNick;
+      ws.send(JSON.stringify({ type: 'rename', nickname: newNick }));
+    });
+  }
+
+  if (roomLeaveBtn) {
+    roomLeaveBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      leaveRoom();
+    });
+  }
+
+  window.addEventListener('beforeunload', function () {
+    if (ws) ws.close();
   });
 
   function sendMessage() {
@@ -254,13 +399,128 @@
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
   });
 
+  function isMobileRoom() {
+    return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+  }
+
+  function updateRoomInputPlaceholder() {
+    if (!roomInput) return;
+    roomInput.placeholder = isMobileRoom()
+      ? '메시지 입력... (Enter: 줄바꿈)'
+      : '메시지 입력... (Shift+Enter: 줄바꿈)';
+  }
+  updateRoomInputPlaceholder();
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(max-width: 768px)');
+    if (mq.addEventListener) mq.addEventListener('change', updateRoomInputPlaceholder);
+    else if (mq.addListener) mq.addListener(updateRoomInputPlaceholder);
+  }
+
   roomSendBtn.addEventListener('click', sendMessage);
   roomInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key !== 'Enter') return;
+    if (isMobileRoom()) {
+      return;
+    }
+    if (!e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   });
+
+  function insertEmojiAtCursor(emoji) {
+    var start = roomInput.selectionStart;
+    var end = roomInput.selectionEnd;
+    var text = roomInput.value;
+    roomInput.value = text.slice(0, start) + emoji + text.slice(end);
+    roomInput.selectionStart = roomInput.selectionEnd = start + emoji.length;
+    roomInput.focus();
+  }
+
+  function initEmojiPanel() {
+    if (roomEmojiPanel.querySelector('.roomEmojiPanelInner')) return;
+    var header = document.createElement('div');
+    header.className = 'roomEmojiPanelHeader';
+    var closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'roomEmojiPanelClose';
+    closeBtn.title = '닫기';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.addEventListener('click', function () {
+      roomEmojiPanel.style.display = 'none';
+    });
+    header.appendChild(closeBtn);
+    roomEmojiPanel.appendChild(header);
+    var inner = document.createElement('div');
+    inner.className = 'roomEmojiPanelInner';
+    EMOJI_LIST.forEach(function (emoji) {
+      var span = document.createElement('span');
+      span.textContent = emoji;
+      span.setAttribute('role', 'button');
+      span.tabIndex = 0;
+      span.addEventListener('click', function () {
+        insertEmojiAtCursor(emoji);
+      });
+      inner.appendChild(span);
+    });
+    roomEmojiPanel.appendChild(inner);
+  }
+
+  if (roomEmojiBtn && roomEmojiPanel) {
+    roomEmojiBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      initEmojiPanel();
+      var visible = roomEmojiPanel.style.display === 'flex' || roomEmojiPanel.style.display === 'grid' || roomEmojiPanel.style.display === 'block';
+      roomEmojiPanel.style.display = visible ? 'none' : 'flex';
+    });
+    document.addEventListener('click', function (e) {
+      if (roomEmojiPanel.style.display !== 'none' && !roomEmojiPanel.contains(e.target) && e.target !== roomEmojiBtn) {
+        roomEmojiPanel.style.display = 'none';
+      }
+    });
+  }
+
+  function startInlineEdit(messageId, currentText) {
+    const rowEl = roomMessages.querySelector('[data-message-id="' + messageId + '"]');
+    if (!rowEl) return;
+    const bubble = rowEl.querySelector('.roomBubble.me');
+    if (!bubble) return;
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'roomBubble-edit';
+    textarea.value = currentText;
+    textarea.rows = 1;
+    bubble.textContent = '';
+    bubble.appendChild(textarea);
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+    function finishEdit(sendUpdate) {
+      const newText = (textarea.value || '').trim();
+      textarea.remove();
+      bubble.textContent = sendUpdate && newText ? newText : currentText;
+      if (sendUpdate && newText && newText !== currentText && ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'edit', message_id: messageId, text: newText }));
+      }
+    }
+
+    textarea.addEventListener('blur', function () {
+      finishEdit(true);
+    });
+    textarea.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        finishEdit(true);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        finishEdit(false);
+      }
+    });
+    textarea.addEventListener('input', function () {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+  }
 
   // 컨텍스트 메뉴 액션 처리
   document.addEventListener('click', function (e) {
@@ -279,15 +539,10 @@
     if (!messageId || !ws || ws.readyState !== WebSocket.OPEN) return;
 
     if (action === 'edit') {
-      const next = window.prompt('메시지 수정', currentText);
-      if (next == null) return;
-      const t = (next || '').trim();
-      if (!t) return;
-      ws.send(JSON.stringify({ type: 'edit', message_id: messageId, text: t }));
+      startInlineEdit(messageId, currentText);
       return;
     }
     if (action === 'delete') {
-      if (!window.confirm('이 메시지를 삭제할까요?')) return;
       ws.send(JSON.stringify({ type: 'delete', message_id: messageId }));
       return;
     }

@@ -64,6 +64,8 @@ _room_connections: List[tuple[WebSocket, str]] = []
 _message_read_status: Dict[str, Dict[str, Any]] = {}
 # 메시지 저장 (수정/삭제용): {message_id: {"sender_nickname": str, "text": str}}
 _room_messages: Dict[str, Dict[str, Any]] = {}
+# IP별 마지막 닉네임 (재접속 시 자동 입력용)
+_ip_nickname: Dict[str, str] = {}
 
 
 class StartResponse(BaseModel):
@@ -129,6 +131,14 @@ def room_page(request: Request) -> Any:
     return templates.TemplateResponse("room.html", {"request": request})
 
 
+@app.get("/api/room/saved-nickname")
+def api_room_saved_nickname(request: Request) -> Any:
+    """요청 IP에 저장된 닉네임이 있으면 반환 (멀티채팅 재접속 시 자동 입장용)."""
+    client_host = request.client.host if request.client else None
+    nickname = _ip_nickname.get(client_host) if client_host else None
+    return {"nickname": nickname}
+
+
 @app.get("/room-bg.png")
 def room_background_image() -> FileResponse:
     """멀티 채팅방 배경 이미지 (chat_bot_web/back.png)."""
@@ -159,6 +169,9 @@ async def ws_room(websocket: WebSocket) -> None:
             await websocket.close()
             return
         nickname = (data["nickname"] or "").strip()[:32]
+        client_host = websocket.client.host if websocket.client else None
+        if client_host:
+            _ip_nickname[client_host] = nickname
         _room_connections.append((websocket, nickname))
         participants = [n for _, n in _room_connections]
         await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=websocket)
@@ -248,6 +261,21 @@ async def ws_room(websocket: WebSocket) -> None:
                         "type": "delete",
                         "message_id": message_id,
                     }, exclude_ws=None)
+
+                elif data.get("type") == "rename" and (data.get("nickname") or "").strip():
+                    new_nick = (data["nickname"] or "").strip()[:32]
+                    if 2 <= len(new_nick) <= 32:
+                        old_nick = nickname
+                        nickname = new_nick
+                        if client_host:
+                            _ip_nickname[client_host] = new_nick
+                        for i, (w, n) in enumerate(_room_connections):
+                            if w is websocket:
+                                _room_connections[i] = (websocket, new_nick)
+                                break
+                        participants = [n for _, n in _room_connections]
+                        await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=None)
+                        await _room_broadcast({"type": "system", "message": f"{old_nick}님이 닉네임을 {new_nick}(으)로 변경했습니다."}, exclude_ws=None)
             
             except json.JSONDecodeError:
                 # JSON 파싱 에러만 무시하고 계속 진행

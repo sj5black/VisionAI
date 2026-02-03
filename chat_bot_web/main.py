@@ -10,11 +10,11 @@ import json
 import os
 import secrets
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -60,6 +60,10 @@ _conversations: Dict[str, Dict[str, Any]] = {}
 
 # 멀티 채팅방: (websocket, nickname) 목록
 _room_connections: List[tuple[WebSocket, str]] = []
+# 메시지 읽음 상태: {message_id: {"sender_ws": WebSocket, "read_by": Set[str], "total_participants": int}}
+_message_read_status: Dict[str, Dict[str, Any]] = {}
+# 메시지 저장 (수정/삭제용): {message_id: {"sender_nickname": str, "text": str}}
+_room_messages: Dict[str, Dict[str, Any]] = {}
 
 
 class StartResponse(BaseModel):
@@ -93,15 +97,18 @@ async def _room_broadcast(message: Dict[str, Any], exclude_ws: Optional[WebSocke
     """멀티 채팅방 전체에 메시지 브로드캐스트."""
     text = json.dumps(message, ensure_ascii=False)
     dead = []
-    for ws, _ in _room_connections:
+    for ws, nick in _room_connections:
         if ws is exclude_ws:
             continue
         try:
             await ws.send_text(text)
-        except Exception:
-            dead.append(ws)
-    for ws in dead:
+        except Exception as e:
+            print(f"Broadcast error to {nick}: {e}")
+            dead.append((ws, nick))
+    # 죽은 연결 정리
+    for ws, nick in dead:
         _room_connections[:] = [(w, n) for w, n in _room_connections if w is not ws]
+        print(f"Removed dead connection: {nick}")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -122,9 +129,25 @@ def room_page(request: Request) -> Any:
     return templates.TemplateResponse("room.html", {"request": request})
 
 
+@app.get("/room-bg.png")
+def room_background_image() -> FileResponse:
+    """멀티 채팅방 배경 이미지 (chat_bot_web/back.png)."""
+    path = ROOT_WEB / "back.png"
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Background image not found")
+    return FileResponse(path, media_type="image/png")
+
+
 @app.websocket("/ws/room")
 async def ws_room(websocket: WebSocket) -> None:
-    """멀티 채팅방 WebSocket. 첫 메시지: {"type":"join","nickname":"..."} 이후 {"type":"chat","text":"..."}."""
+    """멀티 채팅방 WebSocket.
+    첫 메시지: {"type":"join","nickname":"..."}
+    이후:
+    - {"type":"chat","text":"..."}
+    - {"type":"read","message_id":"..."}
+    - {"type":"edit","message_id":"...","text":"..."}  (발신자만)
+    - {"type":"delete","message_id":"..."}            (발신자만)
+    """
     await websocket.accept()
     nickname: Optional[str] = None
     try:
@@ -141,19 +164,135 @@ async def ws_room(websocket: WebSocket) -> None:
         await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=websocket)
         await websocket.send_text(json.dumps({"type": "participants", "list": participants}, ensure_ascii=False))
         await _room_broadcast({"type": "system", "message": f"{nickname}님이 입장했습니다."}, exclude_ws=None)
+        
+        # 메시지 수신 루프
         while True:
-            raw = await websocket.receive_text()
-            data = json.loads(raw)
-            if data.get("type") == "chat" and (data.get("text") or "").strip():
-                text = (data["text"] or "").strip()[:2000]
-                await _room_broadcast({"type": "chat", "nickname": nickname, "text": text}, exclude_ws=None)
+            try:
+                raw = await websocket.receive_text()
+                data = json.loads(raw)
+                
+                if data.get("type") == "chat" and (data.get("text") or "").strip():
+                    text = (data["text"] or "").strip()[:2000]
+                    message_id = str(uuid4())
+                    total_participants = len(_room_connections)
+                    _room_messages[message_id] = {"sender_nickname": nickname, "text": text}
+                    # 읽음 상태 초기화 (발신자는 자동 읽음 처리)
+                    _message_read_status[message_id] = {
+                        "sender_ws": websocket,
+                        "sender_nickname": nickname,
+                        "read_by": {nickname},
+                        "total_participants": total_participants,
+                    }
+                    await _room_broadcast({
+                        "type": "chat",
+                        "message_id": message_id,
+                        "nickname": nickname,
+                        "text": text,
+                        "unread_count": total_participants - 1,  # 발신자 제외
+                    }, exclude_ws=None)
+                    
+                    # 읽음 상태 메모리 관리: 100개 이상이면 오래된 것 삭제
+                    if len(_message_read_status) > 100:
+                        old_ids = list(_message_read_status.keys())[:-50]  # 오래된 50개만 남기고 삭제
+                        for old_id in old_ids:
+                            _message_read_status.pop(old_id, None)
+                
+                elif data.get("type") == "read" and (data.get("message_id") or "").strip():
+                    message_id = data["message_id"]
+                    if message_id in _message_read_status:
+                        status = _message_read_status[message_id]
+                        status["read_by"].add(nickname)
+                        unread_count = status["total_participants"] - len(status["read_by"])
+                        # 발신자에게 읽음 업데이트 전송
+                        sender_ws = status["sender_ws"]
+                        if sender_ws in [ws for ws, _ in _room_connections]:
+                            try:
+                                await sender_ws.send_text(json.dumps({
+                                    "type": "read_update",
+                                    "message_id": message_id,
+                                    "unread_count": unread_count,
+                                }, ensure_ascii=False))
+                            except Exception:
+                                pass
+                        # 모두 읽었으면 상태 삭제
+                        if unread_count == 0:
+                            del _message_read_status[message_id]
+
+                elif data.get("type") == "edit" and (data.get("message_id") or "").strip():
+                    message_id = data["message_id"]
+                    new_text = (data.get("text") or "").strip()[:2000]
+                    if not new_text:
+                        continue
+                    msg = _room_messages.get(message_id)
+                    if not msg:
+                        continue
+                    if msg.get("sender_nickname") != nickname:
+                        continue
+                    msg["text"] = new_text
+                    await _room_broadcast({
+                        "type": "edit",
+                        "message_id": message_id,
+                        "text": new_text,
+                    }, exclude_ws=None)
+
+                elif data.get("type") == "delete" and (data.get("message_id") or "").strip():
+                    message_id = data["message_id"]
+                    msg = _room_messages.get(message_id)
+                    if not msg:
+                        continue
+                    if msg.get("sender_nickname") != nickname:
+                        continue
+                    _room_messages.pop(message_id, None)
+                    _message_read_status.pop(message_id, None)
+                    await _room_broadcast({
+                        "type": "delete",
+                        "message_id": message_id,
+                    }, exclude_ws=None)
+            
+            except json.JSONDecodeError:
+                # JSON 파싱 에러만 무시하고 계속 진행
+                continue
+            except WebSocketDisconnect:
+                # 연결 종료 시 루프 탈출 (재진입 시 무한 로그 방지)
+                raise
+            except Exception as e:
+                # 연결 불가/수신 불가 등은 루프 탈출
+                if "receive" in str(e).lower() or "closed" in str(e).lower() or "connection" in str(e).lower():
+                    raise
+                print(f"WebSocket message error for {nickname}: {e}")
+                continue
+    
     except WebSocketDisconnect:
         pass
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"WebSocket connection error for {nickname}: {e}")
     finally:
         if nickname is not None:
             _room_connections[:] = [(w, n) for w, n in _room_connections if w is not websocket]
+            # 퇴장한 유저가 읽지 않은 메시지의 읽음 상태 업데이트
+            for message_id, status in list(_message_read_status.items()):
+                if websocket == status["sender_ws"]:
+                    # 발신자가 퇴장한 경우 메시지 상태 삭제
+                    del _message_read_status[message_id]
+                else:
+                    # 퇴장한 유저가 수신자인 경우 total_participants 감소
+                    if nickname not in status["read_by"]:
+                        status["total_participants"] -= 1
+                    unread_count = status["total_participants"] - len(status["read_by"])
+                    # 발신자에게 업데이트 전송
+                    sender_ws = status["sender_ws"]
+                    if sender_ws in [ws for ws, _ in _room_connections]:
+                        try:
+                            await sender_ws.send_text(json.dumps({
+                                "type": "read_update",
+                                "message_id": message_id,
+                                "unread_count": unread_count,
+                            }, ensure_ascii=False))
+                        except Exception:
+                            pass
+                    if unread_count == 0:
+                        del _message_read_status[message_id]
+                        _room_messages.pop(message_id, None)
             participants = [n for _, n in _room_connections]
             await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=None)
             await _room_broadcast({"type": "system", "message": f"{nickname}님이 퇴장했습니다."}, exclude_ws=None)

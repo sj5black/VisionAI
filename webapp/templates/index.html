@@ -9,8 +9,8 @@
   <body>
     <main class="container">
       <header class="header">
-        <h1>VisionAI 객체 탐지</h1>
-        <p class="subtitle">이미지를 업로드하면 포함된 사물/동물을 탐지해서 보여줍니다.</p>
+        <h1>VisionAI 객체 탐지 & 행동 예측</h1>
+        <p class="subtitle">이미지를 업로드하면 포함된 사물/동물을 탐지하고, 동물의 감정/자세/행동을 분석합니다.</p>
       </header>
 
       <section class="card">
@@ -23,7 +23,8 @@
           <div class="row">
             <label class="label" for="model">모델</label>
             <select id="model" name="model">
-              <option value="fasterrcnn_resnet50_fpn_v2" selected>Faster R-CNN (ResNet50)</option>
+              <option value="visionai_pipeline" selected>🆕 VisionAI Pipeline (YOLOv8 + 감정/행동 분석)</option>
+              <option value="fasterrcnn_resnet50_fpn_v2">Faster R-CNN (ResNet50)</option>
               <option value="retinanet_resnet50_fpn_v2">RetinaNet (ResNet50)</option>
             </select>
           </div>
@@ -70,10 +71,21 @@
 
         <h2 class="mt">상세 목록</h2>
         <div id="tableWrap"></div>
+        
+        <div id="pipelineInfo" class="notice" style="display: none; margin-top: 1rem;">
+          <b>VisionAI Pipeline</b> 사용 시 추가 정보:
+          <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+            <li><b>감정</b>: relaxed, alert, fearful, aggressive, playful</li>
+            <li><b>자세</b>: sitting, standing, lying, running, jumping</li>
+            <li><b>행동 예측</b>: 다음 5초 이내 예상 행동</li>
+          </ul>
+          처리 시간: <span id="processingTime">-</span>초
+        </div>
       </section>
     </main>
 
-    <script src="/static/app.js"></script>
+    <!-- cache-busting: ensure clients load latest JS -->
+    <script src="/static/app.js?v=2"></script>
   </body>
 </html>
 

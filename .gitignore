@@ -1,0 +1,35 @@
+# Python cache/bytecode
+__pycache__/
+*.py[cod]
+
+# Env files
+.env
+.env.*
+
+# Local logs / pid files
+.visionai_web.pid
+.visionai_web.log
+
+# Image/media folders (project artifacts & datasets)
+images/
+webapp/uploads/
+webapp/outputs/
+
+# Any nested image/media folders
+**/images/
+**/uploads/
+**/outputs/
+
+# YOLO models (will be auto-downloaded)
+*.pt
+yolov8*.pt
+
+# Trained models
+*.pth
+models/
+
+# Temporary visualization outputs
+temp_*.jpg
+temp_*.png
+temp_*.mp4
+

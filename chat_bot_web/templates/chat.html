@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Teddy Park's English Class</title>
+  <link rel="stylesheet" href="/static/chat.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <h1>Teddy Park's English Class</h1>
+      <p class="subtitle">AI와 영어로 대화하며 실력을 늘려보세요. 교정·점수·피드백을 받을 수 있습니다.</p>
+      <a href="/" class="link-room">← 홈</a>
+    </header>
+
+    <section id="chatSection" class="card">
+      <div class="situationBar">
+        <span class="situationLabel">대화주제:</span>
+        <select id="situationSelect">
+          <option value="-1">랜덤</option>
+        </select>
+        <span id="situationTitle">-</span>
+        <button id="newChatBtn" class="btn small">새 대화</button>
+      </div>
+
+      <div id="chatMessages" class="chatMessages"></div>
+
+      <div class="inputBar">
+        <input
+          id="userInput"
+          type="text"
+          placeholder="영어로 답변 입력... (Enter: 전송)"
+          autocomplete="off"
+        />
+        <button id="sendBtn" class="btn primary">전송</button>
+      </div>
+    </section>
+
+    <div id="loading" class="loading" style="display: none;">처리 중...</div>
+    <div id="error" class="error" style="display: none;"></div>
+  </main>
+  <script src="/static/chat.js"></script>
+</body>
+</html>

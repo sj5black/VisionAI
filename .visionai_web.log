@@ -91,3 +91,403 @@ INFO:     112.171.67.160:2432 - "POST /api/detect HTTP/1.1" 200 OK
 INFO:     112.171.67.160:2432 - "GET /files/2b4440c36ec141e3bc020b7718b8c7ad/annotated?t=1769733756709 HTTP/1.1" 200 OK
 INFO:     112.171.67.160:14718 - "POST /api/detect HTTP/1.1" 200 OK
 INFO:     112.171.67.160:14718 - "GET /files/129cf3c4b2ff4d9984068316f18013f1/annotated?t=1769733899737 HTTP/1.1" 200 OK
+INFO:     211.231.103.94:35498 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:62183 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:62183 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:65096 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     112.171.67.160:65096 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:50411 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:33739 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:33831 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:33937 - "GET /robots.txt HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     3.130.96.91:33434 - "GET / HTTP/1.1" 200 OK
+INFO:     3.130.96.91:40892 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     27.0.238.186:54000 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     3.134.148.59:40864 - "GET / HTTP/1.1" 200 OK
+INFO:     3.134.148.59:42608 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     211.231.103.105:57564 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.139.50:42894 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.139.50:42894 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     211.36.139.50:30831 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     211.36.139.50:30831 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     211.36.139.15:10237 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.139.15:10237 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     211.36.139.15:56991 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     211.36.139.15:56991 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     118.235.3.122:18713 - "GET / HTTP/1.1" 200 OK
+INFO:     118.235.3.122:18713 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     118.235.3.122:1096 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     211.36.140.42:46570 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.140.42:46570 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     211.36.140.42:46570 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     211.36.140.42:46570 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     211.36.139.15:33325 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.139.15:33325 - "GET / HTTP/1.1" 200 OK
+INFO:     118.235.3.122:54045 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     118.235.3.122:54045 - "GET /files/23c8f65968644f708e247f7f9c5fd26e/annotated?t=1769835473283 HTTP/1.1" 200 OK
+INFO:     211.36.140.42:51207 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.140.42:51207 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     211.36.140.42:39923 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     211.36.140.42:39923 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     211.36.140.42:62480 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     211.36.140.42:62480 - "GET /files/ae41d2c4ac1a485bb87fd83880afa609/annotated?t=1769835562119 HTTP/1.1" 200 OK
+INFO:     211.36.140.42:52868 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     211.36.140.42:52868 - "GET /files/90a38d60eac04b1faf6b8d53e7f0a874/annotated?t=1769835577575 HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:38320 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:38343 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:38396 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     130.12.180.107:36430 - "CONNECT 1.1.1.1%3A443 HTTP/1.0" 404 Not Found
+INFO:     130.12.180.107:36440 - "CONNECT 130.12.180.107%3A80 HTTP/1.0" 404 Not Found
+INFO:     130.12.180.107:33376 - "CONNECT 130.12.180.107%3A80 HTTP/1.0" 404 Not Found
+INFO:     130.12.180.107:33388 - "CONNECT 130.12.180.107%3A80 HTTP/1.0" 404 Not Found
+INFO:     130.12.180.107:33404 - "CONNECT 130.12.180.107%3A80 HTTP/1.0" 404 Not Found
+INFO:     130.12.180.107:33406 - "CONNECT 130.12.180.107%3A80 HTTP/1.0" 404 Not Found
+INFO:     130.12.180.107:33412 - "CONNECT 130.12.180.107%3A80 HTTP/1.0" 404 Not Found
+INFO:     130.12.180.107:62880 - "CONNECT 130.12.180.107%3A80 HTTP/1.0" 404 Not Found
+INFO:     130.12.180.107:62892 - "CONNECT 130.12.180.107%3A80 HTTP/1.0" 404 Not Found
+INFO:     130.12.180.107:62898 - "CONNECT 130.12.180.107%3A80 HTTP/1.0" 404 Not Found
+INFO:     130.12.180.107:62900 - "CONNECT 130.12.180.107%3A80 HTTP/1.0" 404 Not Found
+INFO:     130.12.180.107:62904 - "CONNECT 130.12.180.107%3A80 HTTP/1.0" 404 Not Found
+INFO:     130.12.180.107:62908 - "CONNECT 130.12.180.107%3A80 HTTP/1.0" 404 Not Found
+INFO:     130.12.180.107:62918 - "CONNECT 130.12.180.107%3A80 HTTP/1.0" 404 Not Found
+INFO:     27.0.238.69:34358 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     3.134.148.59:57682 - "GET / HTTP/1.1" 200 OK
+INFO:     3.134.148.59:32932 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:39269 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:39301 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:39342 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     52.102.12.149:6224 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     112.171.67.160:12111 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12111 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:5469 - "GET /static/app.js HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:3142 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3142 - "GET /files/22cc5bd092414fd5a04435020098bac4/annotated?t=1769991268094 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3046 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3046 - "GET /files/04af5d2e08824de790a8148b34ac2040/annotated?t=1769991276527 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11101 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11101 - "GET /files/6feac47bbde14bc5ad3faec71b16a72a/annotated?t=1769991284531 HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     165.154.162.102:56470 - "GET / HTTP/1.1" 200 OK
+INFO:     165.154.162.102:40378 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     165.154.162.102:40390 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     165.154.162.102:40394 - "GET /sitemap.xml HTTP/1.1" 404 Not Found
+INFO:     165.154.162.102:40408 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     165.154.162.102:40424 - "GET /config.json HTTP/1.1" 404 Not Found
+INFO:     165.154.162.102:40428 - "GET /sse HTTP/1.1" 404 Not Found
+INFO:     165.154.162.102:40438 - "GET /mcp HTTP/1.1" 404 Not Found
+INFO:     165.154.162.102:40450 - "GET /mcp-sse HTTP/1.1" 404 Not Found
+INFO:     175.117.226.110:58381 - "GET / HTTP/1.1" 200 OK
+INFO:     175.117.226.110:63200 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     175.117.226.110:58381 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     175.117.226.110:63200 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:59245 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:59245 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:64922 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     112.171.67.160:64922 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:55542 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:55542 - "GET /files/30c717c0dadb408da4a198d8237da2ba/annotated?t=1770001326743 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11873 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11873 - "GET /files/2f389bdf5f52497688433b7bffb18b74/annotated?t=1770001346136 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:56420 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:56420 - "GET /files/f06a9eea00b344f0b6eec66b9c124d62/annotated?t=1770001387163 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:57864 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:57864 - "GET /files/32aa85dfa3ef48a688474ef670e29b1d/annotated?t=1770001410199 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:55375 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:55375 - "GET /files/963218e39b484e02a88fd10e0a1310b8/annotated?t=1770001473176 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:61537 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:61537 - "GET /files/236c466fd7584c339e03fa00da22c2f0/annotated?t=1770001527802 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:61948 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:61948 - "GET /files/75877d631e824cb29a8a08302b335b36/annotated?t=1770001560559 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:51013 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:51013 - "GET /files/5380a7ef25be4b3d972844c4d25fe381/annotated?t=1770001577119 HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     3.130.96.91:40228 - "GET / HTTP/1.1" 200 OK
+INFO:     3.130.96.91:47226 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3718894]
+nohup: ignoring input
+INFO:     Started server process [117060]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:11662 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11662 - "GET /static/app.js HTTP/1.1" 304 Not Modified
+INFO:     34.227.242.232:40172 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     34.227.242.232:40172 - "GET / HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [117060]
+INFO:     Started server process [117579]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     127.0.0.1:48276 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11007 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1185 - "POST /api/detect HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/fastapi/applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/fastapi/routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/fastapi/routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/fastapi/routing.py", line 355, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/fastapi/routing.py", line 245, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/teddy/VisionAI/webapp/main.py", line 264, in api_detect
+    return _handle_pipeline_detection(image, threshold, max_detections)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/teddy/VisionAI/webapp/main.py", line 134, in _handle_pipeline_detection
+    import cv2
+ModuleNotFoundError: No module named 'cv2'
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [117579]
+INFO:     Started server process [118725]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n)...
+Failed to load VisionAI Pipeline: ultralytics 패키지가 필요합니다. 설치: pip install ultralytics
+INFO:     127.0.0.1:32950 - "POST /api/detect HTTP/1.1" 503 Service Unavailable
+WARNING:  Invalid HTTP request received.
+INFO:     91.231.89.107:41103 - "GET / HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [118725]
+INFO:     Started server process [119084]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n)...
+Creating new Ultralytics Settings v0.0.6 file ✅ 
+View Ultralytics Settings with 'yolo settings' or at '/root/.config/Ultralytics/settings.json'
+Update Settings with 'yolo settings key=value', i.e. 'yolo settings runs_dir=path/to/dir'. For help see https://docs.ultralytics.com/quickstart/#ultralytics-settings.
+[KDownloading https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8n.pt to 'yolov8n.pt': 100% ━━━━━━━━━━━━ 6.2MB 68.9MB/s 0.1s
+[KDownloading https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8n-pose.pt to 'yolov8n-pose.pt': 100% ━━━━━━━━━━━━ 6.5MB 67.4MB/s 0.1s
+✓ YOLOv8n 모델 로드 완료 (device: cuda)
+
+[2/4] 감정 분석 모델 로딩 (MobileNetV3)...
+Downloading: "https://download.pytorch.org/models/mobilenet_v3_small-047dcff4.pth" to /root/.cache/torch/hub/checkpoints/mobilenet_v3_small-047dcff4.pth
+  0%|          | 0.00/9.83M [00:00<?, ?B/s] 64%|██████▎   | 6.25M/9.83M [00:00<00:00, 64.9MB/s]100%|██████████| 9.83M/9.83M [00:00<00:00, 65.8MB/s]
+⚠ 학습된 모델이 없어 랜덤 초기화된 모델 사용 (결과가 부정확할 수 있음)
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     127.0.0.1:60136 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60144 - "HEAD /files/102c4b98070947e1a772df0a920269bd/annotated HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60148 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43156 - "GET /files/102c4b98070947e1a772df0a920269bd/annotated HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [119084]
+INFO:     Started server process [119454]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n)...
+INFO:     127.0.0.1:38426 - "GET / HTTP/1.1" 200 OK
+✓ YOLOv8n 모델 로드 완료 (device: cuda)
+
+[2/4] 감정 분석 모델 로딩 (MobileNetV3)...
+⚠ 학습된 모델이 없어 랜덤 초기화된 모델 사용 (결과가 부정확할 수 있음)
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     127.0.0.1:38442 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     91.231.89.192:56695 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     101.249.62.159:15040 - "GET / HTTP/1.1" 200 OK
+INFO:     220.167.232.108:62302 - "GET / HTTP/1.1" 200 OK
+INFO:     123.245.85.5:15571 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     45.194.92.35:49062 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     45.194.92.35:49066 - "POST /_next HTTP/1.1" 404 Not Found
+INFO:     45.194.92.35:49072 - "POST /api HTTP/1.1" 404 Not Found
+INFO:     45.194.92.35:40696 - "POST /_next/server HTTP/1.1" 404 Not Found
+INFO:     45.194.92.35:40700 - "POST /app HTTP/1.1" 404 Not Found
+INFO:     45.194.92.35:40704 - "POST /api/route HTTP/1.1" 404 Not Found
+INFO:     175.193.238.201:56640 - "GET / HTTP/1.1" 200 OK
+INFO:     175.193.238.201:64341 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     175.193.238.201:56640 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     175.193.238.201:64341 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     182.172.56.228:49366 - "GET / HTTP/1.1" 200 OK
+INFO:     182.172.56.228:49366 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     182.172.56.228:49382 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     182.172.56.228:49382 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:4258 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5962 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4258 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:6098 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6098 - "GET /files/42c0a4a8f18b4edb9c8a5dea8dbb3798/annotated?t=1770077270759 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3447 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3447 - "GET /files/7b1a7c15109144669a2e1501f0e323d9/annotated?t=1770077351544 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12133 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12133 - "GET /files/63567beeb7db47d2855386e157d85d3e/annotated?t=1770077363430 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [119454]
+nohup: ignoring input
+INFO:     Started server process [139041]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:12373 - "GET / HTTP/1.1" 200 OK
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n)...
+✓ YOLOv8n 모델 로드 완료 (device: cuda)
+
+[2/4] 감정/표정 분석 모델 로딩 (OpenCLIP 또는 학습 모델)...
+✓ 감정 분석: OpenCLIP zero-shot (ViT-B-32) 사용 — 표정/자세 정확도 향상
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:7681 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7681 - "GET /files/adc7e15acf804f0a93de120770b71d05/annotated?t=1770077975267 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4766 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4766 - "GET /files/81d06599cac340eeb7c41413e6be0563/annotated?t=1770077998462 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3142 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3142 - "GET /files/cf3e55aa17634fd2b874e5971756f3dc/annotated?t=1770078019014 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [139041]
+nohup: ignoring input
+INFO:     Started server process [140012]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:7504 - "GET / HTTP/1.1" 200 OK
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n)...
+✓ YOLOv8n 모델 로드 완료 (device: cuda)
+
+[2/4] 감정/표정 분석 모델 로딩 (OpenCLIP 또는 학습 모델)...
+✓ 감정 분석: OpenCLIP zero-shot (ViT-B-32) 사용 — 표정/자세 정확도 향상
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:7504 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7504 - "GET /files/624402c08643434f95a9a867d0bf7dbc/annotated?t=1770078445338 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10726 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10726 - "GET /files/d7cbbd4b4dad431da43de2b1eedd4ce9/annotated?t=1770078525068 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5038 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5038 - "GET /files/c05d3ef520bd4f7fad47ea4bfb16e464/annotated?t=1770078537683 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12138 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12138 - "GET /files/4e942138149e43eda3da8e7f111cd63a/annotated?t=1770078544350 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10000 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10000 - "GET /files/446a4ea0024d4438883b57181562b98b/annotated?t=1770078708628 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4775 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5114 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5114 - "GET /files/2a345541633a42f694440f3b754d2390/annotated?t=1770082024384 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13602 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13602 - "GET /files/fefe7248f25f4c77b80f10a301dedb0d/annotated?t=1770083397970 HTTP/1.1" 200 OK
+INFO:     27.0.238.116:42882 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:43138 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:43154 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:43441 - "GET /robots.txt HTTP/1.1" 404 Not Found

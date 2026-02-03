@@ -18,6 +18,14 @@ from visionai_resnet.animal_insights import (
     COCO_ANIMALS,
 )
 
+# 🆕 새로운 VisionAI Pipeline
+try:
+    from visionai_pipeline import VisionAIPipeline
+    PIPELINE_AVAILABLE = True
+except ImportError:
+    PIPELINE_AVAILABLE = False
+    VisionAIPipeline = None
+
 
 ROOT = Path(__file__).resolve().parent
 UPLOAD_DIR = ROOT / "uploads"
@@ -40,6 +48,10 @@ _detector_lock = threading.Lock()
 
 _animal_analyzer: Optional[AnimalBehaviorExpressionAnalyzer] = None
 _animal_lock = threading.Lock()
+
+# 🆕 VisionAI Pipeline
+_pipeline: Optional[Any] = None
+_pipeline_lock = threading.Lock()
 
 
 def _get_detector(model_name: str, device: Optional[str]) -> ResNetObjectDetector:
@@ -76,11 +88,145 @@ def _get_animal_analyzer(device: Optional[str]) -> Optional[AnimalBehaviorExpres
     return _animal_analyzer
 
 
+def _get_pipeline(device: Optional[str]) -> Optional[Any]:
+    """
+    🆕 Lazy-load VisionAI Pipeline.
+    """
+    if not PIPELINE_AVAILABLE:
+        return None
+    
+    global _pipeline
+    if _pipeline is not None:
+        return _pipeline
+    
+    with _pipeline_lock:
+        if _pipeline is None:
+            try:
+                _pipeline = VisionAIPipeline(
+                    device=device or 'auto',
+                    enable_emotion=True,
+                    enable_temporal=False,  # 단일 이미지라 비활성화
+                    enable_prediction=True
+                )
+            except Exception as e:
+                print(f"Failed to load VisionAI Pipeline: {e}")
+                _pipeline = None
+    
+    return _pipeline
+
+
 def _safe_ext(filename: str) -> str:
     ext = Path(filename).suffix.lower()
     if ext in {".jpg", ".jpeg", ".png", ".bmp", ".webp"}:
         return ext
     return ".jpg"
+
+
+def _handle_pipeline_detection(
+    image: UploadFile,
+    threshold: float,
+    max_detections: int
+) -> Dict[str, Any]:
+    """
+    🆕 VisionAI Pipeline으로 이미지 처리
+    """
+    import numpy as np
+    from PIL import Image as PILImage
+    
+    device = os.getenv("VISIONAI_DEVICE")
+    pipeline = _get_pipeline(device)
+    
+    if pipeline is None:
+        raise HTTPException(
+            status_code=503,
+            detail="VisionAI Pipeline is not available. Install: pip install ultralytics"
+        )
+    
+    file_id = uuid4().hex
+    ext = _safe_ext(image.filename or "upload.jpg")
+    upload_path = UPLOAD_DIR / f"{file_id}{ext}"
+    annotated_path = OUTPUT_DIR / f"{file_id}.jpg"
+    
+    # 이미지 저장
+    try:
+        with upload_path.open("wb") as f:
+            while True:
+                chunk = image.file.read(1024 * 1024)
+                if not chunk:
+                    break
+                f.write(chunk)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save upload: {e}") from e
+    
+    # 이미지 로드
+    try:
+        pil_img = PILImage.open(upload_path).convert('RGB')
+        image_np = np.array(pil_img)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load image: {e}") from e
+    
+    # 파이프라인 실행
+    try:
+        result = pipeline.process_image(image_np, conf_threshold=threshold)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Pipeline failed: {e}") from e
+    
+    # 시각화
+    try:
+        vis_image = pipeline.visualize(image_np, result)
+        PILImage.fromarray(vis_image).convert("RGB").save(
+            annotated_path, format="JPEG", quality=90
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Visualization failed: {e}") from e
+    
+    # 결과 변환 (기존 포맷과 호환)
+    object_types = list(set(d['class_name'] for d in result.detections))
+    objects = []
+    
+    for i, det in enumerate(result.detections[:max_detections]):
+        obj = {
+            "label": det['class_name'],
+            "score": det['confidence'],
+            "box_xyxy": det['bbox'],
+        }
+        
+        # 감정/자세 정보 추가
+        if i < len(result.emotions):
+            emotion = result.emotions[i]
+            obj["pipeline_insights"] = {
+                "emotion": emotion['emotion'],
+                "emotion_confidence": emotion['emotion_confidence'],
+                "pose": emotion['pose'],
+                "pose_confidence": emotion['pose_confidence'],
+                "combined_state": emotion['combined_state'],
+            }
+            
+            # Temporal action (있으면)
+            if result.action:
+                obj["pipeline_insights"]["action"] = result.action['action']
+                obj["pipeline_insights"]["action_confidence"] = result.action['confidence']
+            
+            # Prediction (있으면)
+            if result.prediction:
+                obj["pipeline_insights"]["predicted_action"] = result.prediction['predicted_action']
+                obj["pipeline_insights"]["prediction_confidence"] = result.prediction['confidence']
+                obj["pipeline_insights"]["alternative_actions"] = result.prediction['alternative_actions']
+        
+        objects.append(obj)
+    
+    return {
+        "id": file_id,
+        "model": "visionai_pipeline",
+        "threshold": threshold,
+        "max_detections": max_detections,
+        "object_types": object_types,
+        "objects": objects,
+        "pipeline_enabled": True,
+        "processing_time": result.processing_time,
+        "original_image_url": f"/files/{file_id}/original",
+        "annotated_image_url": f"/files/{file_id}/annotated",
+    }
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -99,6 +245,7 @@ def api_detect(
     threshold: float = Form(0.5),
     max_detections: int = Form(100),
     model: str = Form("fasterrcnn_resnet50_fpn_v2"),
+    use_pipeline: bool = Form(False),  # 🆕 파이프라인 사용 여부
 ) -> Dict[str, Any]:
     # Some clients (e.g., curl) may send application/octet-stream for images like .webp.
     # We allow it if the filename extension is an allowed image type.
@@ -111,6 +258,11 @@ def api_detect(
         raise HTTPException(status_code=400, detail="threshold must be between 0 and 1.")
     if max_detections < 1 or max_detections > 300:
         raise HTTPException(status_code=400, detail="max_detections must be between 1 and 300.")
+    
+    # 🆕 파이프라인 모드
+    if use_pipeline or model == "visionai_pipeline":
+        return _handle_pipeline_detection(image, threshold, max_detections)
+    
     if model not in {"fasterrcnn_resnet50_fpn_v2", "retinanet_resnet50_fpn_v2", "fasterrcnn", "retinanet"}:
         raise HTTPException(status_code=400, detail="Unsupported model.")
 

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>멀티 채팅방 - Teddy Park's English Class</title>
+  <link rel="stylesheet" href="/static/room.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <h1>멀티 채팅방</h1>
+      <p class="subtitle">유저끼리 실시간으로 대화하는 방입니다. (AI 미사용)</p>
+      <a href="/" class="link-back">← 홈</a>
+    </header>
+
+    <section id="nickSection" class="card">
+      <p class="intro">닉네임을 입력하고 입장하세요.</p>
+      <div class="nickForm">
+        <input id="nickInput" type="text" placeholder="닉네임 (2~32자)" maxlength="32" autocomplete="off" />
+        <button id="enterBtn" class="btn primary">입장</button>
+      </div>
+      <p id="nickError" class="error-msg" style="display: none;"></p>
+    </section>
+
+    <section id="roomSection" class="card" style="display: none;">
+      <div class="roomTop">
+        <div class="participantsWrap">
+          <span class="participantsLabel">참여자 (<span id="participantCount">0</span>)</span>
+          <ul id="participantList" class="participantList"></ul>
+        </div>
+      </div>
+      <div id="roomMessages" class="roomMessages"></div>
+      <div class="roomInputBar">
+        <input id="roomInput" type="text" placeholder="메시지 입력..." autocomplete="off" />
+        <button id="roomSendBtn" class="btn primary">전송</button>
+      </div>
+    </section>
+  </main>
+  <script src="/static/room.js"></script>
+</body>
+</html>

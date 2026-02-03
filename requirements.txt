@@ -3,9 +3,12 @@ torchvision
 pillow
 
 fastapi
-uvicorn
+uvicorn[standard]
 python-multipart
 jinja2
 
 # Optional (animal behavior/expression zero-shot)
 open_clip_torch
+
+openai>=1.0.0
+python-dotenv>=1.0.0

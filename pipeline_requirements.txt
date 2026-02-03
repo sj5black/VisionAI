@@ -1,0 +1,20 @@
+# VisionAI Pipeline Dependencies
+
+# Core dependencies
+torch>=2.0.0
+torchvision>=0.15.0
+pillow>=9.0.0
+numpy>=1.21.0
+opencv-python>=4.5.0
+
+# YOLO (Object + Pose Detection)
+ultralytics>=8.0.0
+
+# Optional: Web interface
+fastapi
+uvicorn
+python-multipart
+jinja2
+
+# Emotion/Pose analysis (OpenCLIP zero-shot for accurate expression)
+open_clip_torch

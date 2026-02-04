@@ -13,7 +13,9 @@ from openai import OpenAI
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL")
+if not OPENAI_MODEL:
+    raise ValueError("OPENAI_MODEL이 .env에 설정되지 않았습니다. .env 파일에 OPENAI_MODEL을 추가해주세요.")
 
 # 다양한 대화 상황 (영어로 설명해 AI가 맥락을 이해하도록)
 CONVERSATION_SITUATIONS = [

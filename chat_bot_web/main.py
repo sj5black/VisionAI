@@ -161,24 +161,56 @@ Rules:
 
 
 def _call_serena(recent_messages: List[Dict[str, str]]) -> Optional[str]:
-    """OpenAI로 Serena 응답 생성 (동기)."""
+    """OpenAI로 Serena 응답 생성 (동기). gpt-5-mini/nano는 Responses API 사용."""
     try:
         client = get_client()
+        model = os.getenv("OPENAI_MODEL")
+        if not model:
+            print("❌ Serena error: OPENAI_MODEL not set in .env")
+            return None
+        
         conv = "\n".join(f"{m['nickname']}: {m['text']}" for m in recent_messages)
         if not conv.strip():
             conv = "(No recent messages)"
-        resp = client.chat.completions.create(
-            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-            messages=[
-                {"role": "system", "content": SERENA_SYSTEM},
-                {"role": "user", "content": f"Recent chat messages (some may contain Korean):\n{conv}\n\nRespond in English. If any message has Korean in it, briefly give the English equivalent for that Korean (e.g. 'that word means X in English') in a natural, friendly way."},
-            ],
-            max_completion_tokens=150,
-        )
-        if resp.choices and resp.choices[0].message.content:
-            return resp.choices[0].message.content.strip()
+        
+        # gpt-5-mini, gpt-5-nano는 Responses API 사용
+        use_responses_api = any(x in model.lower() for x in ['gpt-5-mini', 'gpt-5-nano', 'gpt-5.1', 'gpt-5.2'])
+        
+        if use_responses_api:
+            # Responses API (최신 모델용)
+            print(f"🔄 Using Responses API for model: {model}")
+            input_text = f"{SERENA_SYSTEM}\n\nRecent chat:\n{conv}\n\nRespond in English. If any message has Korean, briefly give the English equivalent."
+            resp = client.responses.create(
+                model=model,
+                input=input_text,
+                max_output_tokens=300,
+            )
+            if hasattr(resp, 'output_text') and resp.output_text:
+                return resp.output_text.strip()
+            elif hasattr(resp, 'output') and resp.output:
+                # output이 list인 경우
+                for item in resp.output:
+                    if hasattr(item, 'content') and item.content:
+                        for content_item in item.content:
+                            if hasattr(content_item, 'text'):
+                                return content_item.text.strip()
+        else:
+            # Chat Completions API (기존 모델용)
+            print(f"💬 Using Chat Completions API for model: {model}")
+            resp = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": SERENA_SYSTEM},
+                    {"role": "user", "content": f"Recent chat messages (some may contain Korean):\n{conv}\n\nRespond in English. If any message has Korean in it, briefly give the English equivalent for that Korean (e.g. 'that word means X in English') in a natural, friendly way."},
+                ],
+                max_completion_tokens=300,
+            )
+            if resp.choices and resp.choices[0].message.content:
+                return resp.choices[0].message.content.strip()
     except Exception as e:
-        print(f"Serena OpenAI error: {e}")
+        print(f"❌ Serena OpenAI error: {e}")
+        import traceback
+        traceback.print_exc()
     return None
 
 
@@ -593,30 +625,64 @@ def api_start(body: Optional[StartRequest] = None) -> StartResponse:
     situation_ko = SITUATION_KO.get(situation_title, situation_title)
     situation_display = f"{situation_title} ({situation_ko})"
 
+    model = os.getenv("OPENAI_MODEL")
+    if not model:
+        raise HTTPException(status_code=500, detail="OPENAI_MODEL not configured")
+    
     system_content = f"{SYSTEM_PROMPT}\n\nCurrent situation:\n{situation}"
-    messages = [
-        {"role": "system", "content": system_content},
-    ]
-
-    first = client.chat.completions.create(
-        model=os.getenv("OPENAI_MODEL"),
-        messages=messages,
-        max_completion_tokens=300,
-    )
-    first_reply = first.choices[0].message.content.strip()
+    
+    # gpt-5-mini/nano는 Responses API 사용
+    use_responses_api = any(x in model.lower() for x in ['gpt-5-mini', 'gpt-5-nano', 'gpt-5.1', 'gpt-5.2'])
+    
+    if use_responses_api:
+        # Responses API
+        resp = client.responses.create(
+            model=model,
+            input=system_content,
+            max_output_tokens=500,
+        )
+        if hasattr(resp, 'output_text'):
+            first_reply = resp.output_text.strip()
+        else:
+            # output이 list인 경우
+            first_reply = ""
+            for item in resp.output:
+                if hasattr(item, 'content'):
+                    for c in item.content:
+                        if hasattr(c, 'text'):
+                            first_reply = c.text.strip()
+                            break
+    else:
+        # Chat Completions API
+        messages = [{"role": "system", "content": system_content}]
+        first = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            max_completion_tokens=300,
+        )
+        first_reply = first.choices[0].message.content.strip()
+        messages.append({"role": "assistant", "content": first_reply})
     first_message = first_reply
     first_korean = None
     if KOREAN_LABEL in first_reply:
         idx = first_reply.index(KOREAN_LABEL)
         first_message = first_reply[:idx].strip()
         first_korean = first_reply[idx + len(KOREAN_LABEL):].strip()
-    messages.append({"role": "assistant", "content": first_reply})
+    
+    # 대화 히스토리 저장 (Responses API는 텍스트 기반으로 변환 필요)
+    if use_responses_api:
+        messages = [
+            {"role": "system", "content": system_content},
+            {"role": "assistant", "content": first_reply}
+        ]
+    # Chat Completions API는 이미 messages에 추가됨
 
     conv_id = uuid4().hex
     _conversations[conv_id] = {
         "situation": situation,
         "situation_title": situation_title,
         "messages": messages,
+        "use_responses_api": use_responses_api,  # API 타입 저장
     }
 
     return StartResponse(
@@ -649,6 +715,10 @@ def api_chat(body: ChatRequest) -> ChatResponse:
             raw_reply=None,
         )
 
+    model = os.getenv("OPENAI_MODEL")
+    if not model:
+        raise HTTPException(status_code=500, detail="OPENAI_MODEL not configured")
+    
     try:
         client = get_client()
     except ValueError as e:
@@ -656,13 +726,39 @@ def api_chat(body: ChatRequest) -> ChatResponse:
 
     messages = conv["messages"]
     messages.append({"role": "user", "content": user_msg})
-
-    response = client.chat.completions.create(
-        model=os.getenv("OPENAI_MODEL"),
-        messages=messages,
-        max_completion_tokens=650,
-    )
-    ai_text = response.choices[0].message.content.strip()
+    
+    use_responses_api = conv.get("use_responses_api", False)
+    
+    if use_responses_api:
+        # Responses API: 대화 히스토리를 텍스트로 변환
+        conversation_text = "\n".join([
+            f"{'System' if m['role'] == 'system' else 'Assistant' if m['role'] == 'assistant' else 'User'}: {m['content']}"
+            for m in messages
+        ])
+        resp = client.responses.create(
+            model=model,
+            input=conversation_text,
+            max_output_tokens=1000,
+        )
+        if hasattr(resp, 'output_text'):
+            ai_text = resp.output_text.strip()
+        else:
+            ai_text = ""
+            for item in resp.output:
+                if hasattr(item, 'content'):
+                    for c in item.content:
+                        if hasattr(c, 'text'):
+                            ai_text = c.text.strip()
+                            break
+    else:
+        # Chat Completions API
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            max_completion_tokens=650,
+        )
+        ai_text = response.choices[0].message.content.strip()
+    
     messages.append({"role": "assistant", "content": ai_text})
 
     correction, score, reply, korean_reply = parse_ai_response(ai_text)

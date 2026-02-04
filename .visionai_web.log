@@ -570,3 +570,35 @@ INFO:     112.171.67.160:6733 - "GET /static/styles.css HTTP/1.1" 200 OK
 INFO:     112.171.67.160:10610 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
 INFO:     211.36.132.30:42678 - "GET / HTTP/1.1" 200 OK
 INFO:     211.36.132.30:32150 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.132.30:55092 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10190 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10190 - "GET /files/dcc3ec4f38974d08a40f6976f3f7eaaf/annotated?t=1770107672985 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4867 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4867 - "GET /files/c41ed1596c6543519237f6cb22a30f1d/annotated?t=1770107683739 HTTP/1.1" 200 OK
+INFO:     211.36.132.30:47278 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:48236 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:48236 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:37960 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:37960 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     211.36.132.30:54570 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:52558 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:52568 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:36884 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:42090 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:49848 - "GET / HTTP/1.1" 200 OK
+INFO:     175.214.79.180:54292 - "GET / HTTP/1.1" 200 OK
+INFO:     175.214.79.180:54292 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     175.214.79.180:54294 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     175.214.79.180:54294 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [140012]
+nohup: ignoring input
+INFO:     Started server process [194292]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:7894 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7894 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:9430 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified

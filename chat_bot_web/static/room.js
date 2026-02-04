@@ -13,12 +13,20 @@
   const roomEmojiPanel = document.getElementById('roomEmojiPanel');
   const roomNickEditBtn = document.getElementById('roomNickEditBtn');
   const roomLeaveBtn = document.getElementById('roomLeaveBtn');
+  const roomImageBtn = document.getElementById('roomImageBtn');
+  const roomImageInput = document.getElementById('roomImageInput');
 
   var EMOJI_LIST = ['😀','😃','😄','😁','😅','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','👍','👎','👌','✌️','🤞','🤟','🤘','🤙','👋','🤚','🖐️','✋','🖖','👏','🙌','👐','🤲','🙏','❤️','🧡','💛','💚','💙','💜','🖤','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','✨','⭐','🌟','💫','🔥','💯'];
 
   let ws = null;
   let myNickname = '';
   let contextMenuEl = null;
+
+  function escapeHtml(s) {
+    var div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
 
   function showNickError(msg) {
     nickError.textContent = msg || '';
@@ -110,7 +118,7 @@
     }
   }
 
-  function appendRoomMessage(type, nickname, text, messageId, unreadCount) {
+  function appendRoomMessage(type, nickname, text, messageId, unreadCount, imageUrl) {
     if (type === 'system') {
       const sys = document.createElement('div');
       sys.className = 'roomMsg system';
@@ -124,7 +132,7 @@
     row.className = 'roomMsgRow ' + type;
     if (messageId) row.dataset.messageId = messageId;
 
-    var isEmojiOnly = isOnlyEmoji(text);
+    var isEmojiOnly = !imageUrl && isOnlyEmoji(text);
 
     if (isEmojiOnly) {
       if (type === 'me') {
@@ -160,8 +168,24 @@
       var bubble = document.createElement('div');
       bubble.className = 'roomBubble ' + type;
 
+      if (imageUrl) {
+        var imgWrap = document.createElement('div');
+        imgWrap.className = 'roomMsgImageWrap';
+        var img = document.createElement('img');
+        img.src = imageUrl;
+        img.className = 'roomMsgImage';
+        img.alt = '첨부 이미지';
+        imgWrap.appendChild(img);
+        bubble.appendChild(imgWrap);
+      }
+      if (text) {
+        var textSpan = document.createElement('span');
+        textSpan.className = 'roomMsgText';
+        textSpan.textContent = text;
+        bubble.appendChild(textSpan);
+      }
+
       if (type === 'me') {
-        bubble.textContent = text;
         row.appendChild(bubble);
         if (unreadCount > 0) {
           var badge = document.createElement('span');
@@ -172,7 +196,9 @@
         bubble.addEventListener('contextmenu', function (e) {
           e.preventDefault();
           if (!messageId) return;
-          showContextMenu(e.clientX, e.clientY, messageId, bubble.textContent || '');
+          var txtEl = bubble.querySelector('.roomMsgText');
+          var txt = txtEl ? txtEl.textContent : bubble.textContent;
+          showContextMenu(e.clientX, e.clientY, messageId, (txt || '').trim());
         });
       } else {
         var wrap = document.createElement('div');
@@ -181,12 +207,12 @@
         nickLabel.className = 'roomMsgNickAbove';
         nickLabel.textContent = nickname;
         wrap.appendChild(nickLabel);
-        bubble.textContent = text;
         wrap.appendChild(bubble);
         row.appendChild(wrap);
       }
     }
 
+    row.dataset.rawText = text || '';
     roomMessages.appendChild(row);
     scrollRoomBottom();
   }
@@ -226,11 +252,33 @@
             data.nickname,
             data.text || '',
             data.message_id,
-            isMe ? data.unread_count : 0
+            isMe ? data.unread_count : 0,
+            data.image_url || null
           );
-          // 상대방 메시지는 자동으로 읽음 처리
           if (!isMe && data.message_id) {
             ws.send(JSON.stringify({ type: 'read', message_id: data.message_id }));
+          }
+          return;
+        }
+        if (data.type === 'link_preview') {
+          var rowEl = roomMessages.querySelector('[data-message-id="' + data.message_id + '"]');
+          if (rowEl && data.preview) {
+            var card = document.createElement('a');
+            card.href = data.preview.url;
+            card.target = '_blank';
+            card.rel = 'noopener noreferrer';
+            card.className = 'roomLinkPreview';
+            var html = '';
+            if (data.preview.image) {
+              html += '<img class="roomLinkPreviewImg" src="' + escapeHtml(data.preview.image) + '" alt="" />';
+            }
+            html += '<div class="roomLinkPreviewBody">';
+            if (data.preview.title) html += '<div class="roomLinkPreviewTitle">' + escapeHtml(data.preview.title) + '</div>';
+            if (data.preview.description) html += '<div class="roomLinkPreviewDesc">' + escapeHtml(data.preview.description) + '</div>';
+            html += '</div>';
+            card.innerHTML = html;
+            var content = rowEl.querySelector('.roomBubble');
+            if (content) content.appendChild(card);
           }
           return;
         }
@@ -247,7 +295,9 @@
             const bubble = rowEl.querySelector('.roomBubble');
             const emojiDiv = rowEl.querySelector('.roomMsgEmoji');
             if (bubble) {
-              if (isOnlyEmoji(newText)) {
+              var txtEl = bubble.querySelector('.roomMsgText');
+              var imgWrap = bubble.querySelector('.roomMsgImageWrap');
+              if (isOnlyEmoji(newText) && !imgWrap) {
                 var isMe = rowEl.classList.contains('me');
                 var newEmojiDiv = document.createElement('div');
                 newEmojiDiv.className = 'roomMsgEmoji roomMsgEmoji--' + (isMe ? 'me' : 'other');
@@ -263,7 +313,14 @@
                   bubble.parentNode.replaceChild(newEmojiDiv, bubble);
                 }
               } else {
-                bubble.textContent = newText;
+                if (txtEl) {
+                  txtEl.textContent = newText;
+                } else if (newText) {
+                  var span = document.createElement('span');
+                  span.className = 'roomMsgText';
+                  span.textContent = newText;
+                  bubble.appendChild(span);
+                }
               }
             } else if (emojiDiv) {
               if (isOnlyEmoji(newText)) {
@@ -384,12 +441,26 @@
     if (ws) ws.close();
   });
 
-  function sendMessage() {
-    const text = (roomInput.value || '').trim();
-    if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
-    ws.send(JSON.stringify({ type: 'chat', text: text }));
-    roomInput.value = '';
-    roomInput.style.height = 'auto';
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible') return;
+    var inRoom = roomSection && roomSection.style.display !== 'none';
+    var disconnected = !ws || ws.readyState !== WebSocket.OPEN;
+    if (inRoom && disconnected && myNickname) {
+      connect();
+    }
+  });
+
+  function sendMessage(optText, optImageUrl) {
+    var text = (optText != null ? optText : (roomInput && roomInput.value) || '').trim();
+    var imageUrl = optImageUrl || null;
+    if ((!text && !imageUrl) || !ws || ws.readyState !== WebSocket.OPEN) return;
+    var payload = { type: 'chat', text: text };
+    if (imageUrl) payload.image_url = imageUrl;
+    ws.send(JSON.stringify(payload));
+    if (roomInput) {
+      roomInput.value = '';
+      roomInput.style.height = 'auto';
+    }
     roomInput.focus();
   }
 
@@ -416,7 +487,28 @@
     else if (mq.addListener) mq.addListener(updateRoomInputPlaceholder);
   }
 
-  roomSendBtn.addEventListener('click', sendMessage);
+  roomSendBtn.addEventListener('click', function () { sendMessage(); });
+
+  if (roomImageBtn && roomImageInput) {
+    roomImageBtn.addEventListener('click', function () { roomImageInput.click(); });
+    roomImageInput.addEventListener('change', function () {
+      var file = this.files && this.files[0];
+      if (!file || !ws || ws.readyState !== WebSocket.OPEN) { this.value = ''; return; }
+      var fd = new FormData();
+      fd.append('file', file);
+      fetch('/api/room/upload', { method: 'POST', body: fd })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var url = data.url;
+          if (url) {
+            var text = (roomInput && roomInput.value || '').trim();
+            sendMessage(text, url);
+          }
+        })
+        .catch(function () {})
+        .finally(function () { roomImageInput.value = ''; });
+    });
+  }
   roomInput.addEventListener('keydown', function (e) {
     if (e.key !== 'Enter') return;
     if (isMobileRoom()) {

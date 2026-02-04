@@ -6,14 +6,18 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
+import re
 import secrets
 from pathlib import Path
+from urllib.parse import urlparse
 from typing import Any, Dict, List, Optional, Set
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
+import requests
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -50,6 +54,11 @@ SITUATION_KO = {
 ROOT_WEB = Path(__file__).resolve().parent
 TEMPLATES_DIR = ROOT_WEB / "templates"
 STATIC_DIR = ROOT_WEB / "static"
+UPLOADS_DIR = STATIC_DIR / "uploads"
+UPLOADS_DIR.mkdir(exist_ok=True)
+
+# 허용 이미지 타입
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
 
 app = FastAPI(title="English Chat Bot - 영어 대화 연습")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
@@ -95,6 +104,43 @@ class ChatResponse(BaseModel):
     raw_reply: Optional[str] = None
 
 
+def _fetch_link_preview(url: str) -> Optional[Dict[str, str]]:
+    """URL에서 og 태그 추출 (동기, 스레드에서 실행)."""
+    try:
+        r = requests.get(url, timeout=5, headers={"User-Agent": "Mozilla/5.0 (compatible; LinkPreview/1.0)"})
+        r.raise_for_status()
+        html = r.text
+        def _extract(prop: str) -> Optional[str]:
+            for tag in ("og:", "twitter:"):
+                m = re.search(rf'<meta[^>]+(?:property|name)=["\'](?:{re.escape(tag)}{re.escape(prop)})["\'][^>]+content=["\']([^"\']+)["\']', html, re.I)
+                if m:
+                    return m.group(1).strip()
+                m = re.search(rf'<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\'](?:{re.escape(tag)}{re.escape(prop)})["\']', html, re.I)
+                if m:
+                    return m.group(1).strip()
+            return None
+        title = _extract("title") or _extract("site_name")
+        desc = _extract("description")
+        image = _extract("image")
+        if image and image.startswith("/") and not image.startswith("//"):
+            parsed = urlparse(url)
+            base = f"{parsed.scheme}://{parsed.netloc}"
+            image = base + image
+        if not title and not image:
+            return None
+        return {"url": url, "title": (title or "")[:200], "description": (desc or "")[:300], "image": (image or "")[:1000]}
+    except Exception:
+        return None
+
+
+async def _fetch_and_broadcast_link_preview(message_id: str, url: str) -> None:
+    """백그라운드에서 링크 미리보기 조회 후 브로드캐스트."""
+    loop = asyncio.get_event_loop()
+    preview = await loop.run_in_executor(None, _fetch_link_preview, url)
+    if preview:
+        await _room_broadcast({"type": "link_preview", "message_id": message_id, "preview": preview}, exclude_ws=None)
+
+
 async def _room_broadcast(message: Dict[str, Any], exclude_ws: Optional[WebSocket] = None) -> None:
     """멀티 채팅방 전체에 메시지 브로드캐스트."""
     text = json.dumps(message, ensure_ascii=False)
@@ -137,6 +183,21 @@ def api_room_saved_nickname(request: Request) -> Any:
     client_host = request.client.host if request.client else None
     nickname = _ip_nickname.get(client_host) if client_host else None
     return {"nickname": nickname}
+
+
+@app.post("/api/room/upload")
+async def api_room_upload(file: UploadFile = File(...)) -> Any:
+    """멀티채팅 이미지 업로드. 최대 5MB."""
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=400, detail="허용 형식: JPEG, PNG, GIF, WebP")
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="이미지 크기는 5MB 이하여야 합니다.")
+    ext = {"image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif", "image/webp": ".webp"}.get(file.content_type, ".jpg")
+    name = f"{uuid4().hex}{ext}"
+    path = UPLOADS_DIR / name
+    path.write_bytes(content)
+    return {"url": f"/static/uploads/{name}"}
 
 
 @app.get("/room-bg.png")
@@ -184,11 +245,14 @@ async def ws_room(websocket: WebSocket) -> None:
                 raw = await websocket.receive_text()
                 data = json.loads(raw)
                 
-                if data.get("type") == "chat" and (data.get("text") or "").strip():
-                    text = (data["text"] or "").strip()[:2000]
+                if data.get("type") == "chat":
+                    text = (data.get("text") or "").strip()[:2000]
+                    image_url = (data.get("image_url") or "").strip()[:500]
+                    if not text and not image_url:
+                        continue
                     message_id = str(uuid4())
                     total_participants = len(_room_connections)
-                    _room_messages[message_id] = {"sender_nickname": nickname, "text": text}
+                    _room_messages[message_id] = {"sender_nickname": nickname, "text": text, "image_url": image_url or None}
                     # 읽음 상태 초기화 (발신자는 자동 읽음 처리)
                     _message_read_status[message_id] = {
                         "sender_ws": websocket,
@@ -196,14 +260,23 @@ async def ws_room(websocket: WebSocket) -> None:
                         "read_by": {nickname},
                         "total_participants": total_participants,
                     }
-                    await _room_broadcast({
+                    payload = {
                         "type": "chat",
                         "message_id": message_id,
                         "nickname": nickname,
                         "text": text,
-                        "unread_count": total_participants - 1,  # 발신자 제외
-                    }, exclude_ws=None)
-                    
+                        "unread_count": total_participants - 1,
+                    }
+                    if image_url:
+                        payload["image_url"] = image_url
+                    await _room_broadcast(payload, exclude_ws=None)
+
+                    # 링크 미리보기: 텍스트에 URL이 있으면 백그라운드에서 og 태그 조회
+                    url_match = re.search(r"https?://[^\s<>\"']+", text)
+                    if url_match:
+                        found_url = url_match.group(0).rstrip(".,;:!?)")
+                        asyncio.create_task(_fetch_and_broadcast_link_preview(message_id, found_url))
+
                     # 읽음 상태 메모리 관리: 100개 이상이면 오래된 것 삭제
                     if len(_message_read_status) > 100:
                         old_ids = list(_message_read_status.keys())[:-50]  # 오래된 50개만 남기고 삭제

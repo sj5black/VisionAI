@@ -435,6 +435,86 @@ body {
   border-color: var(--accent);
 }
 
+.roomImageBtn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.roomImageBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent);
+}
+
+.roomMsgImageWrap {
+  margin-bottom: 6px;
+  max-width: 100%;
+}
+
+.roomMsgImage {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  display: block;
+}
+
+.roomLinkPreview {
+  display: block;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  max-width: 280px;
+}
+
+.roomLinkPreview:hover {
+  border-color: var(--accent);
+}
+
+.roomLinkPreviewImg {
+  width: 100%;
+  max-height: 140px;
+  object-fit: cover;
+  display: block;
+}
+
+.roomLinkPreviewBody {
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.roomLinkPreviewTitle {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roomLinkPreviewDesc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .roomEmojiPanel {
   position: absolute;
   bottom: 100%;
@@ -643,7 +723,8 @@ body {
     gap: 4px;
   }
 
-  .roomEmojiBtn {
+  .roomEmojiBtn,
+  .roomImageBtn {
     width: 32px;
     height: 32px;
     min-width: 32px;

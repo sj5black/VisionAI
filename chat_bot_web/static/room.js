@@ -28,6 +28,20 @@
     return div.innerHTML;
   }
 
+  function linkify(text) {
+    var urlRe = /(https?:\/\/[^\s<>"']+)/g;
+    var parts = (text || '').split(urlRe);
+    var out = '';
+    for (var i = 0; i < parts.length; i++) {
+      if (i % 2 === 1 && parts[i].match(/^https?:\/\//)) {
+        out += '<a href="' + escapeHtml(parts[i]) + '" target="_blank" rel="noopener noreferrer" class="roomMsgLink">' + escapeHtml(parts[i]) + '</a>';
+      } else {
+        out += escapeHtml(parts[i]).replace(/\n/g, '<br>');
+      }
+    }
+    return out || escapeHtml(text).replace(/\n/g, '<br>');
+  }
+
   function showNickError(msg) {
     nickError.textContent = msg || '';
     nickError.style.display = msg ? 'block' : 'none';
@@ -133,8 +147,46 @@
     if (messageId) row.dataset.messageId = messageId;
 
     var isEmojiOnly = !imageUrl && isOnlyEmoji(text);
+    var hasImage = !!imageUrl;
 
-    if (isEmojiOnly) {
+    if (hasImage) {
+      var imgWrap = document.createElement('div');
+      imgWrap.className = 'roomMsgImageLargeWrap';
+      var img = document.createElement('img');
+      img.src = imageUrl;
+      img.className = 'roomMsgImageLarge';
+      img.alt = '첨부 이미지';
+      imgWrap.appendChild(img);
+      if (text) {
+        var cap = document.createElement('div');
+        cap.className = 'roomMsgImageCaption';
+        cap.textContent = text;
+        imgWrap.appendChild(cap);
+      }
+      if (type === 'me') {
+        row.appendChild(imgWrap);
+        if (unreadCount > 0) {
+          var badge = document.createElement('span');
+          badge.className = 'unread-badge';
+          badge.textContent = unreadCount;
+          row.appendChild(badge);
+        }
+        imgWrap.addEventListener('contextmenu', function (e) {
+          e.preventDefault();
+          if (!messageId) return;
+          showContextMenu(e.clientX, e.clientY, messageId, text || '');
+        });
+      } else {
+        var wrap = document.createElement('div');
+        wrap.className = 'roomMsgOtherWrap';
+        var nickLabel = document.createElement('div');
+        nickLabel.className = 'roomMsgNickAbove';
+        nickLabel.textContent = nickname;
+        wrap.appendChild(nickLabel);
+        wrap.appendChild(imgWrap);
+        row.appendChild(wrap);
+      }
+    } else if (isEmojiOnly) {
       if (type === 'me') {
         var emojiDiv = document.createElement('div');
         emojiDiv.className = 'roomMsgEmoji roomMsgEmoji--me';
@@ -168,20 +220,10 @@
       var bubble = document.createElement('div');
       bubble.className = 'roomBubble ' + type;
 
-      if (imageUrl) {
-        var imgWrap = document.createElement('div');
-        imgWrap.className = 'roomMsgImageWrap';
-        var img = document.createElement('img');
-        img.src = imageUrl;
-        img.className = 'roomMsgImage';
-        img.alt = '첨부 이미지';
-        imgWrap.appendChild(img);
-        bubble.appendChild(imgWrap);
-      }
       if (text) {
         var textSpan = document.createElement('span');
         textSpan.className = 'roomMsgText';
-        textSpan.textContent = text;
+        textSpan.innerHTML = linkify(text);
         bubble.appendChild(textSpan);
       }
 
@@ -263,6 +305,8 @@
         if (data.type === 'link_preview') {
           var rowEl = roomMessages.querySelector('[data-message-id="' + data.message_id + '"]');
           if (rowEl && data.preview) {
+            var wrap = document.createElement('div');
+            wrap.className = 'roomLinkPreviewWrap';
             var card = document.createElement('a');
             card.href = data.preview.url;
             card.target = '_blank';
@@ -277,8 +321,8 @@
             if (data.preview.description) html += '<div class="roomLinkPreviewDesc">' + escapeHtml(data.preview.description) + '</div>';
             html += '</div>';
             card.innerHTML = html;
-            var content = rowEl.querySelector('.roomBubble');
-            if (content) content.appendChild(card);
+            wrap.appendChild(card);
+            rowEl.appendChild(wrap);
           }
           return;
         }
@@ -314,11 +358,11 @@
                 }
               } else {
                 if (txtEl) {
-                  txtEl.textContent = newText;
+                  txtEl.innerHTML = linkify(newText);
                 } else if (newText) {
                   var span = document.createElement('span');
                   span.className = 'roomMsgText';
-                  span.textContent = newText;
+                  span.innerHTML = linkify(newText);
                   bubble.appendChild(span);
                 }
               }
@@ -329,7 +373,10 @@
                 var isMe = rowEl.classList.contains('me');
                 var newBubble = document.createElement('div');
                 newBubble.className = 'roomBubble ' + (isMe ? 'me' : 'other');
-                newBubble.textContent = newText;
+                var span = document.createElement('span');
+                span.className = 'roomMsgText';
+                span.innerHTML = linkify(newText);
+                newBubble.appendChild(span);
                 if (isMe) {
                   rowEl.replaceChild(newBubble, emojiDiv);
                   newBubble.addEventListener('contextmenu', function (e) {
@@ -566,7 +613,7 @@
       roomEmojiPanel.style.display = visible ? 'none' : 'flex';
     });
     document.addEventListener('click', function (e) {
-      if (roomEmojiPanel.style.display !== 'none' && !roomEmojiPanel.contains(e.target) && e.target !== roomEmojiBtn) {
+      if (roomEmojiPanel.style.display !== 'none' && !roomEmojiPanel.contains(e.target) && !(roomEmojiBtn && roomEmojiBtn.contains(e.target))) {
         roomEmojiPanel.style.display = 'none';
       }
     });
@@ -590,7 +637,12 @@
     function finishEdit(sendUpdate) {
       const newText = (textarea.value || '').trim();
       textarea.remove();
-      bubble.textContent = sendUpdate && newText ? newText : currentText;
+      var disp = sendUpdate && newText ? newText : currentText;
+      var span = document.createElement('span');
+      span.className = 'roomMsgText';
+      span.innerHTML = linkify(disp);
+      bubble.textContent = '';
+      bubble.appendChild(span);
       if (sendUpdate && newText && newText !== currentText && ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'edit', message_id: messageId, text: newText }));
       }

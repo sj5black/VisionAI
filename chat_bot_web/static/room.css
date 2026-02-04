@@ -250,7 +250,9 @@ body {
 /* 메시지 행(배지 + 말풍선) */
 .roomMsgRow {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
   gap: 8px;
   max-width: 100%;
 }
@@ -413,65 +415,83 @@ body {
   position: relative;
 }
 
-.roomEmojiBtn {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.25);
-  color: var(--text);
-  font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-.roomEmojiBtn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--accent);
-}
-
+.roomEmojiBtn,
 .roomImageBtn {
   flex-shrink: 0;
   width: 40px;
   height: 40px;
   padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.25);
-  color: var(--text);
-  font-size: 18px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  background-color: transparent;
+  color: #9ca3af;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
+  transition: background 0.2s, color 0.2s;
 }
 
-.roomImageBtn:hover {
+.roomInputWrap .roomEmojiBtn,
+.roomInputWrap .roomImageBtn {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.roomInputWrap .roomEmojiBtn:hover,
+.roomInputWrap .roomImageBtn:hover {
   background: rgba(255, 255, 255, 0.08);
-  border-color: var(--accent);
 }
 
-.roomMsgImageWrap {
-  margin-bottom: 6px;
-  max-width: 100%;
+.roomEmojiBtn:hover,
+.roomImageBtn:hover {
+  color: var(--text);
 }
 
-.roomMsgImage {
-  max-width: 100%;
-  max-height: 200px;
-  border-radius: 8px;
+.room-input-icon svg {
   display: block;
+}
+
+.roomMsgImageLargeWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.roomMsgImageLarge {
+  max-width: 70%;
+  max-height: 200px;
+  border-radius: 12px;
+  display: block;
+}
+
+.roomMsgImageCaption {
+  font-size: 14px;
+  color: var(--text);
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.roomMsgLink {
+  color: #fef08a;
+  text-decoration: underline;
+}
+
+.roomMsgLink:hover {
+  text-decoration: none;
+}
+
+.roomLinkPreviewWrap {
+  flex-basis: 100%;
+  margin-top: 8px;
+  padding-left: 0;
+  order: 10;
 }
 
 .roomLinkPreview {
   display: block;
-  margin-top: 8px;
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
@@ -729,7 +749,12 @@ body {
     height: 32px;
     min-width: 32px;
     min-height: 32px;
-    font-size: 16px;
+  }
+
+  .roomEmojiBtn svg,
+  .roomImageBtn svg {
+    width: 18px;
+    height: 18px;
   }
 
   #roomInput {
@@ -785,12 +810,18 @@ body {
     padding: 5px 6px;
   }
 
-  .roomEmojiBtn {
+  .roomEmojiBtn,
+  .roomImageBtn {
     width: 28px;
     height: 28px;
     min-width: 28px;
     min-height: 28px;
-    font-size: 14px;
+  }
+
+  .roomEmojiBtn svg,
+  .roomImageBtn svg {
+    width: 16px;
+    height: 16px;
   }
 
   .roomSendBtn {

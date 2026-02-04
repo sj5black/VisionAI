@@ -57,8 +57,8 @@ STATIC_DIR = ROOT_WEB / "static"
 UPLOADS_DIR = STATIC_DIR / "uploads"
 UPLOADS_DIR.mkdir(exist_ok=True)
 
-# 허용 이미지 타입
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+# 허용 이미지 타입 (모바일 호환: heic, jpg 등 포함)
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp", "image/heic", "image/pjpeg"}
 
 app = FastAPI(title="English Chat Bot - 영어 대화 연습")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
@@ -75,6 +75,12 @@ _message_read_status: Dict[str, Dict[str, Any]] = {}
 _room_messages: Dict[str, Dict[str, Any]] = {}
 # IP별 마지막 닉네임 (재접속 시 자동 입력용)
 _ip_nickname: Dict[str, str] = {}
+# 최근 대화 (Serena 초대용, 최대 10개): [{"nickname": str, "text": str}, ...]
+_room_message_history: List[Dict[str, str]] = []
+# Serena가 초대된 상태인지 (초대 후 계속 대화 참여)
+_serena_invited: bool = False
+# Serena 자동 응답 예약 태스크 (디바운스용)
+_serena_pending_task: Optional[asyncio.Task] = None
 
 
 class StartResponse(BaseModel):
@@ -141,6 +147,104 @@ async def _fetch_and_broadcast_link_preview(message_id: str, url: str) -> None:
         await _room_broadcast({"type": "link_preview", "message_id": message_id, "preview": preview}, exclude_ws=None)
 
 
+SERENA_SYSTEM = """You are Serena, a native English speaker from California who is participating in an international group chat. You are friendly and outgoing, but you ONLY speak English - you don't understand or speak Korean at all.
+
+Rules:
+- You are a native English speaker. Respond ONLY in English, no matter what language others use.
+- When someone's message contains Korean (mixed with English or alone), naturally work into your reply the English equivalent for that Korean. For example: "By the way, '맛있어' is 'it's delicious' in English :)" or "Just so you know, that word means ~ in English." Keep it brief and friendly so it helps them practice English.
+- If the message is mostly or only Korean and you can't infer meaning, say something like "I didn't catch that - could you try in English?" and encourage them to use English.
+- Be conversational and natural—react, comment, ask questions, or add to the discussion.
+- Keep your replies short (1–3 sentences). If you add a Korean→English tip, one short phrase is enough.
+- Don't mention that you are AI. You're just a regular person who happens to only speak English.
+- Stay in character as a friendly, English-speaking person joining the chat.
+- Do NOT use Unicode emoji (e.g. 😀 👍 ❤️). Instead, occasionally use simple text emoticons like lol, :), :(, T-T, ^^, haha when it fits naturally."""
+
+
+def _call_serena(recent_messages: List[Dict[str, str]]) -> Optional[str]:
+    """OpenAI로 Serena 응답 생성 (동기)."""
+    try:
+        client = get_client()
+        conv = "\n".join(f"{m['nickname']}: {m['text']}" for m in recent_messages)
+        if not conv.strip():
+            conv = "(No recent messages)"
+        resp = client.chat.completions.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            messages=[
+                {"role": "system", "content": SERENA_SYSTEM},
+                {"role": "user", "content": f"Recent chat messages (some may contain Korean):\n{conv}\n\nRespond in English. If any message has Korean in it, briefly give the English equivalent for that Korean (e.g. 'that word means X in English') in a natural, friendly way."},
+            ],
+            max_completion_tokens=150,
+        )
+        if resp.choices and resp.choices[0].message.content:
+            return resp.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"Serena OpenAI error: {e}")
+    return None
+
+
+async def _invite_serena_and_broadcast() -> None:
+    """Serena 응답 생성 후 브로드캐스트. 실패 시 시스템 메시지로 알림."""
+    global _serena_invited
+    try:
+        recent = list(_room_message_history)[-10:] if _room_message_history else []
+        loop = asyncio.get_event_loop()
+        reply = await loop.run_in_executor(None, _call_serena, recent)
+        if not reply:
+            await _room_broadcast({
+                "type": "system",
+                "message": "Serena를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요."
+            }, exclude_ws=None)
+            return
+        was_invited = _serena_invited
+        _serena_invited = True
+        
+        # 첫 초대 시 입장 안내
+        if not was_invited:
+            await _room_broadcast({"type": "system", "message": "Serena님이 입장했습니다."}, exclude_ws=None)
+            participants = [n for _, n in _room_connections] + ["Serena"]
+            await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=None)
+            await _room_broadcast({"type": "serena_status", "present": True}, exclude_ws=None)
+        
+        message_id = str(uuid4())
+        await _room_broadcast({
+            "type": "chat",
+            "message_id": message_id,
+            "nickname": "Serena",
+            "text": reply,
+            "unread_count": 0,
+        }, exclude_ws=None)
+        # 모든 클라이언트에 Serena 상태 갱신 (초대한 사람 외 다른 참여자도 강퇴 버튼 표시)
+        await _room_broadcast({"type": "serena_status", "present": True}, exclude_ws=None)
+        _room_message_history.append({"nickname": "Serena", "text": reply})
+        if len(_room_message_history) > 10:
+            _room_message_history.pop(0)
+    except Exception as e:
+        print(f"Serena invite error (non-fatal): {e}")
+        try:
+            await _room_broadcast({
+                "type": "system",
+                "message": "Serena를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요."
+            }, exclude_ws=None)
+        except Exception:
+            pass
+
+
+def _schedule_serena_response() -> None:
+    """사용자 메시지 후 Serena가 자연스럽게 응답하도록 디바운스 예약 (3초 후)."""
+    global _serena_pending_task
+
+    async def _delayed_serena() -> None:
+        try:
+            await asyncio.sleep(3)
+        except asyncio.CancelledError:
+            return
+        await _invite_serena_and_broadcast()
+
+    if _serena_pending_task and not _serena_pending_task.done():
+        _serena_pending_task.cancel()
+    _serena_pending_task = asyncio.create_task(_delayed_serena())
+
+
 async def _room_broadcast(message: Dict[str, Any], exclude_ws: Optional[WebSocket] = None) -> None:
     """멀티 채팅방 전체에 메시지 브로드캐스트."""
     text = json.dumps(message, ensure_ascii=False)
@@ -185,15 +289,36 @@ def api_room_saved_nickname(request: Request) -> Any:
     return {"nickname": nickname}
 
 
+def _get_image_ext(content_type: Optional[str], filename: Optional[str]) -> str:
+    """content_type 또는 filename에서 이미지 확장자 결정 (모바일 호환)."""
+    ct_map = {"image/jpeg": ".jpg", "image/jpg": ".jpg", "image/pjpeg": ".jpg", "image/png": ".png",
+              "image/gif": ".gif", "image/webp": ".webp", "image/heic": ".heic"}
+    ext = ct_map.get((content_type or "").lower().split(";")[0].strip(), None)
+    if ext:
+        return ext
+    fn = (filename or "").lower()
+    for e in [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic"]:
+        if fn.endswith(e):
+            return e
+    return ".jpg"
+
+
 @app.post("/api/room/upload")
 async def api_room_upload(file: UploadFile = File(...)) -> Any:
-    """멀티채팅 이미지 업로드. 최대 5MB."""
-    if file.content_type not in ALLOWED_IMAGE_TYPES:
-        raise HTTPException(status_code=400, detail="허용 형식: JPEG, PNG, GIF, WebP")
+    """멀티채팅 이미지 업로드. 최대 5MB. 모바일 호환."""
+    content_type = (file.content_type or "").lower().split(";")[0].strip()
+    ext_ok = (file.filename or "").lower().endswith((".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic"))
+    is_image = (
+        content_type.startswith("image/")
+        or content_type in ALLOWED_IMAGE_TYPES
+        or (ext_ok and content_type in ("", "application/octet-stream"))
+    )
+    if not is_image:
+        raise HTTPException(status_code=400, detail="허용 형식: JPEG, PNG, GIF, WebP, HEIC")
     content = await file.read()
     if len(content) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="이미지 크기는 5MB 이하여야 합니다.")
-    ext = {"image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif", "image/webp": ".webp"}.get(file.content_type, ".jpg")
+    ext = _get_image_ext(file.content_type, file.filename)
     name = f"{uuid4().hex}{ext}"
     path = UPLOADS_DIR / name
     path.write_bytes(content)
@@ -209,6 +334,15 @@ def room_background_image() -> FileResponse:
     return FileResponse(path, media_type="image/png")
 
 
+@app.get("/serena.png")
+def serena_avatar() -> FileResponse:
+    """Serena AI 프로필 이미지 (chat_bot_web/Serena.png)."""
+    path = ROOT_WEB / "Serena.png"
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Serena image not found")
+    return FileResponse(path, media_type="image/png")
+
+
 @app.websocket("/ws/room")
 async def ws_room(websocket: WebSocket) -> None:
     """멀티 채팅방 WebSocket.
@@ -219,6 +353,7 @@ async def ws_room(websocket: WebSocket) -> None:
     - {"type":"edit","message_id":"...","text":"..."}  (발신자만)
     - {"type":"delete","message_id":"..."}            (발신자만)
     """
+    global _serena_invited, _serena_pending_task
     await websocket.accept()
     nickname: Optional[str] = None
     try:
@@ -235,8 +370,11 @@ async def ws_room(websocket: WebSocket) -> None:
             _ip_nickname[client_host] = nickname
         _room_connections.append((websocket, nickname))
         participants = [n for _, n in _room_connections]
+        if _serena_invited:
+            participants.append("Serena")
         await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=websocket)
         await websocket.send_text(json.dumps({"type": "participants", "list": participants}, ensure_ascii=False))
+        await websocket.send_text(json.dumps({"type": "serena_status", "present": _serena_invited}, ensure_ascii=False))
         await _room_broadcast({"type": "system", "message": f"{nickname}님이 입장했습니다."}, exclude_ws=None)
         
         # 메시지 수신 루프
@@ -270,6 +408,15 @@ async def ws_room(websocket: WebSocket) -> None:
                     if image_url:
                         payload["image_url"] = image_url
                     await _room_broadcast(payload, exclude_ws=None)
+
+                    # Serena 초대용 최근 대화 저장 (최대 10개)
+                    _room_message_history.append({"nickname": nickname, "text": text})
+                    if len(_room_message_history) > 10:
+                        _room_message_history.pop(0)
+
+                    # Serena가 초대된 상태면 사용자 메시지 후 자동 응답 예약 (디바운스 3초)
+                    if _serena_invited and nickname != "Serena":
+                        _schedule_serena_response()
 
                     # 링크 미리보기: 텍스트에 URL이 있으면 백그라운드에서 og 태그 조회
                     url_match = re.search(r"https?://[^\s<>\"']+", text)
@@ -347,8 +494,24 @@ async def ws_room(websocket: WebSocket) -> None:
                                 _room_connections[i] = (websocket, new_nick)
                                 break
                         participants = [n for _, n in _room_connections]
+                        if _serena_invited:
+                            participants.append("Serena")
                         await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=None)
                         await _room_broadcast({"type": "system", "message": f"{old_nick}님이 닉네임을 {new_nick}(으)로 변경했습니다."}, exclude_ws=None)
+
+                elif data.get("type") == "invite_serena":
+                    asyncio.create_task(_invite_serena_and_broadcast())
+
+                elif data.get("type") == "kick_serena":
+                    if _serena_invited:
+                        _serena_invited = False
+                        if _serena_pending_task and not _serena_pending_task.done():
+                            _serena_pending_task.cancel()
+                            _serena_pending_task = None
+                        await _room_broadcast({"type": "system", "message": "Serena님이 퇴장했습니다."}, exclude_ws=None)
+                        participants = [n for _, n in _room_connections]
+                        await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=None)
+                        await _room_broadcast({"type": "serena_status", "present": False}, exclude_ws=None)
             
             except json.JSONDecodeError:
                 # JSON 파싱 에러만 무시하고 계속 진행
@@ -395,6 +558,8 @@ async def ws_room(websocket: WebSocket) -> None:
                         del _message_read_status[message_id]
                         _room_messages.pop(message_id, None)
             participants = [n for _, n in _room_connections]
+            if _serena_invited:
+                participants.append("Serena")
             await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=None)
             await _room_broadcast({"type": "system", "message": f"{nickname}님이 퇴장했습니다."}, exclude_ws=None)
 

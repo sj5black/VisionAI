@@ -194,9 +194,35 @@ body {
 }
 
 .roomTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   margin-bottom: 12px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border);
+}
+
+.serenaInviteBtn {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.serenaInviteBtn:hover {
+  background: rgba(99, 102, 241, 0.35);
+}
+
+.serenaInviteBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .participantsWrap {
@@ -204,6 +230,8 @@ body {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .participantsLabel {
@@ -216,6 +244,23 @@ body {
   color: var(--text);
   font-size: 13px;
   display: inline;
+}
+
+.participantItem {
+  display: inline;
+}
+
+.participantAvatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  vertical-align: middle;
+  margin-right: 2px;
+}
+
+.participantSerena .participantAvatar {
+  margin-right: 4px;
 }
 
 .roomMessages {
@@ -318,10 +363,31 @@ body {
   gap: 2px;
 }
 
+.roomMsgNickRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.roomMsgAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  display: block;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
 .roomMsgNickAbove {
   font-size: 11px;
   color: var(--muted);
   padding-left: 2px;
+}
+
+.roomMsgNickRow .roomMsgNickAbove {
+  padding-left: 0;
 }
 
 .roomMsgEmoji {
@@ -460,8 +526,8 @@ body {
 }
 
 .roomMsgImageLarge {
-  max-width: 70%;
-  max-height: 200px;
+  max-width: 90%;
+  max-height: 360px;
   border-radius: 12px;
   display: block;
 }
@@ -728,6 +794,17 @@ body {
     font-size: 9px;
   }
 
+  .roomMsgAvatar {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+  }
+
+  .roomMsgNickRow {
+    gap: 4px;
+  }
+
   .unread-badge {
     min-width: 14px;
     height: 14px;
@@ -839,4 +916,54 @@ body {
 
 .link-leave:hover {
   color: #fca5a5;
+}
+
+.serenaModal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.serenaModalContent {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.serenaModalContent img {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.serenaModalClose {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.serenaModalClose:hover {
+  background: rgba(255, 255, 255, 0.25);
 }

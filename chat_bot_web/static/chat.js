@@ -138,6 +138,7 @@
 
     appendMessage('user', text);
     userInput.value = '';
+    userInput.style.height = 'auto';
     scrollToBottom();
     setLoading(true);
 
@@ -185,9 +186,16 @@
   sendBtn.addEventListener('click', sendMessage);
   userInput.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') {
+      if (e.shiftKey) {
+        return;
+      }
       e.preventDefault();
       sendMessage();
     }
+  });
+  userInput.addEventListener('input', function () {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
   });
   loadSituations();
   if (document.readyState === 'loading') {

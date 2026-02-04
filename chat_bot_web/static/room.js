@@ -15,12 +15,36 @@
   const roomLeaveBtn = document.getElementById('roomLeaveBtn');
   const roomImageBtn = document.getElementById('roomImageBtn');
   const roomImageInput = document.getElementById('roomImageInput');
+  const serenaInviteBtn = document.getElementById('serenaInviteBtn');
 
   var EMOJI_LIST = ['😀','😃','😄','😁','😅','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','👍','👎','👌','✌️','🤞','🤟','🤘','🤙','👋','🤚','🖐️','✋','🖖','👏','🙌','👐','🤲','🙏','❤️','🧡','💛','💚','💙','💜','🖤','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','✨','⭐','🌟','💫','🔥','💯'];
 
   let ws = null;
   let myNickname = '';
   let contextMenuEl = null;
+  let serenaPresent = false;
+
+  function createNickRow(nickname) {
+    var row = document.createElement('div');
+    row.className = 'roomMsgNickRow';
+    if (nickname === 'Serena') {
+      var avatar = document.createElement('img');
+      avatar.src = '/serena.png';
+      avatar.alt = 'Serena';
+      avatar.className = 'roomMsgAvatar';
+      avatar.addEventListener('click', function (e) { e.stopPropagation(); showSerenaPopup(); });
+      avatar.addEventListener('error', function () { 
+        console.error('Failed to load Serena avatar'); 
+        this.style.background = '#6366f1';
+      });
+      row.appendChild(avatar);
+    }
+    var label = document.createElement('span');
+    label.className = 'roomMsgNickAbove';
+    label.textContent = nickname;
+    row.appendChild(label);
+    return row;
+  }
 
   function escapeHtml(s) {
     var div = document.createElement('div');
@@ -42,6 +66,28 @@
     return out || escapeHtml(text).replace(/\n/g, '<br>');
   }
 
+  function updateSerenaBtn() {
+    if (!serenaInviteBtn) return;
+    serenaInviteBtn.textContent = serenaPresent ? 'Serena 강퇴' : 'Serena 초대';
+  }
+
+  function showSerenaPopup() {
+    var modal = document.getElementById('serenaModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'serenaModal';
+      modal.className = 'serenaModal';
+      modal.innerHTML = '<div class="serenaModalContent"><img src="/serena.png" alt="Serena" /><button class="serenaModalClose">✕</button></div>';
+      document.body.appendChild(modal);
+      modal.addEventListener('click', function (e) {
+        if (e.target === modal || e.target.className === 'serenaModalClose') {
+          modal.style.display = 'none';
+        }
+      });
+    }
+    modal.style.display = 'flex';
+  }
+
   function showNickError(msg) {
     nickError.textContent = msg || '';
     nickError.style.display = msg ? 'block' : 'none';
@@ -55,8 +101,14 @@
   }
 
   function renderParticipants(list) {
-    participantCount.textContent = list.length;
-    participantList.textContent = (list || []).join(', ');
+    var arr = list || [];
+    participantCount.textContent = arr.length;
+    participantList.innerHTML = arr.map(function (name) {
+      if (name === 'Serena') {
+        return '<span class="participantItem participantSerena"><img class="participantAvatar" src="/serena.png" alt="">Serena</span>';
+      }
+      return '<span class="participantItem">' + escapeHtml(name) + '</span>';
+    }).join(', ');
   }
 
   function ensureContextMenu() {
@@ -179,10 +231,7 @@
       } else {
         var wrap = document.createElement('div');
         wrap.className = 'roomMsgOtherWrap';
-        var nickLabel = document.createElement('div');
-        nickLabel.className = 'roomMsgNickAbove';
-        nickLabel.textContent = nickname;
-        wrap.appendChild(nickLabel);
+        wrap.appendChild(createNickRow(nickname));
         wrap.appendChild(imgWrap);
         row.appendChild(wrap);
       }
@@ -206,10 +255,7 @@
       } else {
         var wrap = document.createElement('div');
         wrap.className = 'roomMsgOtherWrap';
-        var nickLabel = document.createElement('div');
-        nickLabel.className = 'roomMsgNickAbove';
-        nickLabel.textContent = nickname;
-        wrap.appendChild(nickLabel);
+        wrap.appendChild(createNickRow(nickname));
         var emojiDiv = document.createElement('div');
         emojiDiv.className = 'roomMsgEmoji roomMsgEmoji--other';
         emojiDiv.textContent = text;
@@ -245,10 +291,7 @@
       } else {
         var wrap = document.createElement('div');
         wrap.className = 'roomMsgOtherWrap';
-        var nickLabel = document.createElement('div');
-        nickLabel.className = 'roomMsgNickAbove';
-        nickLabel.textContent = nickname;
-        wrap.appendChild(nickLabel);
+        wrap.appendChild(createNickRow(nickname));
         wrap.appendChild(bubble);
         row.appendChild(wrap);
       }
@@ -280,7 +323,10 @@
           return;
         }
         if (data.type === 'participants') {
-          renderParticipants(data.list || []);
+          var list = data.list || [];
+          renderParticipants(list);
+          serenaPresent = list.includes('Serena');
+          updateSerenaBtn();
           return;
         }
         if (data.type === 'system') {
@@ -397,6 +443,11 @@
           if (rowEl) rowEl.remove();
           return;
         }
+        if (data.type === 'serena_status') {
+          serenaPresent = !!data.present;
+          updateSerenaBtn();
+          return;
+        }
       } catch (e) {}
     };
 
@@ -421,6 +472,7 @@
     roomSection.style.minHeight = '0';
     if (roomNickEditBtn) roomNickEditBtn.style.display = 'flex';
     if (roomLeaveBtn) roomLeaveBtn.style.display = 'flex';
+    updateSerenaBtn();
     connect();
     roomInput.focus();
   }
@@ -434,6 +486,8 @@
     roomSection.style.display = 'none';
     if (roomNickEditBtn) roomNickEditBtn.style.display = 'none';
     if (roomLeaveBtn) roomLeaveBtn.style.display = 'none';
+    serenaPresent = false;
+    updateSerenaBtn();
     showNickError('');
   }
 
@@ -481,6 +535,16 @@
     roomLeaveBtn.addEventListener('click', function (e) {
       e.preventDefault();
       leaveRoom();
+    });
+  }
+
+  if (serenaInviteBtn) {
+    serenaInviteBtn.addEventListener('click', function () {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      serenaInviteBtn.disabled = true;
+      var action = serenaPresent ? 'kick_serena' : 'invite_serena';
+      ws.send(JSON.stringify({ type: action }));
+      setTimeout(function () { serenaInviteBtn.disabled = false; }, 5000);
     });
   }
 
@@ -542,9 +606,12 @@
       var file = this.files && this.files[0];
       if (!file || !ws || ws.readyState !== WebSocket.OPEN) { this.value = ''; return; }
       var fd = new FormData();
-      fd.append('file', file);
+      fd.append('file', file, file.name || 'image.jpg');
       fetch('/api/room/upload', { method: 'POST', body: fd })
-        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || '업로드 실패'); });
+          return r.json();
+        })
         .then(function (data) {
           var url = data.url;
           if (url) {
@@ -552,7 +619,7 @@
             sendMessage(text, url);
           }
         })
-        .catch(function () {})
+        .catch(function (err) { showNickError(err.message || '사진 업로드에 실패했습니다.'); })
         .finally(function () { roomImageInput.value = ''; });
     });
   }

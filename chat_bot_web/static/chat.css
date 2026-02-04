@@ -205,6 +205,7 @@ body {
   align-self: flex-end;
   background: var(--user-bg);
   color: white;
+  white-space: pre-line;
 }
 
 .msg.ai {
@@ -278,8 +279,10 @@ body {
 
 #userInput {
   flex: 1;
-  height: 44px;
+  min-height: 44px;
+  max-height: 120px;
   padding: 10px 16px;
+  resize: none;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: rgba(0, 0, 0, 0.25);
@@ -412,7 +415,8 @@ body {
   }
 
   #userInput {
-    height: 48px;
+    min-height: 48px;
+    max-height: 100px;
     padding: 12px 14px;
     font-size: 16px;
     min-width: 0;

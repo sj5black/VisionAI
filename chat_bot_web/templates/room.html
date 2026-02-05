@@ -50,6 +50,36 @@
           <span id="participantList" class="participantList"></span>
         </div>
         <button type="button" id="serenaInviteBtn" class="serenaInviteBtn" title="Serena 초대">Serena 초대</button>
+        <button type="button" id="chessGameBtn" class="chessGameBtn" title="Serena와 체스" style="display: none;">♔ Serena</button>
+        <button type="button" id="chessPvpBtn" class="chessGameBtn" title="1:1 체스" style="display: none;">♔ 1:1</button>
+      </div>
+      <div id="chessPanel" class="chessPanel" style="display: none;">
+        <div class="chessPanelHeader">
+          <div class="chessPanelHeaderLeft">
+            <span id="chessPanelTitle" class="chessPanelTitle">♔ Serena vs (대기 중)</span>
+            <span id="chessStatus" class="chessStatusInline">-</span>
+          </div>
+          <div class="chessPanelHeaderRight">
+            <div class="chessActions chessActionsTop">
+              <button type="button" id="chessStartBtn" class="chessStartBtn">새 게임 (Serena)</button>
+              <button type="button" id="chessStartPvpBtn" class="chessStartBtn chessStartPvpBtn" style="display: none;">1:1 도전</button>
+              <button type="button" id="chessResignBtn" class="chessResignBtn">기권</button>
+            </div>
+            <button type="button" id="chessPanelClose" class="chessPanelClose" title="닫기">&times;</button>
+          </div>
+        </div>
+        <div class="chessBoardWrap">
+          <div class="chessBoardRow">
+            <div id="chessCapturedLeft" class="chessCaptured chessCapturedLeft" title="흰색이 따먹은 기물"></div>
+            <div id="chessBoard" class="chessBoard"></div>
+            <div id="chessCapturedRight" class="chessCaptured chessCapturedRight" title="검은색이 따먹은 기물"></div>
+          </div>
+          <div id="chessPvpSelect" class="chessPvpSelect" style="display: none;">
+            <span class="chessPvpLabel">대상 선택:</span>
+            <select id="chessPvpOpponent" class="chessPvpOpponent"></select>
+            <button type="button" id="chessPvpConfirm" class="chessPvpConfirm">도전</button>
+          </div>
+        </div>
       </div>
       <div id="roomMessages" class="roomMessages"></div>
       <div class="roomInputBar">
@@ -83,7 +113,6 @@
     </section>
   </main>
   <iframe class="room-iframe" src="http://175.197.131.234:8003/" title="VisionAI 객체 탐지"></iframe>
-  </div>
   <script src="/static/room.js"></script>
 </body>
 </html>

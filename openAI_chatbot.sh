@@ -25,4 +25,18 @@ if [ -n "$OLD_PID" ]; then
   echo "Stopped."
 fi
 
-uvicorn chat_bot_web.main:app --host 0.0.0.0 --port $PORT --reload
+LOG_FILE=".visionai_chatbot.log"
+PID_FILE=".visionai_chatbot.pid"
+
+echo "Starting chatbot server on port $PORT (nohup, background)..."
+# 기존 로그 파일이 있으면 새로 쓴다 (재시작 시)
+: > "$LOG_FILE"
+nohup uvicorn chat_bot_web.main:app --host 0.0.0.0 --port $PORT --reload >> "$LOG_FILE" 2>&1 &
+UVICORN_PID=$!
+echo $UVICORN_PID > "$PID_FILE"
+echo "Server started. PID: $UVICORN_PID"
+echo "Following logs (Ctrl+C to stop following; server keeps running)..."
+echo "To stop server: kill \$(cat $PID_FILE) or kill processes on port $PORT"
+echo "---"
+trap 'exit 0' INT
+tail -f "$LOG_FILE"

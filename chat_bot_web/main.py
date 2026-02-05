@@ -11,6 +11,7 @@ import json
 import os
 import re
 import secrets
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
 from typing import Any, Dict, List, Optional, Set
@@ -28,6 +29,8 @@ import sys
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+import chess
 
 from english_chat_bot import (
     get_client,
@@ -81,6 +84,21 @@ _room_message_history: List[Dict[str, str]] = []
 _serena_invited: bool = False
 # Serena 자동 응답 예약 태스크 (디바운스용)
 _serena_pending_task: Optional[asyncio.Task] = None
+
+# 체스 게임: 단일 방당 1게임 (Serena vs 유저 또는 유저 vs 유저)
+# {"board": chess.Board, "white_player": str, "black_player": str, "mode": "serena"|"pvp", "status": str, "white_captured": List[str], "black_captured": List[str]}
+_chess_game: Optional[Dict[str, Any]] = None
+_chess_pending_task: Optional[asyncio.Task] = None
+
+
+def _get_captured_piece(board: chess.Board, move: chess.Move) -> Optional[str]:
+    """캡처된 기물 기호 반환 (push 전에 호출)."""
+    if not board.is_capture(move):
+        return None
+    p = board.piece_at(move.to_square)
+    if p is None and board.is_en_passant(move):
+        p = chess.Piece(chess.PAWN, not board.turn)
+    return p.symbol() if p else None
 
 
 class StartResponse(BaseModel):
@@ -149,15 +167,49 @@ async def _fetch_and_broadcast_link_preview(message_id: str, url: str) -> None:
 
 SERENA_SYSTEM = """You are Serena, a native English speaker from California who is participating in an international group chat. You are friendly and outgoing, but you ONLY speak English - you don't understand or speak Korean at all.
 
+Style & register (important):
+- Use relatively advanced, natural English: idiomatic phrases, phrasal verbs, and vocabulary that educated native speakers use in casual conversation (e.g. "no cap", "lowkey", "it hits different", "that's a stretch", "I'm not gonna lie", "on the flip side", "at the end of the day", "throw shade", "spill the tea" where it fits).
+- Vary your sentence structure: use subordinate clauses, relative clauses, and the occasional inversion or fronting when it sounds natural (e.g. "What I'm saying is...", "The thing is,...", "Not that I'm complaining, but...").
+- Sound like a real Californian in a group chat: mix in slang and colloquialisms naturally—don't overdo it, but do use expressions real natives use (e.g. "totally", "for real", "kinda", "gonna", "gotta", "pretty much", "no biggie", "my bad", "that's on me").
+
 Rules:
 - You are a native English speaker. Respond ONLY in English, no matter what language others use.
-- When someone's message contains Korean (mixed with English or alone), naturally work into your reply the English equivalent for that Korean. For example: "By the way, '맛있어' is 'it's delicious' in English :)" or "Just so you know, that word means ~ in English." Keep it brief and friendly so it helps them practice English.
+- When someone's message contains Korean (mixed with English or alone), naturally work into your reply the English equivalent for that Korean. Keep it brief and friendly so it helps them practice English.
 - If the message is mostly or only Korean and you can't infer meaning, say something like "I didn't catch that - could you try in English?" and encourage them to use English.
+- When the last user message is in English but has grammar mistakes or unnatural phrasing, briefly and kindly add feedback: suggest the correct or more natural way. Keep it to one short phrase so your reply stays conversational; then continue the conversation naturally.
 - Be conversational and natural—react, comment, ask questions, or add to the discussion.
-- Keep your replies short (1–3 sentences). If you add a Korean→English tip, one short phrase is enough.
+- Keep your replies to 2–4 sentences so you have room for richer expression.
 - Don't mention that you are AI. You're just a regular person who happens to only speak English.
 - Stay in character as a friendly, English-speaking person joining the chat.
 - Do NOT use Unicode emoji (e.g. 😀 👍 ❤️). Instead, occasionally use simple text emoticons like lol, :), :(, T-T, ^^, haha when it fits naturally."""
+
+
+SEOUL_TZ = timezone(timedelta(hours=9))
+
+
+def _seoul_time_str() -> str:
+    """현재 서울(UTC+9) 기준 24시 형식 시간 반환 (HH:MM)."""
+    return datetime.now(SEOUL_TZ).strftime("%H:%M")
+
+
+def _contains_korean(text: str) -> bool:
+    """문자열에 한글이 포함되어 있는지 여부."""
+    if not text or not isinstance(text, str):
+        return False
+    for c in text:
+        if "\uAC00" <= c <= "\uD7A3" or "\u1100" <= c <= "\u11FF" or "\u3130" <= c <= "\u318F":
+            return True
+    return False
+
+
+def _last_user_message_has_korean(recent_messages: List[Dict[str, str]]) -> bool:
+    """Serena가 아닌 유저의 마지막 메시지(방금 보낸 쿼리)에 한글이 포함된 경우만 True."""
+    for m in reversed(recent_messages):
+        nick = (m.get("nickname") or "").strip()
+        if nick.lower() == "serena":
+            continue
+        return _contains_korean(m.get("text") or "")
+    return False
 
 
 def _call_serena(recent_messages: List[Dict[str, str]]) -> Optional[str]:
@@ -173,13 +225,20 @@ def _call_serena(recent_messages: List[Dict[str, str]]) -> Optional[str]:
         if not conv.strip():
             conv = "(No recent messages)"
         
+        # 유저의 마지막 쿼리에 한글이 포함된 경우에만 한국어→영어 지도 문구 추가
+        korean_hint = _last_user_message_has_korean(recent_messages)
+        if korean_hint:
+            user_instruction = "Respond in English. The last user message contains Korean—briefly give the English equivalent for that Korean in a natural, friendly way."
+        else:
+            user_instruction = "Respond in English only. Do NOT provide Korean-to-English translation or language guidance in this reply. If the last user message in English has grammar or naturalness issues, briefly and kindly suggest a correction or more natural phrasing (e.g. one short tip), then continue the conversation."
+        
         # gpt-5-mini, gpt-5-nano는 Responses API 사용
         use_responses_api = any(x in model.lower() for x in ['gpt-5-mini', 'gpt-5-nano', 'gpt-5.1', 'gpt-5.2'])
         
         if use_responses_api:
             # Responses API (최신 모델용)
             print(f"🔄 Using Responses API for model: {model}")
-            input_text = f"{SERENA_SYSTEM}\n\nRecent chat:\n{conv}\n\nRespond in English. If any message has Korean, briefly give the English equivalent."
+            input_text = f"{SERENA_SYSTEM}\n\nRecent chat:\n{conv}\n\n{user_instruction}"
             resp = client.responses.create(
                 model=model,
                 input=input_text,
@@ -201,7 +260,7 @@ def _call_serena(recent_messages: List[Dict[str, str]]) -> Optional[str]:
                 model=model,
                 messages=[
                     {"role": "system", "content": SERENA_SYSTEM},
-                    {"role": "user", "content": f"Recent chat messages (some may contain Korean):\n{conv}\n\nRespond in English. If any message has Korean in it, briefly give the English equivalent for that Korean (e.g. 'that word means X in English') in a natural, friendly way."},
+                    {"role": "user", "content": f"Recent chat messages:\n{conv}\n\n{user_instruction}"},
                 ],
                 max_completion_tokens=300,
             )
@@ -212,6 +271,160 @@ def _call_serena(recent_messages: List[Dict[str, str]]) -> Optional[str]:
         import traceback
         traceback.print_exc()
     return None
+
+
+SERENA_RESPONSE_TIMEOUT = 30  # Serena 응답 타임아웃 (초)
+
+CHESS_SYSTEM = """You are Serena playing chess (black pieces). You ONLY reply with ONE valid UCI move from the legal moves list. Format: 4 chars like e7e5 or g8f6. No other text."""
+
+
+def _call_serena_chess(fen: str, legal_moves: Optional[List[str]] = None) -> Optional[str]:
+    """OpenAI로 Serena 체스 수 반환 (동기). UCI 형식 4자 (e.g., e7e5). 실패 시 None."""
+    try:
+        client = get_client()
+        model = os.getenv("OPENAI_CHESS_MODEL") or os.getenv("OPENAI_MODEL")
+        if not model:
+            return None
+        model = model.strip()
+        use_responses_api = any(x in model.lower() for x in ['gpt-5-mini', 'gpt-5-nano', 'gpt-5.1', 'gpt-5.2'])
+        legal_str = ", ".join(legal_moves[:30]) if legal_moves else "(compute from FEN)"
+        user_content = f"Board FEN: {fen}\nLegal black moves (pick ONE): {legal_str}\nReply with exactly 4 chars (e.g. e7e5)."
+        if use_responses_api:
+            resp = client.responses.create(model=model, input=f"{CHESS_SYSTEM}\n\n{user_content}", max_output_tokens=20)
+            text = (resp.output_text if hasattr(resp, 'output_text') else None) or ""
+            if hasattr(resp, 'output') and resp.output is not None and not text:
+                for item in (resp.output or []):
+                    if item is None:
+                        continue
+                    content = getattr(item, 'content', None)
+                    if content is None:
+                        continue
+                    items = content if isinstance(content, (list, tuple)) else [content]
+                    for c in items:
+                        if c is not None:
+                            t = getattr(c, 'text', None)
+                            if t:
+                                text = str(t)
+                                break
+        else:
+            resp = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": CHESS_SYSTEM},
+                    {"role": "user", "content": user_content},
+                ],
+                max_completion_tokens=20,
+            )
+            text = (resp.choices[0].message.content or "").strip()
+        s = (text or "").strip().lower()
+        m = re.search(r'([a-h][1-8][a-h][1-8])', s)
+        return m.group(1) if m else None
+    except Exception as e:
+        print(f"Serena chess error: {e}")
+    return None
+
+
+def _pick_random_legal_move(board: chess.Board) -> Optional[str]:
+    """합법적인 수 중 랜덤 선택 (AI 실패 시 폴백)."""
+    moves = list(board.legal_moves)
+    if not moves:
+        return None
+    m = secrets.choice(moves)
+    return m.uci()
+
+
+async def _play_serena_chess_move() -> None:
+    """Serena 차례일 때 AI 수 두고 브로드캐스트. AI 실패 시 랜덤 합법 수 사용."""
+    global _chess_game, _chess_pending_task
+    if not _chess_game or _chess_game.get("status") != "active":
+        return
+    board: chess.Board = _chess_game["board"]
+    if board.turn != chess.BLACK:
+        return
+    fen = board.fen()
+    legal_uci = [m.uci() for m in board.legal_moves]
+    if not legal_uci:
+        return
+
+    def _try_ai() -> Optional[str]:
+        return _call_serena_chess(fen, legal_uci)
+
+    loop = asyncio.get_event_loop()
+    uci: Optional[str] = None
+    try:
+        uci = await asyncio.wait_for(
+            loop.run_in_executor(None, _try_ai),
+            timeout=SERENA_RESPONSE_TIMEOUT,
+        )
+    except asyncio.TimeoutError:
+        print("Serena chess: AI timeout, using random move")
+        uci = _pick_random_legal_move(board)
+    _chess_pending_task = None
+
+    if not uci:
+        uci = _pick_random_legal_move(board)
+        if uci:
+            print("Serena chess: AI returned invalid/empty, using random move")
+    if not uci or not _chess_game or _chess_game.get("status") != "active":
+        return
+    try:
+        move = chess.Move.from_uci(uci)
+        if move not in board.legal_moves:
+            uci = _pick_random_legal_move(board)
+            if not uci:
+                return
+            move = chess.Move.from_uci(uci)
+        cap = _get_captured_piece(board, move)
+        if cap:
+            _chess_game.setdefault("black_captured", []).append(cap)
+        board.push(move)
+        uci = move.uci()
+        status = "active"
+        if board.is_checkmate():
+            status = "checkmate_white"
+        elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
+            status = "draw"
+        _chess_game["status"] = status
+        await _room_broadcast({
+            "type": "chess_state",
+            "fen": board.fen(),
+            "last_move": uci,
+            "status": status,
+            "turn": "white" if board.turn == chess.WHITE else "black",
+            "in_check": board.is_check(),
+            "white_captured": _chess_game.get("white_captured", []),
+            "black_captured": _chess_game.get("black_captured", []),
+            "white_player": _chess_game.get("white_player"),
+            "black_player": _chess_game.get("black_player"),
+            "mode": _chess_game.get("mode", "serena"),
+        }, exclude_ws=None)
+    except (ValueError, chess.InvalidMoveError):
+        uci_fb = _pick_random_legal_move(board)
+        if uci_fb and _chess_game and _chess_game.get("status") == "active":
+            try:
+                move = chess.Move.from_uci(uci_fb)
+                board.push(move)
+                status = "active"
+                if board.is_checkmate():
+                    status = "checkmate_white"
+                elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
+                    status = "draw"
+                _chess_game["status"] = status
+                await _room_broadcast({
+                    "type": "chess_state",
+                    "fen": board.fen(),
+                    "last_move": uci_fb,
+                    "status": status,
+                    "turn": "white" if board.turn == chess.WHITE else "black",
+                    "in_check": board.is_check(),
+                    "white_captured": _chess_game.get("white_captured", []),
+                    "black_captured": _chess_game.get("black_captured", []),
+                    "white_player": _chess_game.get("white_player"),
+                    "black_player": _chess_game.get("black_player"),
+                    "mode": _chess_game.get("mode", "serena"),
+                }, exclude_ws=None)
+            except Exception:
+                pass
 
 
 async def _invite_serena_and_broadcast() -> None:
@@ -244,6 +457,7 @@ async def _invite_serena_and_broadcast() -> None:
             "nickname": "Serena",
             "text": reply,
             "unread_count": 0,
+            "timestamp": _seoul_time_str(),
         }, exclude_ws=None)
         # 모든 클라이언트에 Serena 상태 갱신 (초대한 사람 외 다른 참여자도 강퇴 버튼 표시)
         await _room_broadcast({"type": "serena_status", "present": True}, exclude_ws=None)
@@ -385,7 +599,7 @@ async def ws_room(websocket: WebSocket) -> None:
     - {"type":"edit","message_id":"...","text":"..."}  (발신자만)
     - {"type":"delete","message_id":"..."}            (발신자만)
     """
-    global _serena_invited, _serena_pending_task
+    global _serena_invited, _serena_pending_task, _chess_game, _chess_pending_task
     await websocket.accept()
     nickname: Optional[str] = None
     try:
@@ -407,6 +621,22 @@ async def ws_room(websocket: WebSocket) -> None:
         await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=websocket)
         await websocket.send_text(json.dumps({"type": "participants", "list": participants}, ensure_ascii=False))
         await websocket.send_text(json.dumps({"type": "serena_status", "present": _serena_invited}, ensure_ascii=False))
+        if _chess_game and _chess_game.get("status"):
+            b = _chess_game["board"]
+            lm = b.peek().uci() if len(b.move_stack) > 0 else None
+            await websocket.send_text(json.dumps({
+                "type": "chess_state",
+                "fen": b.fen(),
+                "white_player": _chess_game.get("white_player"),
+                "black_player": _chess_game.get("black_player"),
+                "mode": _chess_game.get("mode", "serena"),
+                "status": _chess_game.get("status"),
+                "turn": "white" if b.turn == chess.WHITE else "black",
+                "last_move": lm,
+                "in_check": b.is_check(),
+                "white_captured": _chess_game.get("white_captured", []),
+                "black_captured": _chess_game.get("black_captured", []),
+            }, ensure_ascii=False))
         await _room_broadcast({"type": "system", "message": f"{nickname}님이 입장했습니다."}, exclude_ws=None)
         
         # 메시지 수신 루프
@@ -436,6 +666,7 @@ async def ws_room(websocket: WebSocket) -> None:
                         "nickname": nickname,
                         "text": text,
                         "unread_count": total_participants - 1,
+                        "timestamp": _seoul_time_str(),
                     }
                     if image_url:
                         payload["image_url"] = image_url
@@ -540,10 +771,151 @@ async def ws_room(websocket: WebSocket) -> None:
                         if _serena_pending_task and not _serena_pending_task.done():
                             _serena_pending_task.cancel()
                             _serena_pending_task = None
+                        if _chess_pending_task and not _chess_pending_task.done():
+                            _chess_pending_task.cancel()
+                            _chess_pending_task = None
+                        _chess_game = None
+                        await _room_broadcast({"type": "chess_state", "fen": None, "status": None}, exclude_ws=None)
                         await _room_broadcast({"type": "system", "message": "Serena님이 퇴장했습니다."}, exclude_ws=None)
                         participants = [n for _, n in _room_connections]
                         await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=None)
                         await _room_broadcast({"type": "serena_status", "present": False}, exclude_ws=None)
+
+                elif data.get("type") == "chess_start":
+                    if not _serena_invited:
+                        continue
+                    if _chess_pending_task and not _chess_pending_task.done():
+                        _chess_pending_task.cancel()
+                        _chess_pending_task = None
+                    board = chess.Board()
+                    _chess_game = {
+                        "board": board,
+                        "white_player": nickname,
+                        "black_player": "Serena",
+                        "mode": "serena",
+                        "status": "active",
+                        "white_captured": [],
+                        "black_captured": [],
+                    }
+                    await _room_broadcast({
+                        "type": "chess_state",
+                        "fen": board.fen(),
+                        "white_player": nickname,
+                        "black_player": "Serena",
+                        "mode": "serena",
+                        "status": "active",
+                        "turn": "white",
+                        "last_move": None,
+                        "in_check": False,
+                        "white_captured": [],
+                        "black_captured": [],
+                    }, exclude_ws=None)
+
+                elif data.get("type") == "chess_start_pvp" and (data.get("opponent") or "").strip():
+                    opp = (data["opponent"] or "").strip()[:32]
+                    if opp == nickname:
+                        continue
+                    if not any(n == opp for _, n in _room_connections):
+                        continue
+                    if _chess_pending_task and not _chess_pending_task.done():
+                        _chess_pending_task.cancel()
+                        _chess_pending_task = None
+                    board = chess.Board()
+                    _chess_game = {
+                        "board": board,
+                        "white_player": nickname,
+                        "black_player": opp,
+                        "mode": "pvp",
+                        "status": "active",
+                        "white_captured": [],
+                        "black_captured": [],
+                    }
+                    await _room_broadcast({
+                        "type": "chess_state",
+                        "fen": board.fen(),
+                        "white_player": nickname,
+                        "black_player": opp,
+                        "mode": "pvp",
+                        "status": "active",
+                        "turn": "white",
+                        "last_move": None,
+                        "in_check": False,
+                        "white_captured": [],
+                        "black_captured": [],
+                    }, exclude_ws=None)
+
+                elif data.get("type") == "chess_move" and (data.get("uci") or "").strip():
+                    uci = (data["uci"] or "").strip().lower()[:10]
+                    if not _chess_game or _chess_game.get("status") != "active":
+                        continue
+                    board: chess.Board = _chess_game["board"]
+                    mode = _chess_game.get("mode", "serena")
+                    white_p = _chess_game.get("white_player")
+                    black_p = _chess_game.get("black_player")
+                    if board.turn == chess.WHITE:
+                        if nickname != white_p:
+                            continue
+                    else:
+                        if mode == "serena":
+                            continue
+                        if nickname != black_p:
+                            continue
+                    try:
+                        move = chess.Move.from_uci(uci)
+                        if move not in board.legal_moves:
+                            continue
+                        captured = _get_captured_piece(board, move)
+                        if captured:
+                            if board.turn == chess.WHITE:
+                                _chess_game.setdefault("white_captured", []).append(captured)
+                            else:
+                                _chess_game.setdefault("black_captured", []).append(captured)
+                        board.push(move)
+                        status = "active"
+                        if board.is_checkmate():
+                            status = "checkmate_black"
+                        elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
+                            status = "draw"
+                        _chess_game["status"] = status
+                        await _room_broadcast({
+                            "type": "chess_state",
+                            "fen": board.fen(),
+                            "last_move": uci,
+                            "status": status,
+                            "turn": "white" if board.turn == chess.WHITE else "black",
+                            "in_check": board.is_check(),
+                            "white_captured": _chess_game.get("white_captured", []),
+                            "black_captured": _chess_game.get("black_captured", []),
+                            "white_player": white_p,
+                            "black_player": black_p,
+                            "mode": mode,
+                        }, exclude_ws=None)
+                        if status == "active" and board.turn == chess.BLACK and mode == "serena":
+                            _chess_pending_task = asyncio.create_task(_play_serena_chess_move())
+                    except (ValueError, chess.InvalidMoveError):
+                        pass
+
+                elif data.get("type") == "chess_resign":
+                    if not _chess_game or _chess_game.get("status") != "active":
+                        continue
+                    if _chess_pending_task and not _chess_pending_task.done():
+                        _chess_pending_task.cancel()
+                        _chess_pending_task = None
+                    if nickname == _chess_game.get("white_player"):
+                        status = "resign_white"
+                    elif nickname == _chess_game.get("black_player"):
+                        status = "resign_black"
+                    else:
+                        continue
+                    _chess_game["status"] = status
+                    await _room_broadcast({
+                        "type": "chess_state",
+                        "fen": _chess_game["board"].fen(),
+                        "status": status,
+                        "in_check": False,
+                        "white_captured": _chess_game.get("white_captured", []),
+                        "black_captured": _chess_game.get("black_captured", []),
+                    }, exclude_ws=None)
             
             except json.JSONDecodeError:
                 # JSON 파싱 에러만 무시하고 계속 진행

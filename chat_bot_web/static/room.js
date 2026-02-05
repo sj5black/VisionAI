@@ -16,6 +16,13 @@
   const roomImageBtn = document.getElementById('roomImageBtn');
   const roomImageInput = document.getElementById('roomImageInput');
   const serenaInviteBtn = document.getElementById('serenaInviteBtn');
+  const chessGameBtn = document.getElementById('chessGameBtn');
+  const chessPanel = document.getElementById('chessPanel');
+  const chessBoard = document.getElementById('chessBoard');
+  const chessStatus = document.getElementById('chessStatus');
+  const chessStartBtn = document.getElementById('chessStartBtn');
+  const chessResignBtn = document.getElementById('chessResignBtn');
+  const chessPanelClose = document.getElementById('chessPanelClose');
 
   var EMOJI_LIST = ['😀','😃','😄','😁','😅','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','👍','👎','👌','✌️','🤞','🤟','🤘','🤙','👋','🤚','🖐️','✋','🖖','👏','🙌','👐','🤲','🙏','❤️','🧡','💛','💚','💙','💜','🖤','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','✨','⭐','🌟','💫','🔥','💯'];
 
@@ -23,6 +30,9 @@
   let myNickname = '';
   let contextMenuEl = null;
   let serenaPresent = false;
+
+  var chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, mode: 'serena', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [] };
+  var chessSelected = null;
 
   function createNickRow(nickname) {
     var row = document.createElement('div');
@@ -66,9 +76,204 @@
     return out || escapeHtml(text).replace(/\n/g, '<br>');
   }
 
+  const chessPvpBtn = document.getElementById('chessPvpBtn');
+  const chessStartPvpBtn = document.getElementById('chessStartPvpBtn');
+  const chessPvpSelect = document.getElementById('chessPvpSelect');
+  const chessPvpOpponent = document.getElementById('chessPvpOpponent');
+  const chessPvpConfirm = document.getElementById('chessPvpConfirm');
+  const chessCapturedLeft = document.getElementById('chessCapturedLeft');
+  const chessCapturedRight = document.getElementById('chessCapturedRight');
+
+  var participantListArr = [];
+
   function updateSerenaBtn() {
     if (!serenaInviteBtn) return;
     serenaInviteBtn.textContent = serenaPresent ? 'Serena 강퇴' : 'Serena 초대';
+    if (chessGameBtn) chessGameBtn.style.display = serenaPresent ? 'inline-block' : 'none';
+    if (chessPvpBtn) chessPvpBtn.style.display = 'inline-block';
+  }
+
+  var CHESS_PIECES = { K: '\u2654', Q: '\u2655', R: '\u2656', B: '\u2657', N: '\u2658', P: '\u2659', k: '\u265A', q: '\u265B', r: '\u265C', b: '\u265D', n: '\u265E', p: '\u265F' };
+
+  function fenToBoard(fen) {
+    if (!fen) return null;
+    var parts = fen.split(' ');
+    var rows = parts[0].split('/');
+    var board = [];
+    for (var r = 0; r < 8; r++) {
+      var row = [];
+      for (var i = 0; i < rows[r].length; i++) {
+        var c = rows[r][i];
+        if (/[1-8]/.test(c)) {
+          for (var j = 0; j < parseInt(c, 10); j++) row.push(null);
+        } else {
+          row.push(c);
+        }
+      }
+      board.push(row);
+    }
+    return board;
+  }
+
+  function countPieces(arr) {
+    var o = {};
+    arr.forEach(function (p) {
+      o[p] = (o[p] || 0) + 1;
+    });
+    return o;
+  }
+
+  function renderCapturedPieces() {
+    if (!chessCapturedLeft || !chessCapturedRight) return;
+    var wc = chessState.whiteCaptured || [];
+    var bc = chessState.blackCaptured || [];
+    chessCapturedLeft.innerHTML = '';
+    chessCapturedRight.innerHTML = '';
+    var wCounts = countPieces(wc);
+    ['q', 'r', 'n', 'b', 'p'].forEach(function (p) {
+      if (!wCounts[p]) return;
+      var wrap = document.createElement('span');
+      wrap.className = 'chessCapturedPieceWrap';
+      var icon = document.createElement('span');
+      icon.className = 'chessCapturedPiece';
+      icon.textContent = CHESS_PIECES[p] || p;
+      wrap.appendChild(icon);
+      var count = document.createElement('span');
+      count.className = 'chessCapturedCount';
+      count.textContent = 'x' + wCounts[p];
+      wrap.appendChild(count);
+      chessCapturedLeft.appendChild(wrap);
+    });
+    var bCounts = countPieces(bc);
+    ['Q', 'R', 'N', 'B', 'P'].forEach(function (p) {
+      if (!bCounts[p]) return;
+      var wrap = document.createElement('span');
+      wrap.className = 'chessCapturedPieceWrap';
+      var icon = document.createElement('span');
+      icon.className = 'chessCapturedPiece';
+      icon.textContent = CHESS_PIECES[p] || p;
+      wrap.appendChild(icon);
+      var count = document.createElement('span');
+      count.className = 'chessCapturedCount';
+      count.textContent = 'x' + bCounts[p];
+      wrap.appendChild(count);
+      chessCapturedRight.appendChild(wrap);
+    });
+  }
+
+  function renderChessBoard() {
+    if (!chessBoard) return;
+    chessBoard.innerHTML = '';
+    var board = fenToBoard(chessState.fen);
+    var lastMove = chessState.lastMove || '';
+    var myTurn = (chessState.turn === 'white' && chessState.whitePlayer === myNickname) || (chessState.turn === 'black' && chessState.blackPlayer === myNickname);
+    var active = chessState.status === 'active';
+    for (var r = 0; r < 8; r++) {
+      for (var c = 0; c < 8; c++) {
+        var sq = document.createElement('div');
+        var file = String.fromCharCode(97 + c);
+        var rank = 8 - r;
+        sq.dataset.sq = file + rank;
+        sq.className = 'chessSquare ' + ((r + c) % 2 === 0 ? 'light' : 'dark');
+        if (lastMove && (sq.dataset.sq === lastMove.slice(0, 2) || sq.dataset.sq === lastMove.slice(2, 4))) {
+          sq.classList.add('last-move');
+        }
+        if (chessSelected === sq.dataset.sq) sq.classList.add('selected');
+        var piece = board && board[r] && board[r][c];
+        if (piece) {
+          var span = document.createElement('span');
+          span.className = /[KQRBNP]/.test(piece) ? 'chessPiece chessPieceWhite' : 'chessPiece chessPieceBlack';
+          span.textContent = CHESS_PIECES[piece] || piece;
+          sq.appendChild(span);
+        }
+        var canMove = active && ((chessState.turn === 'white' && chessState.whitePlayer === myNickname) || (chessState.turn === 'black' && chessState.blackPlayer === myNickname));
+        if (canMove) {
+          var isWhiteTurn = chessState.turn === 'white';
+          var canSelect = (isWhiteTurn && piece && /[KQRBNP]/.test(piece)) || (!isWhiteTurn && piece && /[kqrbnp]/.test(piece));
+          sq.style.cursor = canSelect || chessSelected ? 'pointer' : 'default';
+          sq.addEventListener('click', function () { onChessSquareClick(this.dataset.sq); });
+        }
+        chessBoard.appendChild(sq);
+      }
+    }
+  }
+
+  function onChessSquareClick(sq) {
+    if (chessState.status !== 'active') return;
+    var myTurnWhite = chessState.turn === 'white' && chessState.whitePlayer === myNickname;
+    var myTurnBlack = chessState.turn === 'black' && chessState.blackPlayer === myNickname;
+    if (!myTurnWhite && !myTurnBlack) return;
+    if (chessSelected) {
+      var uci = chessSelected + sq;
+      if (uci.length === 4 && chessSelected !== sq) {
+        if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'chess_move', uci: uci }));
+        chessSelected = null;
+      } else if (sq === chessSelected) {
+        chessSelected = null;
+      } else {
+        var board = fenToBoard(chessState.fen);
+        var r = 8 - parseInt(sq[1], 10);
+        var c = sq.charCodeAt(0) - 97;
+        var piece = board && board[r] && board[r][c];
+        var isWhite = chessState.turn === 'white';
+        if (piece && ((isWhite && /[KQRBNP]/.test(piece)) || (!isWhite && /[kqrbnp]/.test(piece)))) chessSelected = sq;
+        else chessSelected = null;
+      }
+    } else {
+      var board = fenToBoard(chessState.fen);
+      var r = 8 - parseInt(sq[1], 10);
+      var c = sq.charCodeAt(0) - 97;
+      var piece = board && board[r] && board[r][c];
+      var isWhite = chessState.turn === 'white';
+      if (piece && ((isWhite && /[KQRBNP]/.test(piece)) || (!isWhite && /[kqrbnp]/.test(piece)))) chessSelected = sq;
+    }
+    renderChessBoard();
+  }
+
+  function updateChessPanelTitle() {
+    var titleEl = document.getElementById('chessPanelTitle');
+    if (!titleEl) return;
+    if (chessState.whitePlayer) {
+      var wp = chessState.whitePlayer;
+      var bp = chessState.blackPlayer || 'Serena';
+      var title = (chessState.mode === 'serena') ? ('Serena vs ' + wp) : (wp + ' vs ' + bp);
+      titleEl.textContent = '♔ ' + title;
+    } else {
+      titleEl.textContent = '♔ Serena vs (대기 중)';
+    }
+  }
+
+  function updateChessButtons() {
+    if (chessStartBtn) {
+      chessStartBtn.style.display = serenaPresent ? 'inline-block' : 'none';
+      var canStart = serenaPresent && (!chessState.fen || chessState.status !== 'active' || chessState.whitePlayer === myNickname);
+      chessStartBtn.disabled = !canStart;
+    }
+  if (chessStartPvpBtn) {
+    chessStartPvpBtn.style.display = (!chessState.fen || chessState.status !== 'active') ? 'inline-block' : 'none';
+    chessStartPvpBtn.disabled = !!(chessState.fen && chessState.status === 'active' && chessState.whitePlayer !== myNickname);
+  }
+    if (chessPvpSelect) {
+      chessPvpSelect.style.display = (chessPvpSelect.dataset.visible === '1') ? 'flex' : 'none';
+    }
+  }
+
+  function updateChessStatus() {
+    if (!chessStatus) return;
+    var s = chessState.status;
+    var mode = chessState.mode || 'serena';
+    if (!chessState.fen) { chessStatus.textContent = mode === 'serena' ? 'Serena를 초대한 뒤 새 게임을 시작하세요.' : '1:1 체스 도전을 하거나 대기하세요.'; return; }
+    if (s === 'active') {
+      var wp = chessState.whitePlayer || '흰색';
+      var bp = chessState.blackPlayer || '검은색';
+      var base = chessState.turn === 'white' ? wp + ' (흰색) 차례' : bp + ' (검은색) 차례';
+      chessStatus.textContent = chessState.inCheck ? base + ' – ⚠ 체크!' : base;
+    } else if (s === 'checkmate_white') chessStatus.textContent = (chessState.blackPlayer || '검은색') + ' 승리! (체크메이트)';
+    else if (s === 'checkmate_black') chessStatus.textContent = (chessState.whitePlayer || '흰색') + ' 승리! (체크메이트)';
+    else if (s === 'resign_white') chessStatus.textContent = (chessState.blackPlayer || '검은색') + ' 승리! (흰색 기권)';
+    else if (s === 'resign_black') chessStatus.textContent = (chessState.whitePlayer || '흰색') + ' 승리! (검은색 기권)';
+    else if (s === 'draw') chessStatus.textContent = '무승부';
+    else chessStatus.textContent = '-';
   }
 
   function showSerenaPopup() {
@@ -184,7 +389,13 @@
     }
   }
 
-  function appendRoomMessage(type, nickname, text, messageId, unreadCount, imageUrl) {
+  function formatSeoulTime() {
+    var now = new Date();
+    var options = { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false };
+    return now.toLocaleTimeString('ko-KR', options);
+  }
+
+  function appendRoomMessage(type, nickname, text, messageId, unreadCount, imageUrl, timestamp) {
     if (type === 'system') {
       const sys = document.createElement('div');
       sys.className = 'roomMsg system';
@@ -197,6 +408,11 @@
     const row = document.createElement('div');
     row.className = 'roomMsgRow ' + type;
     if (messageId) row.dataset.messageId = messageId;
+
+    var timeStr = timestamp || formatSeoulTime();
+    var timeSpan = document.createElement('span');
+    timeSpan.className = 'roomMsgTimestamp';
+    timeSpan.textContent = timeStr;
 
     var isEmojiOnly = !imageUrl && isOnlyEmoji(text);
     var hasImage = !!imageUrl;
@@ -217,6 +433,7 @@
       }
       if (type === 'me') {
         row.appendChild(imgWrap);
+        row.appendChild(timeSpan);
         if (unreadCount > 0) {
           var badge = document.createElement('span');
           badge.className = 'unread-badge';
@@ -233,6 +450,7 @@
         wrap.className = 'roomMsgOtherWrap';
         wrap.appendChild(createNickRow(nickname));
         wrap.appendChild(imgWrap);
+        wrap.appendChild(timeSpan);
         row.appendChild(wrap);
       }
     } else if (isEmojiOnly) {
@@ -241,6 +459,7 @@
         emojiDiv.className = 'roomMsgEmoji roomMsgEmoji--me';
         emojiDiv.textContent = text;
         row.appendChild(emojiDiv);
+        row.appendChild(timeSpan);
         if (unreadCount > 0) {
           var badge = document.createElement('span');
           badge.className = 'unread-badge';
@@ -260,6 +479,7 @@
         emojiDiv.className = 'roomMsgEmoji roomMsgEmoji--other';
         emojiDiv.textContent = text;
         wrap.appendChild(emojiDiv);
+        wrap.appendChild(timeSpan);
         row.appendChild(wrap);
       }
     } else {
@@ -275,6 +495,7 @@
 
       if (type === 'me') {
         row.appendChild(bubble);
+        row.appendChild(timeSpan);
         if (unreadCount > 0) {
           var badge = document.createElement('span');
           badge.className = 'unread-badge';
@@ -293,6 +514,7 @@
         wrap.className = 'roomMsgOtherWrap';
         wrap.appendChild(createNickRow(nickname));
         wrap.appendChild(bubble);
+        wrap.appendChild(timeSpan);
         row.appendChild(wrap);
       }
     }
@@ -324,6 +546,7 @@
         }
         if (data.type === 'participants') {
           var list = data.list || [];
+          participantListArr = list.filter(function (n) { return n !== myNickname && n !== 'Serena'; });
           renderParticipants(list);
           serenaPresent = list.includes('Serena');
           updateSerenaBtn();
@@ -341,7 +564,8 @@
             data.text || '',
             data.message_id,
             isMe ? data.unread_count : 0,
-            data.image_url || null
+            data.image_url || null,
+            data.timestamp || null
           );
           if (!isMe && data.message_id) {
             ws.send(JSON.stringify({ type: 'read', message_id: data.message_id }));
@@ -446,6 +670,35 @@
         if (data.type === 'serena_status') {
           serenaPresent = !!data.present;
           updateSerenaBtn();
+          if (!data.present) {
+            chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, mode: 'serena', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [] };
+            chessSelected = null;
+            renderChessBoard();
+            updateChessStatus();
+            updateChessButtons();
+          }
+          return;
+        }
+        if (data.type === 'chess_state') {
+          chessState.fen = data.fen || null;
+          chessState.turn = data.turn || null;
+          chessState.status = data.status || null;
+          chessState.whitePlayer = data.white_player || null;
+          chessState.blackPlayer = data.black_player || null;
+          chessState.mode = data.mode || 'serena';
+          chessState.lastMove = data.last_move || null;
+          chessState.inCheck = !!data.in_check;
+          chessState.whiteCaptured = data.white_captured || [];
+          chessState.blackCaptured = data.black_captured || [];
+          chessSelected = null;
+          renderChessBoard();
+          renderCapturedPieces();
+          updateChessStatus();
+          updateChessButtons();
+          updateChessPanelTitle();
+          if (data.status === 'active' && data.white_player && data.white_player !== myNickname) {
+            if (chessPanel) chessPanel.style.display = 'block';
+          }
           return;
         }
       } catch (e) {}
@@ -545,6 +798,69 @@
       var action = serenaPresent ? 'kick_serena' : 'invite_serena';
       ws.send(JSON.stringify({ type: action }));
       setTimeout(function () { serenaInviteBtn.disabled = false; }, 5000);
+    });
+  }
+
+  if (chessGameBtn) {
+    chessGameBtn.addEventListener('click', function () {
+      chessPanel.style.display = chessPanel.style.display === 'none' ? 'block' : 'none';
+      if (chessPanel.style.display === 'block') {
+        renderChessBoard();
+        renderCapturedPieces();
+        updateChessStatus();
+        updateChessButtons();
+        updateChessPanelTitle();
+      }
+    });
+  }
+  if (chessPvpBtn) {
+    chessPvpBtn.addEventListener('click', function () {
+      chessPanel.style.display = chessPanel.style.display === 'none' ? 'block' : 'none';
+      if (chessPanel.style.display === 'block') {
+        renderChessBoard();
+        renderCapturedPieces();
+        updateChessStatus();
+        updateChessButtons();
+        updateChessPanelTitle();
+      }
+    });
+  }
+  if (chessPanelClose) {
+    chessPanelClose.addEventListener('click', function () { chessPanel.style.display = 'none'; });
+  }
+  if (chessStartBtn) {
+    chessStartBtn.addEventListener('click', function () {
+      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'chess_start' }));
+    });
+  }
+  if (chessStartPvpBtn) {
+    chessStartPvpBtn.addEventListener('click', function () {
+      if (chessPvpSelect) {
+        chessPvpSelect.dataset.visible = chessPvpSelect.dataset.visible === '1' ? '0' : '1';
+        chessPvpSelect.style.display = chessPvpSelect.dataset.visible === '1' ? 'flex' : 'none';
+        if (chessPvpOpponent && chessPvpSelect.dataset.visible === '1') {
+          chessPvpOpponent.innerHTML = participantListArr.map(function (n) {
+            return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>';
+          }).join('') || '<option value="">참여자 없음</option>';
+        }
+      }
+    });
+  }
+  if (chessPvpConfirm && chessPvpOpponent) {
+    chessPvpConfirm.addEventListener('click', function () {
+      var opp = chessPvpOpponent.value;
+      if (opp && ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'chess_start_pvp', opponent: opp }));
+        if (chessPvpSelect) {
+          chessPvpSelect.dataset.visible = '0';
+          chessPvpSelect.style.display = 'none';
+        }
+      }
+    });
+  }
+  if (chessResignBtn) {
+    chessResignBtn.addEventListener('click', function () {
+      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'chess_resign' }));
     });
   }
 

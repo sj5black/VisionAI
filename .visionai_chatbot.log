@@ -1,0 +1,17 @@
+INFO:     Will watch for changes in these directories: ['/home/teddy/VisionAI']
+INFO:     Uvicorn running on http://0.0.0.0:8004 (Press CTRL+C to quit)
+INFO:     Started reloader process [571375] using WatchFiles
+INFO:     Started server process [571378]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     112.171.67.160:8289 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     112.171.67.160:14595 - "GET /room HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14595 - "GET /static/room.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11214 - "GET /static/room.js HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11214 - "GET /api/room/saved-nickname HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13538 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     210.179.94.144:43032 - "WebSocket /ws/room" [accepted]
+INFO:     connection open

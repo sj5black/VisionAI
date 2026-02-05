@@ -225,6 +225,247 @@ body {
   cursor: not-allowed;
 }
 
+.chessGameBtn {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.chessGameBtn:hover {
+  background: rgba(99, 102, 241, 0.35);
+}
+
+.chessPanel {
+  flex-shrink: 0;
+  max-height: min(70vh, 70dvh);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.chessPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chessPanelHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.chessPanelHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chessPanelTitle {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.chessStatusInline {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.chessActionsTop {
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chessPanelClose {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--muted);
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.chessPanelClose:hover {
+  color: var(--text);
+}
+
+.chessBoardWrap {
+  padding: 14px;
+}
+
+.chessBoardRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.chessCaptured {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-items: flex-start;
+  align-content: flex-start;
+  min-width: 36px;
+  max-width: 80px;
+  font-size: 20px;
+  min-height: 40px;
+  padding: 6px;
+  border-radius: 6px;
+  background: #d1d5db;
+}
+
+.chessCapturedLeft .chessCapturedPiece { color: #111; font-weight: 900; }
+.chessCapturedRight .chessCapturedPiece { color: #fff; -webkit-text-stroke: 1px #fff; font-weight: 900; }
+.chessCapturedPieceWrap { display: inline-flex; align-items: center; gap: 2px; }
+.chessCapturedCount { font-size: 12px; color: #374151; font-weight: 600; }
+.chessCapturedRight .chessCapturedCount { color: #1f2937; }
+
+.chessBoard {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  aspect-ratio: 1;
+  width: 100%;
+  max-width: min(560px, 90vw);
+  max-height: min(560px, 65vh);
+  min-width: 200px;
+  margin: 0 auto 10px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.chessSquare {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: min(36px, 4.5vw);
+  user-select: none;
+}
+
+.chessSquare.light {
+  background: #f0d9b5;
+}
+
+.chessSquare.dark {
+  background: #b58863;
+}
+
+.chessSquare.selected {
+  background: rgba(99, 102, 241, 0.5) !important;
+  outline: 2px solid var(--accent);
+}
+
+.chessSquare.highlight {
+  background: rgba(99, 102, 241, 0.35) !important;
+}
+
+.chessSquare.last-move {
+  background: rgba(155, 199, 0, 0.4) !important;
+}
+
+.chessPiece {
+  display: block;
+  line-height: 1;
+}
+
+.chessPieceWhite {
+  color: #ffffff;
+  -webkit-text-stroke: 1.5px #ffffff;
+  font-weight: 900;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8), 0 0 1px #000;
+}
+
+.chessPieceBlack {
+  color: #111111;
+  -webkit-text-stroke: 1px #111111;
+  font-weight: 900;
+}
+
+.chessActions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.chessStartBtn,
+.chessResignBtn {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+}
+
+.chessStartBtn {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.chessStartBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chessPvpSelect {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chessPvpLabel { font-size: 13px; color: var(--muted); }
+.chessPvpOpponent {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  min-width: 120px;
+}
+.chessPvpConfirm {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+.chessResignBtn {
+  background: var(--surface);
+  color: var(--text);
+}
+
 .participantsWrap {
   display: flex;
   align-items: center;
@@ -388,6 +629,19 @@ body {
 
 .roomMsgNickRow .roomMsgNickAbove {
   padding-left: 0;
+}
+
+.roomMsgTimestamp {
+  font-size: 10px;
+  color: var(--muted);
+  align-self: flex-end;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.roomMsgOtherWrap .roomMsgTimestamp {
+  margin-left: 0;
+  margin-top: 2px;
 }
 
 .roomMsgEmoji {
@@ -791,6 +1045,10 @@ body {
   }
 
   .roomMsgNickAbove {
+    font-size: 9px;
+  }
+
+  .roomMsgTimestamp {
     font-size: 9px;
   }
 

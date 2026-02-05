@@ -664,3 +664,221 @@ INFO:     112.171.67.160:7993 - "GET / HTTP/1.1" 200 OK
 INFO:     112.171.67.160:7993 - "GET /static/styles.css HTTP/1.1" 200 OK
 INFO:     112.171.67.160:6941 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
 INFO:     112.171.67.160:7125 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4100 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4804 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1559 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14764 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.140.23:49418 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.140.23:49418 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:2191 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.140.60:41704 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1184 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.140.60:24591 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7675 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.140.60:50987 - "GET / HTTP/1.1" 200 OK
+INFO:     44.221.64.233:35202 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     44.221.64.233:35202 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7478 - "GET / HTTP/1.1" 200 OK
+INFO:     107.22.139.147:51208 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     107.22.139.147:51208 - "GET / HTTP/1.1" 200 OK
+INFO:     100.28.221.204:55756 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     100.28.221.204:55756 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11672 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:54588 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:54588 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:54588 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:50032 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:50032 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:50034 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:39284 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:54362 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:53410 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:43336 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:45746 - "GET / HTTP/1.1" 200 OK
+INFO:     3.137.73.221:49794 - "GET / HTTP/1.1" 200 OK
+INFO:     3.137.73.221:58498 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     44.221.64.233:52880 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     44.221.64.233:52880 - "GET / HTTP/1.1" 200 OK
+INFO:     13.220.53.29:58138 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     13.220.53.29:58138 - "GET / HTTP/1.1" 200 OK
+INFO:     107.22.139.147:42342 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     107.22.139.147:42342 - "GET / HTTP/1.1" 200 OK
+INFO:     54.226.255.98:42040 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     54.226.255.98:42040 - "GET / HTTP/1.1" 200 OK
+INFO:     3.235.230.22:52722 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     3.235.230.22:52722 - "GET / HTTP/1.1" 200 OK
+INFO:     44.221.64.233:36560 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     44.221.64.233:36560 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:34740 - "GET / HTTP/1.1" 200 OK
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n)...
+✓ YOLOv8n 모델 로드 완료 (device: cuda)
+
+[2/4] 감정/표정 분석 모델 로딩 (OpenCLIP 또는 학습 모델)...
+✓ 감정 분석: OpenCLIP zero-shot (ViT-B-32) 사용 — 표정/자세 정확도 향상
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:6128 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6128 - "GET /files/2755195a3e4547a0920facf4a8e5bb16/annotated?t=1770193046730 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12584 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12584 - "GET /files/b9838ee6a78641919153f79ea4220a7a/annotated?t=1770193061023 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10265 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10265 - "GET /files/3a5268d0696b43cc8ff43907a35925b6/annotated?t=1770193080235 HTTP/1.1" 200 OK
+INFO:     210.179.94.144:53552 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:47878 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:49582 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:49585 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     210.179.94.144:49584 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     139.162.3.144:39166 - "GET / HTTP/1.0" 200 OK
+INFO:     139.162.3.144:38934 - "GET /nice%20ports%2C/Trinity.txt.bak HTTP/1.0" 404 Not Found
+INFO:     139.162.3.144:43024 - "OPTIONS / HTTP/1.0" 405 Method Not Allowed
+INFO:     139.162.3.144:43026 - "OPTIONS / HTTP/1.0" 405 Method Not Allowed
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     139.162.3.144:43416 - "GET /devicedesc.xml HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     52.15.170.15:39768 - "GET / HTTP/1.1" 200 OK
+INFO:     52.15.170.15:34836 - "GET / HTTP/1.1" 200 OK
+INFO:     3.21.56.215:34006 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     3.21.56.215:42734 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     18.223.29.95:34220 - "GET / HTTP/1.1" 200 OK
+INFO:     18.223.29.95:38474 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     18.224.93.12:33826 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     18.224.93.12:40518 - "GET / HTTP/1.1" 200 OK
+INFO:     3.16.163.196:58222 - "GET / HTTP/1.1" 200 OK
+INFO:     3.16.163.196:43554 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     3.14.245.52:46342 - "GET / HTTP/1.1" 200 OK
+INFO:     18.116.114.108:39608 - "GET / HTTP/1.1" 200 OK
+INFO:     3.14.245.52:54852 - "GET / HTTP/1.1" 200 OK
+INFO:     18.116.114.108:48078 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     18.117.159.116:55904 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:31623 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:31657 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:31704 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     3.138.173.150:35790 - "GET / HTTP/1.1" 200 OK
+INFO:     52.15.101.224:59782 - "GET / HTTP/1.1" 200 OK
+INFO:     3.138.173.150:32946 - "GET / HTTP/1.1" 200 OK
+INFO:     52.15.101.224:50380 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     3.143.235.8:49328 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     3.143.235.8:47134 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     3.139.62.152:40482 - "GET / HTTP/1.1" 200 OK
+INFO:     3.139.62.152:36388 - "GET / HTTP/1.1" 200 OK
+INFO:     3.147.51.201:37522 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     3.147.51.201:39166 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     18.224.93.12:35034 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     18.224.93.12:37538 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     18.116.43.92:55640 - "GET / HTTP/1.1" 200 OK
+INFO:     18.116.43.92:38332 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     18.222.163.193:44196 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     3.144.100.75:41084 - "GET / HTTP/1.1" 200 OK
+INFO:     18.222.163.193:40268 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     3.144.100.75:48690 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     194.187.178.227:52316 - "GET / HTTP/1.1" 200 OK
+INFO:     194.187.178.70:52326 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     3.139.62.152:42016 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:42220 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:42220 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:42222 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     3.139.62.152:54444 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:39270 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     3.144.100.75:45550 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     3.128.190.134:48372 - "GET / HTTP/1.1" 200 OK
+INFO:     3.144.100.75:37876 - "GET / HTTP/1.1" 200 OK
+INFO:     3.128.190.134:45628 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     210.179.94.144:45110 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     210.179.94.144:52014 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:41834 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7327 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7327 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:2321 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified

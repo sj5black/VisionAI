@@ -13,3 +13,4 @@ open_clip_torch
 
 openai>=1.0.0
 python-dotenv>=1.0.0
+python-chess>=1.9

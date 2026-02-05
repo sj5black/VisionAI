@@ -1,17 +1,16 @@
 INFO:     Will watch for changes in these directories: ['/home/teddy/VisionAI']
 INFO:     Uvicorn running on http://0.0.0.0:8004 (Press CTRL+C to quit)
-INFO:     Started reloader process [571375] using WatchFiles
-INFO:     Started server process [571378]
+INFO:     Started reloader process [670790] using WatchFiles
+INFO:     Started server process [670793]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     112.171.67.160:8289 - "WebSocket /ws/room" [accepted]
+INFO:     112.171.67.160:12517 - "GET /room HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12517 - "GET /static/room.css HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:3917 - "GET /static/room.js HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:12517 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12517 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12517 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2640 - "WebSocket /ws/room" [accepted]
 INFO:     connection open
-INFO:     connection closed
-INFO:     112.171.67.160:14595 - "GET /room HTTP/1.1" 200 OK
-INFO:     112.171.67.160:14595 - "GET /static/room.css HTTP/1.1" 200 OK
-INFO:     112.171.67.160:11214 - "GET /static/room.js HTTP/1.1" 200 OK
-INFO:     112.171.67.160:11214 - "GET /api/room/saved-nickname HTTP/1.1" 200 OK
-INFO:     112.171.67.160:13538 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:43032 - "WebSocket /ws/room" [accepted]
+INFO:     112.171.67.160:3368 - "WebSocket /ws/room" [accepted]
 INFO:     connection open

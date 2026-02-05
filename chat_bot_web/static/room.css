@@ -51,6 +51,7 @@ body {
   background: rgba(15, 20, 25, 0.96);
   border-right: 1px solid var(--border);
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .room-page .room-iframe {
@@ -81,12 +82,316 @@ body {
   position: relative;
   margin-bottom: 16px;
   flex-shrink: 0;
+  z-index: 100;
 }
 
 .header h1 {
   margin: 0;
   font-size: 22px;
   font-weight: 700;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: absolute;
+  left: 0;
+}
+
+.userName {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.btn-small {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.btn-small:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.chatTabsBar {
+  flex-shrink: 0;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chatTabsList {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 4px 0;
+  min-height: 40px;
+  align-items: center;
+}
+
+.chatTab {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.chatTab:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.chatTab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.chatTabClose {
+  padding: 0;
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.chatTabClose:hover {
+  background: rgba(0, 0, 0, 0.2);
+  opacity: 1;
+}
+
+.chatTab.multiOnly .chatTabClose {
+  display: none;
+}
+
+.roomTabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.roomTab {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.roomTab.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.dmPanel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: 12px;
+}
+
+.dmPanelFull {
+  flex-direction: column;
+  width: 100%;
+}
+
+.dmChatHeaderBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.dmBackLink {
+  color: var(--accent);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+  padding: 0;
+  text-decoration: none;
+}
+
+.dmBackLink:hover {
+  text-decoration: underline;
+}
+
+.dmSidebar {
+  flex: 0 0 180px;
+  border-right: 1px solid var(--border);
+  padding-right: 8px;
+  overflow-y: auto;
+}
+
+.dmNewBtn {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.dmRoomList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dmRoomItem {
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.dmRoomItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dmRoomName { font-weight: 600; display: block; }
+.dmRoomPreview { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.dmChatArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dmChatHeader {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.dmMessages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px 12px 14px;
+}
+
+.dmInputBar {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  margin-top: 8px;
+  padding: 0 14px 12px 14px;
+}
+
+.dmPanel .dmInputBar.roomInputBar {
+  flex-wrap: wrap;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.dmEmpty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.dmFromParticipantBtn {
+  padding: 3px 8px;
+  margin-left: 6px;
+  font-size: 12px;
+  border: none;
+  border-radius: 4px;
+  background: #2d3238;
+  color: #e4e6eb;
+  cursor: pointer;
+}
+
+.dmFromParticipantBtn:hover {
+  background: #3d434a;
+  color: #f0f2f5;
+}
+
+.authTabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.authTab {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.authTab.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.authForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.authForm input {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  font-size: 16px;
+}
+
+.authForm input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.multiPanel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .header-actions {
@@ -97,6 +402,61 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.dmListWrap {
+  position: relative;
+  z-index: 1000;
+}
+
+.dmListDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  min-width: 220px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: rgba(15, 20, 25, 0.98);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+  padding: 6px 0;
+}
+
+.dmListItem {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 1px solid transparent;
+}
+
+.dmListItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dmListName {
+  display: block;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.dmListPreview {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dmListEmpty {
+  padding: 16px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
 }
 
 .link-icon,
@@ -132,8 +492,12 @@ body {
 }
 
 #roomSection.card {
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
 }
 
 .intro {
@@ -198,9 +562,10 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  padding: 12px 14px 12px 14px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
-  padding-bottom: 12px;
+  flex-shrink: 0;
+  margin-bottom: 0;
   border-bottom: 1px solid var(--border);
 }
 
@@ -491,6 +856,54 @@ body {
   display: inline;
 }
 
+.participantWithDm {
+  position: relative;
+  display: inline-block;
+}
+
+.participantName {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin: 0 -4px;
+}
+
+.participantName:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.participantDmPopover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  z-index: 150;
+  padding: 6px 0;
+  background: #1a1d21;
+  border: 1px solid #2d3238;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.participantDmPopover .dmFromParticipantBtn {
+  display: block;
+  width: 100%;
+  min-width: 90px;
+  padding: 8px 14px;
+  margin: 0;
+  font-size: 13px;
+  text-align: left;
+  background: transparent;
+  color: #e4e6eb;
+  border: none;
+  border-radius: 0;
+}
+
+.participantDmPopover .dmFromParticipantBtn:hover {
+  background: #2d3238;
+  color: #f0f2f5;
+}
+
 .participantAvatar {
   width: 18px;
   height: 18px;
@@ -505,10 +918,10 @@ body {
 }
 
 .roomMessages {
-  flex: 1;
-  min-height: 160px;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
-  padding: 10px 14px 10px 0;
+  padding: 12px 14px 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -720,10 +1133,11 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 12px;
   flex-shrink: 0;
   align-items: flex-end;
   position: relative;
+  padding: 12px 14px 12px 14px;
+  margin-top: auto;
 }
 
 .roomInputWrap {
@@ -924,10 +1338,10 @@ body {
   background: rgba(255, 255, 255, 0.1);
 }
 
-#roomInput {
+#roomInput,
+#dmInput {
   flex: 1;
   min-width: 0;
-  flex: 1;
   min-height: 46px;
   max-height: 120px;
   padding: 12px 14px;
@@ -937,7 +1351,6 @@ body {
   color: var(--text);
   font-size: 16px;
   outline: none;
-  min-width: 0;
   font-family: inherit;
   resize: none;
   overflow-y: auto;
@@ -946,13 +1359,15 @@ body {
   -ms-overflow-style: none;
 }
 
-#roomInput::-webkit-scrollbar {
+#roomInput::-webkit-scrollbar,
+#dmInput::-webkit-scrollbar {
   display: none;
   width: 0;
   height: 0;
 }
 
-#roomInput:focus {
+#roomInput:focus,
+#dmInput:focus {
   border-color: var(--accent);
 }
 
@@ -1023,13 +1438,18 @@ body {
   }
 
   .roomTop {
-    margin-bottom: 6px;
-    padding-bottom: 6px;
+    padding: 8px 10px 8px 10px;
   }
 
-  .roomMessages {
-    padding: 4px 6px 4px 0;
+  .roomMessages,
+  .dmMessages {
+    padding: 8px 10px 8px 10px;
     gap: 5px;
+  }
+
+  .roomInputBar,
+  .dmInputBar {
+    padding: 8px 10px 8px 10px;
   }
 
   .roomMsg,
@@ -1092,7 +1512,8 @@ body {
     height: 18px;
   }
 
-  #roomInput {
+  #roomInput,
+  #dmInput {
     min-height: 32px;
     max-height: 90px;
     padding: 6px 8px;
@@ -1140,7 +1561,22 @@ body {
     padding: 8px 6px;
   }
 
-  #roomInput {
+  .roomTop {
+    padding: 6px 8px 6px 8px;
+  }
+
+  .roomMessages,
+  .dmMessages {
+    padding: 6px 8px 6px 8px;
+  }
+
+  .roomInputBar,
+  .dmInputBar {
+    padding: 6px 8px 6px 8px;
+  }
+
+  #roomInput,
+  #dmInput {
     font-size: 11px;
     padding: 5px 6px;
   }

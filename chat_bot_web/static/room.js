@@ -1,9 +1,8 @@
 (function () {
-  const nickSection = document.getElementById('nickSection');
+  const authSection = document.getElementById('authSection');
+  const loadingSection = document.getElementById('loadingSection');
   const roomSection = document.getElementById('roomSection');
-  const nickInput = document.getElementById('nickInput');
-  const enterBtn = document.getElementById('enterBtn');
-  const nickError = document.getElementById('nickError');
+  const nickError = document.getElementById('authError');
   const participantCount = document.getElementById('participantCount');
   const participantList = document.getElementById('participantList');
   const roomMessages = document.getElementById('roomMessages');
@@ -27,9 +26,16 @@
   var EMOJI_LIST = ['😀','😃','😄','😁','😅','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','👍','👎','👌','✌️','🤞','🤟','🤘','🤙','👋','🤚','🖐️','✋','🖖','👏','🙌','👐','🤲','🙏','❤️','🧡','💛','💚','💙','💜','🖤','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','✨','⭐','🌟','💫','🔥','💯'];
 
   let ws = null;
+  let wsDm = null;
   let myNickname = '';
+  let myUser = null;
+  let wsToken = null;
   let contextMenuEl = null;
   let serenaPresent = false;
+  let currentDmRoomId = null;
+
+  var chatTabs = [{ id: 'multi', label: '라운지', type: 'multi', closable: false }];
+  var activeTabId = 'multi';
 
   var chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, mode: 'serena', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [] };
   var chessSelected = null;
@@ -75,6 +81,17 @@
     }
     return out || escapeHtml(text).replace(/\n/g, '<br>');
   }
+
+  const dmPanel = document.getElementById('dmPanel');
+  const multiPanel = document.getElementById('multiPanel');
+  const dmChatHeader = document.getElementById('dmChatHeader');
+  const dmMessages = document.getElementById('dmMessages');
+  const dmInput = document.getElementById('dmInput');
+  const dmSendBtn = document.getElementById('dmSendBtn');
+  const dmEmojiBtn = document.getElementById('dmEmojiBtn');
+  const dmEmojiPanel = document.getElementById('dmEmojiPanel');
+  const dmImageBtn = document.getElementById('dmImageBtn');
+  const dmImageInput = document.getElementById('dmImageInput');
 
   const chessPvpBtn = document.getElementById('chessPvpBtn');
   const chessStartPvpBtn = document.getElementById('chessStartPvpBtn');
@@ -294,8 +311,10 @@
   }
 
   function showNickError(msg) {
-    nickError.textContent = msg || '';
-    nickError.style.display = msg ? 'block' : 'none';
+    if (nickError) {
+      nickError.textContent = msg || '';
+      nickError.style.display = msg ? 'block' : 'none';
+    }
   }
 
   function scrollRoomBottom() {
@@ -306,14 +325,33 @@
   }
 
   function renderParticipants(list) {
-    var arr = list || [];
+    var arr = (list || []).filter(function (p) {
+      var userId = p && p.user_id;
+      var name = typeof p === 'string' ? p : (p && p.name);
+      return !(myUser && userId === myUser.id) && name !== myNickname;
+    });
     participantCount.textContent = arr.length;
-    participantList.innerHTML = arr.map(function (name) {
+    participantList.innerHTML = arr.map(function (p) {
+      var name = typeof p === 'string' ? p : (p.name || p);
+      var userId = p && p.user_id;
+      var isMe = myUser && userId === myUser.id;
+      var avatar = (p && p.avatar_url) || (name === 'Serena' ? '/serena.png' : '');
       if (name === 'Serena') {
         return '<span class="participantItem participantSerena"><img class="participantAvatar" src="/serena.png" alt="">Serena</span>';
       }
-      return '<span class="participantItem">' + escapeHtml(name) + '</span>';
-    }).join(', ');
+      var html = '<span class="participantItem' + (userId && !isMe ? ' participantWithDm" data-user-id="' + userId + '"' : '"') + '>';
+      if (avatar) html += '<img class="participantAvatar" src="' + escapeHtml(avatar) + '" alt="">';
+      if (userId && !isMe) {
+        html += '<span class="participantName">' + escapeHtml(name) + '</span>';
+        html += '<div class="participantDmPopover" style="display:none">';
+        html += '<button type="button" class="dmFromParticipantBtn participantDmBtn" data-user-id="' + userId + '" title="1:1 대화">1:1 대화</button>';
+        html += '</div>';
+      } else {
+        html += escapeHtml(name);
+      }
+      html += '</span>';
+      return html;
+    }).join(' ');
   }
 
   function ensureContextMenu() {
@@ -386,6 +424,190 @@
       }
     } else {
       if (badge) badge.remove();
+    }
+  }
+
+  function addDmTab(roomId, otherUser) {
+    var tabId = 'dm-' + roomId;
+    var existing = chatTabs.find(function (t) { return t.id === tabId; });
+    if (existing) {
+      switchToTab(tabId);
+      return;
+    }
+    chatTabs.push({ id: tabId, label: (otherUser && otherUser.name) || '1:1 대화', type: 'dm', roomId: roomId, otherUser: otherUser, closable: true });
+    renderChatTabs();
+    switchToTab(tabId);
+  }
+
+  function switchToTab(tabId) {
+    activeTabId = tabId;
+    var tab = chatTabs.find(function (t) { return t.id === tabId; });
+    if (!tab) return;
+    renderChatTabs();
+    if (tab.type === 'multi') {
+      if (multiPanel) multiPanel.style.display = 'flex';
+      if (dmPanel) dmPanel.style.display = 'none';
+      if (wsDm) { wsDm.close(); wsDm = null; }
+      currentDmRoomId = null;
+      if (roomInput) roomInput.focus();
+    } else {
+      if (multiPanel) multiPanel.style.display = 'none';
+      if (dmPanel) dmPanel.style.display = 'flex';
+      openDmRoom(tab.roomId, tab.otherUser);
+      if (dmInput) dmInput.focus();
+    }
+  }
+
+  function removeTab(tabId) {
+    if (tabId === 'multi') return;
+    var idx = chatTabs.findIndex(function (t) { return t.id === tabId; });
+    if (idx < 0) return;
+    chatTabs.splice(idx, 1);
+    if (activeTabId === tabId) {
+      if (chatTabs.length > 0) switchToTab(chatTabs[Math.max(0, idx - 1)].id);
+      else switchToTab('multi');
+    } else {
+      renderChatTabs();
+    }
+  }
+
+  function renderChatTabs() {
+    var el = document.getElementById('chatTabsList');
+    if (!el) return;
+    el.innerHTML = '';
+    chatTabs.forEach(function (t) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chatTab' + (t.id === activeTabId ? ' active' : '') + (t.closable ? '' : ' multiOnly');
+      btn.dataset.tabId = t.id;
+      btn.innerHTML = '<span>' + escapeHtml(t.label) + '</span>';
+      if (t.closable) {
+        var closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'chatTabClose';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.addEventListener('click', function (e) { e.stopPropagation(); removeTab(t.id); });
+        btn.appendChild(closeBtn);
+      }
+      btn.addEventListener('click', function (e) { if (!e.target.classList.contains('chatTabClose')) switchToTab(t.id); });
+      el.appendChild(btn);
+    });
+  }
+
+  function startDmWithUser(otherUserId) {
+    var id = parseInt(otherUserId, 10);
+    if (isNaN(id) || id < 1) return;
+    fetch('/api/dm/rooms/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ other_user_id: id })
+    })
+      .then(function (r) {
+        return r.json().then(function (data) {
+          if (!r.ok) {
+            var d = data && data.detail;
+            var msg = '요청 실패';
+            if (typeof d === 'string') msg = d;
+            else if (Array.isArray(d)) msg = d.map(function (x) { return x.msg || x; }).join(', ');
+            else if (d && d.msg) msg = d.msg;
+            alert(msg);
+            return null;
+          }
+          return data;
+        });
+      })
+      .then(function (data) {
+        if (!data || !data.room) return;
+        addDmTab(data.room.id, data.room.other_user);
+      })
+      .catch(function () {
+        alert('1:1 대화방 생성 중 오류가 발생했습니다.');
+      });
+  }
+
+  function openDmRoom(roomId, otherUser) {
+    currentDmRoomId = roomId;
+    if (dmChatHeader) dmChatHeader.textContent = (otherUser && otherUser.name) || '1:1 대화';
+    if (dmMessages) dmMessages.innerHTML = '';
+    if (wsDm) {
+      wsDm.close();
+      wsDm = null;
+    }
+    connectDm(roomId);
+  }
+
+  function connectDm(roomId) {
+    var url = (window.location.origin.replace(/^http/, 'ws') + '/ws/dm');
+    wsDm = new WebSocket(url);
+    wsDm.onopen = function () {
+      wsDm.send(JSON.stringify({ type: 'join', ws_token: wsToken, room_id: roomId }));
+    };
+    wsDm.onmessage = function (ev) {
+      try {
+        var d = JSON.parse(ev.data);
+        if (d.type === 'error') { showNickError(d.message); return; }
+        if (d.type === 'chat') {
+          var isMe = d.is_me === true || d.nickname === myNickname;
+          appendDmMessage(isMe, d.nickname, d.text, d.image_url, d.timestamp);
+        }
+      } catch (e) {}
+    };
+    wsDm.onclose = function () { wsDm = null; };
+  }
+
+  function appendDmMessage(isMe, nickname, text, imageUrl, timestamp) {
+    var row = document.createElement('div');
+    row.className = 'roomMsgRow ' + (isMe ? 'me' : 'other');
+    var timeStr = timestamp || formatSeoulTime();
+    var ts = document.createElement('span');
+    ts.className = 'roomMsgTimestamp';
+    ts.textContent = timeStr;
+    if (isMe) {
+      if (imageUrl) {
+        var imgW = document.createElement('div');
+        imgW.className = 'roomMsgImageLargeWrap';
+        var img = document.createElement('img');
+        img.src = imageUrl;
+        img.className = 'roomMsgImageLarge';
+        imgW.appendChild(img);
+        if (text) { var c = document.createElement('div'); c.className = 'roomMsgImageCaption'; c.textContent = text; imgW.appendChild(c); }
+        row.appendChild(imgW);
+      } else {
+        var b = document.createElement('div');
+        b.className = 'roomBubble me';
+        b.innerHTML = '<span class="roomMsgText">' + linkify(text || '') + '</span>';
+        row.appendChild(b);
+      }
+      row.appendChild(ts);
+    } else {
+      var wrap = document.createElement('div');
+      wrap.className = 'roomMsgOtherWrap';
+      var nr = document.createElement('div');
+      nr.className = 'roomMsgNickRow';
+      nr.innerHTML = '<span class="roomMsgNickAbove">' + escapeHtml(nickname) + '</span>';
+      wrap.appendChild(nr);
+      if (imageUrl) {
+        var imgW2 = document.createElement('div');
+        imgW2.className = 'roomMsgImageLargeWrap';
+        var img2 = document.createElement('img');
+        img2.src = imageUrl;
+        img2.className = 'roomMsgImageLarge';
+        imgW2.appendChild(img2);
+        if (text) { var c2 = document.createElement('div'); c2.className = 'roomMsgImageCaption'; c2.textContent = text; imgW2.appendChild(c2); }
+        wrap.appendChild(imgW2);
+      } else {
+        var b2 = document.createElement('div');
+        b2.className = 'roomBubble other';
+        b2.innerHTML = '<span class="roomMsgText">' + linkify(text || '') + '</span>';
+        wrap.appendChild(b2);
+      }
+      wrap.appendChild(ts);
+      row.appendChild(wrap);
+    }
+    if (dmMessages) {
+      dmMessages.appendChild(row);
+      dmMessages.scrollTop = dmMessages.scrollHeight;
     }
   }
 
@@ -529,26 +751,37 @@
     ws = new WebSocket(url);
 
     ws.onopen = function () {
-      ws.send(JSON.stringify({ type: 'join', nickname: myNickname }));
+      ws.send(JSON.stringify({ type: 'join', ws_token: wsToken }));
     };
 
     ws.onmessage = function (event) {
       try {
         const data = JSON.parse(event.data);
         if (data.type === 'error') {
-          nickSection.style.display = 'block';
+          if (authSection) authSection.style.display = 'block';
+          if (loadingSection) loadingSection.style.display = 'none';
           roomSection.style.display = 'none';
           if (roomNickEditBtn) roomNickEditBtn.style.display = 'none';
           if (roomLeaveBtn) roomLeaveBtn.style.display = 'none';
+          if (document.getElementById('dmListBtn')) document.getElementById('dmListBtn').style.display = 'none';
           showNickError(data.message || '오류');
           ws.close();
           return;
         }
+        if (data.type === 'new_dm') {
+          if (data.room_id && data.other_user) {
+            addDmTab(data.room_id, data.other_user);
+          }
+          return;
+        }
         if (data.type === 'participants') {
           var list = data.list || [];
-          participantListArr = list.filter(function (n) { return n !== myNickname && n !== 'Serena'; });
+          participantListArr = list.filter(function (p) {
+            var n = typeof p === 'string' ? p : (p && p.name);
+            return n !== myNickname && n !== 'Serena' && (p && p.user_id);
+          });
           renderParticipants(list);
-          serenaPresent = list.includes('Serena');
+          serenaPresent = list.some(function (p) { return (p && p.name) === 'Serena'; });
           updateSerenaBtn();
           return;
         }
@@ -713,60 +946,378 @@
     };
   }
 
-  function enterRoom(nick) {
-    if (!nick || nick.length < 2 || nick.length > 32) return;
+  function getDmRoomIdFromUrl() {
+    var m = (window.location.search || '').match(/[?&]dm=(\d+)/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+
+  function enterRoom(user) {
+    if (!user || !user.name) return;
     showNickError('');
-    myNickname = nick;
-    nickInput.value = nick;
-    nickSection.style.display = 'none';
+    myUser = user;
+    myNickname = user.name;
+    if (loadingSection) loadingSection.style.display = 'none';
+    if (authSection) authSection.style.display = 'none';
     roomSection.style.display = 'flex';
     roomSection.style.flexDirection = 'column';
     roomSection.style.flex = '1';
     roomSection.style.minHeight = '0';
+    var headerUser = document.getElementById('headerUser');
+    if (headerUser) {
+      headerUser.style.display = 'flex';
+      var un = document.getElementById('userName');
+      if (un) un.textContent = user.name;
+    }
     if (roomNickEditBtn) roomNickEditBtn.style.display = 'flex';
     if (roomLeaveBtn) roomLeaveBtn.style.display = 'flex';
+    if (document.getElementById('dmListBtn')) document.getElementById('dmListBtn').style.display = 'flex';
+    var chatTabsBar = document.getElementById('chatTabsBar');
+    if (chatTabsBar) chatTabsBar.style.display = 'block';
+    chatTabs = [{ id: 'multi', label: '라운지', type: 'multi', closable: false }];
+    activeTabId = 'multi';
     updateSerenaBtn();
+    var dmRoomId = getDmRoomIdFromUrl();
     connect();
-    roomInput.focus();
+    fetch('/api/dm/rooms', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var rooms = data.rooms || [];
+        var existingIds = {};
+        chatTabs.forEach(function (t) { existingIds[t.id] = true; });
+        rooms.forEach(function (r) {
+          var tabId = 'dm-' + r.id;
+          if (!existingIds[tabId]) {
+            existingIds[tabId] = true;
+            chatTabs.push({
+              id: tabId,
+              label: (r.other_user && r.other_user.name) || '1:1 대화',
+              type: 'dm',
+              roomId: r.id,
+              otherUser: r.other_user,
+              closable: true
+            });
+          }
+        });
+        renderChatTabs();
+      })
+      .catch(function () { renderChatTabs(); });
+    if (dmRoomId) {
+      fetch('/api/dm/rooms/' + dmRoomId, { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.room) {
+            addDmTab(data.room.id, data.room.other_user);
+            if (dmInput) dmInput.focus();
+          } else {
+            showNickError('대화방을 찾을 수 없습니다.');
+            if (roomInput) roomInput.focus();
+          }
+        })
+        .catch(function () {
+          showNickError('대화방을 불러올 수 없습니다.');
+          if (roomInput) roomInput.focus();
+        });
+    } else {
+      if (multiPanel) multiPanel.style.display = 'flex';
+      if (dmPanel) dmPanel.style.display = 'none';
+      connect();
+      if (roomInput) roomInput.focus();
+    }
   }
 
   function leaveRoom() {
-    if (ws) {
-      ws.close();
-      ws = null;
-    }
-    nickSection.style.display = 'block';
+    if (ws) { ws.close(); ws = null; }
+    if (wsDm) { wsDm.close(); wsDm = null; }
+    if (loadingSection) loadingSection.style.display = 'block';
     roomSection.style.display = 'none';
     if (roomNickEditBtn) roomNickEditBtn.style.display = 'none';
     if (roomLeaveBtn) roomLeaveBtn.style.display = 'none';
+    if (document.getElementById('dmListBtn')) document.getElementById('dmListBtn').style.display = 'none';
+    if (document.getElementById('dmListDropdown')) document.getElementById('dmListDropdown').style.display = 'none';
+    if (document.getElementById('chatTabsBar')) document.getElementById('chatTabsBar').style.display = 'none';
     serenaPresent = false;
     updateSerenaBtn();
     showNickError('');
   }
 
-  enterBtn.addEventListener('click', function () {
-    const nick = (nickInput.value || '').trim();
-    if (nick.length < 2 || nick.length > 32) {
-      showNickError('닉네임은 2~32자로 입력해 주세요.');
-      return;
-    }
-    enterRoom(nick);
-  });
-
-  nickInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') enterBtn.click();
-  });
-
-  // 저장된 닉네임이 있으면 해당 IP에서 자동 입장
-  fetch('/api/room/saved-nickname')
+  // 로그인 상태 확인 후 입장
+  fetch('/api/auth/me', { credentials: 'same-origin' })
     .then(function (r) { return r.json(); })
     .then(function (data) {
-      var nick = (data.nickname || '').trim();
-      if (nick.length >= 2 && nick.length <= 32) {
-        enterRoom(nick);
+      if (!data.logged_in) {
+        if (loadingSection) loadingSection.style.display = 'none';
+        if (authSection) authSection.style.display = 'block';
+        return;
       }
+      return fetch('/api/auth/ws-token').then(function (r) { return r.json(); })
+        .then(function (tok) {
+          wsToken = tok.token;
+          enterRoom(data.user);
+        });
     })
-    .catch(function () {});
+    .catch(function () {
+      if (loadingSection) loadingSection.style.display = 'none';
+      if (authSection) authSection.style.display = 'block';
+    });
+
+  function doLogin() {
+    var username = (document.getElementById('loginId').value || '').trim();
+    var password = document.getElementById('loginPassword').value || '';
+    showNickError('');
+    if (!username) { showNickError('아이디를 입력하세요.'); return; }
+    if (!password) { showNickError('비밀번호를 입력하세요.'); return; }
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, password: password })
+    })
+      .then(function (r) {
+        if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || '로그인 실패'); });
+        return r.json();
+      })
+      .then(function (data) {
+        showNickError('');
+        return fetch('/api/auth/ws-token').then(function (r) { return r.json(); })
+          .then(function (tok) {
+            wsToken = tok.token;
+            enterRoom(data.user);
+          });
+      })
+      .catch(function (err) { showNickError(err.message || '로그인에 실패했습니다.'); });
+  }
+
+  function doSignup() {
+    var username = (document.getElementById('signupId').value || '').trim();
+    var password = document.getElementById('signupPassword').value || '';
+    var passwordConfirm = document.getElementById('signupPasswordConfirm').value || '';
+    var name = (document.getElementById('signupName').value || '').trim();
+    showNickError('');
+    if (!username) { showNickError('아이디를 입력하세요.'); return; }
+    if (username.length < 2) { showNickError('아이디는 2자 이상이어야 합니다.'); return; }
+    if (!password) { showNickError('비밀번호를 입력하세요.'); return; }
+    if (password.length < 4) { showNickError('비밀번호는 4자 이상이어야 합니다.'); return; }
+    if (password !== passwordConfirm) { showNickError('비밀번호가 일치하지 않습니다.'); return; }
+    if (!name) { showNickError('닉네임을 입력하세요.'); return; }
+    fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, name: name, password: password, password_confirm: passwordConfirm })
+    })
+      .then(function (r) {
+        if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || '가입 실패'); });
+        return r.json();
+      })
+      .then(function (data) {
+        showNickError('');
+        return fetch('/api/auth/ws-token').then(function (r) { return r.json(); })
+          .then(function (tok) {
+            wsToken = tok.token;
+            enterRoom(data.user);
+          });
+      })
+      .catch(function (err) { showNickError(err.message || '회원가입에 실패했습니다.'); });
+  }
+
+  if (document.getElementById('authTabLogin')) {
+    document.getElementById('authTabLogin').addEventListener('click', function () {
+      document.getElementById('authTabLogin').classList.add('active');
+      document.getElementById('authTabSignup').classList.remove('active');
+      document.getElementById('loginForm').style.display = 'flex';
+      document.getElementById('signupForm').style.display = 'none';
+      showNickError('');
+    });
+  }
+  if (document.getElementById('authTabSignup')) {
+    document.getElementById('authTabSignup').addEventListener('click', function () {
+      document.getElementById('authTabSignup').classList.add('active');
+      document.getElementById('authTabLogin').classList.remove('active');
+      document.getElementById('signupForm').style.display = 'flex';
+      document.getElementById('loginForm').style.display = 'none';
+      showNickError('');
+    });
+  }
+  if (document.getElementById('loginBtn')) document.getElementById('loginBtn').addEventListener('click', doLogin);
+  if (document.getElementById('signupBtn')) document.getElementById('signupBtn').addEventListener('click', doSignup);
+
+  // 참여자 목록: 이름 클릭 시 1:1 대화 버튼 표시, 버튼 클릭 시 탭에 추가
+  if (participantList) {
+    participantList.addEventListener('click', function (e) {
+      var btn = e.target.closest('.dmFromParticipantBtn');
+      if (btn && btn.dataset.userId) {
+        e.stopPropagation();
+        startDmWithUser(parseInt(btn.dataset.userId, 10));
+        hideParticipantDmBtns();
+        return;
+      }
+      var nameEl = e.target.closest('.participantName');
+      if (nameEl) {
+        e.stopPropagation();
+        var item = nameEl.closest('.participantWithDm');
+        if (item) {
+          var popover = item.querySelector('.participantDmPopover');
+          var wasVisible = popover && popover.style.display === 'block';
+          hideParticipantDmBtns();
+          if (popover && !wasVisible) popover.style.display = 'block';
+        }
+        return;
+      }
+    });
+  }
+
+  function hideParticipantDmBtns() {
+    var popovers = participantList && participantList.querySelectorAll('.participantDmPopover');
+    if (popovers) for (var i = 0; i < popovers.length; i++) popovers[i].style.display = 'none';
+  }
+
+  document.addEventListener('click', function () { hideParticipantDmBtns(); });
+
+  // 1:1 대화 목록 버튼 (로그인 후 이전 대화 열기)
+  var dmListBtn = document.getElementById('dmListBtn');
+  var dmListDropdown = document.getElementById('dmListDropdown');
+  if (dmListBtn && dmListDropdown) {
+    dmListBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (dmListDropdown.style.display === 'block') {
+        dmListDropdown.style.display = 'none';
+        return;
+      }
+      fetch('/api/dm/rooms', { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          dmListDropdown.innerHTML = '';
+          var rooms = data.rooms || [];
+          if (rooms.length === 0) {
+            dmListDropdown.innerHTML = '<div class="dmListEmpty">1:1 대화가 없습니다.</div>';
+          } else {
+            rooms.forEach(function (r) {
+              var name = (r.other_user && r.other_user.name) || '알 수 없음';
+              var preview = (r.last_text || '').substring(0, 20);
+              if (r.last_text && r.last_text.length > 20) preview += '...';
+              var li = document.createElement('div');
+              li.className = 'dmListItem';
+              li.innerHTML = '<span class="dmListName">' + escapeHtml(name) + '</span><span class="dmListPreview">' + escapeHtml(preview) + '</span>';
+              li.addEventListener('click', function () {
+                addDmTab(r.id, r.other_user);
+                dmListDropdown.style.display = 'none';
+              });
+              dmListDropdown.appendChild(li);
+            });
+          }
+          dmListDropdown.style.display = 'block';
+        })
+        .catch(function () {
+          dmListDropdown.innerHTML = '<div class="dmListEmpty">불러오기 실패</div>';
+          dmListDropdown.style.display = 'block';
+        });
+    });
+    document.addEventListener('click', function () {
+      if (dmListDropdown) dmListDropdown.style.display = 'none';
+    });
+    if (dmListDropdown) {
+      dmListDropdown.addEventListener('click', function (e) { e.stopPropagation(); });
+    }
+  }
+
+  if (document.getElementById('dmBackLink')) {
+    document.getElementById('dmBackLink').addEventListener('click', function () {
+      switchToTab('multi');
+    });
+  }
+
+  function sendDmMessage(text, imageUrl) {
+    if (!wsDm || wsDm.readyState !== WebSocket.OPEN || !currentDmRoomId) return;
+    var txt = (text || '').trim();
+    if (!txt && !imageUrl) return;
+    wsDm.send(JSON.stringify({ type: 'chat', text: txt || '', image_url: imageUrl || '' }));
+    if (dmInput) dmInput.value = '';
+  }
+
+  if (dmSendBtn && dmInput) {
+    dmSendBtn.addEventListener('click', function () {
+      var txt = (dmInput.value || '').trim();
+      sendDmMessage(txt);
+    });
+  }
+
+  if (dmInput) {
+    dmInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        if (!e.shiftKey) {
+          e.preventDefault();
+          sendDmMessage((dmInput.value || '').trim());
+        }
+      }
+    });
+  }
+
+  if (dmImageBtn && dmImageInput) {
+    dmImageBtn.addEventListener('click', function () { dmImageInput.click(); });
+    dmImageInput.addEventListener('change', function () {
+      var file = this.files && this.files[0];
+      if (!file || !wsDm || wsDm.readyState !== WebSocket.OPEN || !currentDmRoomId) { this.value = ''; return; }
+      var fd = new FormData();
+      fd.append('file', file, file.name || 'image.jpg');
+      fetch('/api/room/upload', { method: 'POST', body: fd })
+        .then(function (r) {
+          if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || '업로드 실패'); });
+          return r.json();
+        })
+        .then(function (data) {
+          if (data.url) sendDmMessage((dmInput && dmInput.value || '').trim(), data.url);
+        })
+        .catch(function (err) { showNickError(err.message || '사진 업로드에 실패했습니다.'); })
+        .finally(function () { dmImageInput.value = ''; });
+    });
+  }
+
+  function insertEmojiIntoTextarea(ta, emoji) {
+    if (!ta) return;
+    var start = ta.selectionStart;
+    var end = ta.selectionEnd;
+    var text = ta.value;
+    ta.value = text.slice(0, start) + emoji + text.slice(end);
+    ta.selectionStart = ta.selectionEnd = start + emoji.length;
+    ta.focus();
+  }
+
+  function initDmEmojiPanel() {
+    if (!dmEmojiPanel || dmEmojiPanel.querySelector('.roomEmojiPanelInner')) return;
+    var header = document.createElement('div');
+    header.className = 'roomEmojiPanelHeader';
+    var closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'roomEmojiPanelClose';
+    closeBtn.title = '닫기';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.addEventListener('click', function () { dmEmojiPanel.style.display = 'none'; });
+    header.appendChild(closeBtn);
+    dmEmojiPanel.appendChild(header);
+    var inner = document.createElement('div');
+    inner.className = 'roomEmojiPanelInner';
+    EMOJI_LIST.forEach(function (emoji) {
+      var span = document.createElement('span');
+      span.textContent = emoji;
+      span.setAttribute('role', 'button');
+      span.tabIndex = 0;
+      span.addEventListener('click', function () { insertEmojiIntoTextarea(dmInput, emoji); });
+      inner.appendChild(span);
+    });
+    dmEmojiPanel.appendChild(inner);
+  }
+
+  if (dmEmojiBtn && dmEmojiPanel) {
+    dmEmojiBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      initDmEmojiPanel();
+      var visible = dmEmojiPanel.style.display === 'flex' || dmEmojiPanel.style.display === 'grid' || dmEmojiPanel.style.display === 'block';
+      dmEmojiPanel.style.display = visible ? 'none' : 'flex';
+    });
+    document.addEventListener('click', function (e) {
+      if (dmEmojiPanel && dmEmojiPanel.style.display !== 'none' && !dmEmojiPanel.contains(e.target) && !(dmEmojiBtn && dmEmojiBtn.contains(e.target))) {
+        dmEmojiPanel.style.display = 'none';
+      }
+    });
+  }
 
   if (roomNickEditBtn) {
     roomNickEditBtn.addEventListener('click', function (e) {
@@ -788,6 +1339,7 @@
     roomLeaveBtn.addEventListener('click', function (e) {
       e.preventDefault();
       leaveRoom();
+      window.location.href = '/api/auth/logout';
     });
   }
 
@@ -839,8 +1391,9 @@
         chessPvpSelect.dataset.visible = chessPvpSelect.dataset.visible === '1' ? '0' : '1';
         chessPvpSelect.style.display = chessPvpSelect.dataset.visible === '1' ? 'flex' : 'none';
         if (chessPvpOpponent && chessPvpSelect.dataset.visible === '1') {
-          chessPvpOpponent.innerHTML = participantListArr.map(function (n) {
-            return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>';
+          chessPvpOpponent.innerHTML = participantListArr.map(function (p) {
+            var n = p && p.name;
+            return n ? '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>' : '';
           }).join('') || '<option value="">참여자 없음</option>';
         }
       }

@@ -2,6 +2,7 @@
 영어 채팅 챗봇 웹 서비스
 - FastAPI 기반 채팅 UI
 - 175.197.131.234:8004 에서 접속
+- 회원가입/로그인, 1:1 대화방 지원
 """
 
 from __future__ import annotations
@@ -18,11 +19,12 @@ from typing import Any, Dict, List, Optional, Set
 from uuid import uuid4
 
 import requests
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from starlette.middleware.sessions import SessionMiddleware
 
 # english_chat_bot 로직 재사용
 import sys
@@ -39,6 +41,9 @@ from english_chat_bot import (
     SYSTEM_PROMPT,
     KOREAN_LABEL,
 )
+
+from . import auth as auth_module
+from . import database as db
 
 # 상황 제목 -> 한국어 설명 (대화 주제)
 SITUATION_KO = {
@@ -65,13 +70,23 @@ ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/gif", "ima
 
 app = FastAPI(title="English Chat Bot - 영어 대화 연습")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
-# WebSocket은 static 마운트 전에 등록 (프록시/경로 매칭 우선)
+
+# 세션 (RefreshToken 역할: 30일 유지 → 창 껐다 켜도 자동 로그인)
+REFRESH_TOKEN_DAYS = 30
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=auth_module.get_session_secret(),
+    max_age=REFRESH_TOKEN_DAYS * 24 * 60 * 60,
+)
+
+# DB 초기화
+db.init_db()
 
 # 세션별 대화 저장 (in-memory)
 _conversations: Dict[str, Dict[str, Any]] = {}
 
-# 멀티 채팅방: (websocket, nickname) 목록
-_room_connections: List[tuple[WebSocket, str]] = []
+# 멀티 채팅방: (websocket, user_info) 목록. user_info = {id, name, email}
+_room_connections: List[tuple[WebSocket, Dict[str, Any]]] = []
 # 메시지 읽음 상태: {message_id: {"sender_ws": WebSocket, "read_by": Set[str], "total_participants": int}}
 _message_read_status: Dict[str, Dict[str, Any]] = {}
 # 메시지 저장 (수정/삭제용): {message_id: {"sender_nickname": str, "text": str}}
@@ -89,6 +104,9 @@ _serena_pending_task: Optional[asyncio.Task] = None
 # {"board": chess.Board, "white_player": str, "black_player": str, "mode": "serena"|"pvp", "status": str, "white_captured": List[str], "black_captured": List[str]}
 _chess_game: Optional[Dict[str, Any]] = None
 _chess_pending_task: Optional[asyncio.Task] = None
+
+# 1:1 DM: {room_id: [(websocket, user_info), ...]}
+_dm_connections: Dict[int, List[tuple[WebSocket, Dict[str, Any]]]] = {}
 
 
 def _get_captured_piece(board: chess.Board, move: chess.Move) -> Optional[str]:
@@ -446,7 +464,7 @@ async def _invite_serena_and_broadcast() -> None:
         # 첫 초대 시 입장 안내
         if not was_invited:
             await _room_broadcast({"type": "system", "message": "Serena님이 입장했습니다."}, exclude_ws=None)
-            participants = [n for _, n in _room_connections] + ["Serena"]
+            participants = _build_participants_list()
             await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=None)
             await _room_broadcast({"type": "serena_status", "present": True}, exclude_ws=None)
         
@@ -491,22 +509,36 @@ def _schedule_serena_response() -> None:
     _serena_pending_task = asyncio.create_task(_delayed_serena())
 
 
+def _build_participants_list() -> List[Dict[str, Any]]:
+    """참여자 목록 (user_id, username 포함, Serena는 user_id=null)."""
+    out = []
+    for _, u in _room_connections:
+        out.append({
+            "user_id": u["id"],
+            "username": u.get("username"),
+            "name": u["name"],
+            "avatar_url": u.get("avatar_url") or None,
+        })
+    if _serena_invited:
+        out.append({"user_id": None, "name": "Serena", "avatar_url": "/serena.png"})
+    return out
+
+
 async def _room_broadcast(message: Dict[str, Any], exclude_ws: Optional[WebSocket] = None) -> None:
     """멀티 채팅방 전체에 메시지 브로드캐스트."""
     text = json.dumps(message, ensure_ascii=False)
     dead = []
-    for ws, nick in _room_connections:
+    for ws, u in _room_connections:
         if ws is exclude_ws:
             continue
         try:
             await ws.send_text(text)
         except Exception as e:
-            print(f"Broadcast error to {nick}: {e}")
-            dead.append((ws, nick))
-    # 죽은 연결 정리
-    for ws, nick in dead:
-        _room_connections[:] = [(w, n) for w, n in _room_connections if w is not ws]
-        print(f"Removed dead connection: {nick}")
+            print(f"Broadcast error to {u.get('name', '?')}: {e}")
+            dead.append((ws, u))
+    for ws, u in dead:
+        _room_connections[:] = [(w, usr) for w, usr in _room_connections if w is not ws]
+        print(f"Removed dead connection: {u.get('name', '?')}")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -522,17 +554,174 @@ def chat_page(request: Request) -> Any:
 
 
 @app.get("/room", response_class=HTMLResponse)
-def room_page(request: Request) -> Any:
-    """멀티 채팅방 페이지 (닉네임 입력 후 유저 간 실시간 채팅)."""
+async def room_page(request: Request) -> Any:
+    """멀티 채팅방 페이지. 로그인하면 채팅 이용 가능."""
     return templates.TemplateResponse("room.html", {"request": request})
+
+
+@app.post("/api/auth/signup")
+async def api_auth_signup(request: Request):
+    """회원가입. body: {username, name, password, password_confirm}"""
+    try:
+        body = await request.json()
+        username = (body.get("username") or "").strip()
+        name = (body.get("name") or "").strip()
+        password = body.get("password") or ""
+        password_confirm = body.get("password_confirm") or ""
+        if not username or not name or not password:
+            raise HTTPException(status_code=400, detail="아이디, 닉네임, 비밀번호를 모두 입력해 주세요.")
+        if len(username) < 2:
+            raise HTTPException(status_code=400, detail="아이디는 2자 이상이어야 합니다.")
+        if len(password) < 4:
+            raise HTTPException(status_code=400, detail="비밀번호는 4자 이상이어야 합니다.")
+        if password != password_confirm:
+            raise HTTPException(status_code=400, detail="비밀번호가 일치하지 않습니다.")
+        password_hash = auth_module.hash_password(password)
+        user_id = db.create_user(username, name, password_hash)
+        user = db.get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=500, detail="가입 처리 중 오류")
+        request.session["user"] = {
+            "id": user["id"],
+            "username": user["username"],
+            "name": user["name"],
+        }
+        return {"ok": True, "user": request.session["user"]}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/auth/login")
+async def api_auth_login(request: Request):
+    """로그인. body: {username, password}"""
+    try:
+        body = await request.json()
+        username = (body.get("username") or "").strip()
+        password = body.get("password") or ""
+        if not username or not password:
+            raise HTTPException(status_code=400, detail="아이디와 비밀번호를 입력해 주세요.")
+        user = db.get_user_by_username(username)
+        if not user or not auth_module.verify_password(password, user["password_hash"]):
+            raise HTTPException(status_code=401, detail="아이디 또는 비밀번호가 올바르지 않습니다.")
+        request.session["user"] = {
+            "id": user["id"],
+            "username": user["username"],
+            "name": user["name"],
+        }
+        return {"ok": True, "user": request.session["user"]}
+    except HTTPException:
+        raise
+
+
+@app.get("/api/auth/logout")
+async def auth_logout(request: Request):
+    """로그아웃."""
+    request.session.clear()
+    return RedirectResponse(url="/", status_code=302)
+
+
+@app.get("/api/auth/me")
+async def api_auth_me(request: Request):
+    """현재 로그인 유저."""
+    user = await auth_module.get_current_user(request)
+    if not user:
+        return {"logged_in": False}
+    return {"logged_in": True, "user": user}
+
+
+@app.get("/api/auth/ws-token")
+async def api_auth_ws_token(request: Request):
+    """WebSocket 인증용 토큰 (5분 유효)."""
+    user = await auth_module.get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not logged in")
+    token = auth_module.create_ws_token(user)
+    return {"token": token}
 
 
 @app.get("/api/room/saved-nickname")
 def api_room_saved_nickname(request: Request) -> Any:
-    """요청 IP에 저장된 닉네임이 있으면 반환 (멀티채팅 재접속 시 자동 입장용)."""
+    """요청 IP에 저장된 닉네임이 있으면 반환 (구버전 호환)."""
     client_host = request.client.host if request.client else None
     nickname = _ip_nickname.get(client_host) if client_host else None
     return {"nickname": nickname}
+
+
+@app.get("/api/users/search")
+async def api_users_search(request: Request, q: str = ""):
+    """아이디로 유저 검색 (1:1 대화 상대 찾기)."""
+    user = await auth_module.get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not logged in")
+    q = (q or "").strip()
+    if len(q) < 1:
+        return {"users": []}
+    users = db.search_users_by_username(q, limit=10)
+    return {"users": [{"id": u["id"], "username": u["username"], "name": u["name"]} for u in users]}
+
+
+@app.get("/api/dm/rooms")
+async def api_dm_rooms(request: Request):
+    """내 1:1 대화방 목록."""
+    user = await auth_module.get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not logged in")
+    rooms = db.list_dm_rooms(user["id"])
+    return {"rooms": rooms}
+
+
+@app.get("/api/dm/rooms/{room_id}")
+async def api_dm_room_get(room_id: int, request: Request):
+    """1:1 방 정보 조회 (참여자만)."""
+    user = await auth_module.get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not logged in")
+    room = db.get_dm_room(room_id, user["id"])
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    return {"room": room}
+
+
+@app.post("/api/dm/rooms/create")
+async def api_dm_create(request: Request):
+    """1:1 대화방 생성 또는 기존 방 반환. body: {other_user_id: int} 또는 {other_username: str}"""
+    user = await auth_module.get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not logged in")
+    try:
+        body = await request.json() or {}
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid body")
+    other_id = None
+    if "other_user_id" in body and body["other_user_id"] is not None:
+        try:
+            other_id = int(body["other_user_id"])
+        except (TypeError, ValueError):
+            pass
+    if other_id is None and "other_username" in body and body["other_username"]:
+        other = db.get_user_by_username((body["other_username"] or "").strip())
+        if other:
+            other_id = other["id"]
+    if not other_id:
+        raise HTTPException(status_code=400, detail="대화 상대(아이디 또는 사용자)를 지정해 주세요.")
+    if other_id == user["id"]:
+        raise HTTPException(status_code=400, detail="자기 자신과는 1:1 대화를 할 수 없습니다.")
+    other = db.get_user_by_id(other_id)
+    if not other:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    room_id = db.get_or_create_dm_room(user["id"], other_id)
+    room = db.get_dm_room(room_id, user["id"])
+    return {"room": room}
+
+
+@app.get("/api/dm/rooms/{room_id}/messages")
+async def api_dm_messages(room_id: int, request: Request):
+    """1:1 방 메시지 목록."""
+    user = await auth_module.get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not logged in")
+    messages = db.get_dm_messages(room_id, user["id"])
+    return {"messages": messages}
 
 
 def _get_image_ext(content_type: Optional[str], filename: Optional[str]) -> str:
@@ -592,7 +781,7 @@ def serena_avatar() -> FileResponse:
 @app.websocket("/ws/room")
 async def ws_room(websocket: WebSocket) -> None:
     """멀티 채팅방 WebSocket.
-    첫 메시지: {"type":"join","nickname":"..."}
+    첫 메시지: {"type":"join","ws_token":"..."}
     이후:
     - {"type":"chat","text":"..."}
     - {"type":"read","message_id":"..."}
@@ -601,23 +790,34 @@ async def ws_room(websocket: WebSocket) -> None:
     """
     global _serena_invited, _serena_pending_task, _chess_game, _chess_pending_task
     await websocket.accept()
-    nickname: Optional[str] = None
+    user_info: Optional[Dict[str, Any]] = None
     try:
-        # 첫 메시지: join + nickname
         raw = await websocket.receive_text()
         data = json.loads(raw)
-        if data.get("type") != "join" or not (data.get("nickname") or "").strip():
-            await websocket.send_text(json.dumps({"type": "error", "message": "닉네임을 입력해 주세요."}, ensure_ascii=False))
+        if data.get("type") != "join":
+            await websocket.send_text(json.dumps({"type": "error", "message": "Invalid join message."}, ensure_ascii=False))
             await websocket.close()
             return
-        nickname = (data["nickname"] or "").strip()[:32]
-        client_host = websocket.client.host if websocket.client else None
-        if client_host:
-            _ip_nickname[client_host] = nickname
-        _room_connections.append((websocket, nickname))
-        participants = [n for _, n in _room_connections]
-        if _serena_invited:
-            participants.append("Serena")
+        ws_token = (data.get("ws_token") or "").strip()
+        user_info = auth_module.verify_ws_token(ws_token)
+        if not user_info:
+            await websocket.send_text(json.dumps({"type": "error", "message": "로그인이 만료되었습니다. 새로고침 후 다시 시도해 주세요."}, ensure_ascii=False))
+            await websocket.close()
+            return
+        # DB에서 user 조회
+        db_user = db.get_user_by_id(user_info.get("user_id"))
+        if not db_user:
+            await websocket.send_text(json.dumps({"type": "error", "message": "사용자를 찾을 수 없습니다."}, ensure_ascii=False))
+            await websocket.close()
+            return
+        user_info = {
+            "id": db_user["id"],
+            "username": db_user.get("username"),
+            "name": db_user["name"],
+        }
+        nickname = user_info["name"]
+        _room_connections.append((websocket, user_info))
+        participants = _build_participants_list()
         await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=websocket)
         await websocket.send_text(json.dumps({"type": "participants", "list": participants}, ensure_ascii=False))
         await websocket.send_text(json.dumps({"type": "serena_status", "present": _serena_invited}, ensure_ascii=False))
@@ -746,19 +946,17 @@ async def ws_room(websocket: WebSocket) -> None:
                     }, exclude_ws=None)
 
                 elif data.get("type") == "rename" and (data.get("nickname") or "").strip():
-                    new_nick = (data["nickname"] or "").strip()[:32]
-                    if 2 <= len(new_nick) <= 32:
+                    new_nick = (data["nickname"] or "").strip()[:100]
+                    if 2 <= len(new_nick):
                         old_nick = nickname
                         nickname = new_nick
-                        if client_host:
-                            _ip_nickname[client_host] = new_nick
-                        for i, (w, n) in enumerate(_room_connections):
+                        for i, (w, u) in enumerate(_room_connections):
                             if w is websocket:
-                                _room_connections[i] = (websocket, new_nick)
+                                new_user = {**u, "name": new_nick}
+                                _room_connections[i] = (websocket, new_user)
+                                db.update_user_name(u.get("id"), new_nick)
                                 break
-                        participants = [n for _, n in _room_connections]
-                        if _serena_invited:
-                            participants.append("Serena")
+                        participants = _build_participants_list()
                         await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=None)
                         await _room_broadcast({"type": "system", "message": f"{old_nick}님이 닉네임을 {new_nick}(으)로 변경했습니다."}, exclude_ws=None)
 
@@ -777,7 +975,7 @@ async def ws_room(websocket: WebSocket) -> None:
                         _chess_game = None
                         await _room_broadcast({"type": "chess_state", "fen": None, "status": None}, exclude_ws=None)
                         await _room_broadcast({"type": "system", "message": "Serena님이 퇴장했습니다."}, exclude_ws=None)
-                        participants = [n for _, n in _room_connections]
+                        participants = _build_participants_list()
                         await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=None)
                         await _room_broadcast({"type": "serena_status", "present": False}, exclude_ws=None)
 
@@ -815,7 +1013,7 @@ async def ws_room(websocket: WebSocket) -> None:
                     opp = (data["opponent"] or "").strip()[:32]
                     if opp == nickname:
                         continue
-                    if not any(n == opp for _, n in _room_connections):
+                    if not any(u.get("name") == opp for _, u in _room_connections):
                         continue
                     if _chess_pending_task and not _chess_pending_task.done():
                         _chess_pending_task.cancel()
@@ -935,8 +1133,8 @@ async def ws_room(websocket: WebSocket) -> None:
     except Exception as e:
         print(f"WebSocket connection error for {nickname}: {e}")
     finally:
-        if nickname is not None:
-            _room_connections[:] = [(w, n) for w, n in _room_connections if w is not websocket]
+        if user_info is not None:
+            _room_connections[:] = [(w, u) for w, u in _room_connections if w is not websocket]
             # 퇴장한 유저가 읽지 않은 메시지의 읽음 상태 업데이트
             for message_id, status in list(_message_read_status.items()):
                 if websocket == status["sender_ws"]:
@@ -961,11 +1159,125 @@ async def ws_room(websocket: WebSocket) -> None:
                     if unread_count == 0:
                         del _message_read_status[message_id]
                         _room_messages.pop(message_id, None)
-            participants = [n for _, n in _room_connections]
-            if _serena_invited:
-                participants.append("Serena")
+            participants = _build_participants_list()
             await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=None)
             await _room_broadcast({"type": "system", "message": f"{nickname}님이 퇴장했습니다."}, exclude_ws=None)
+
+
+@app.websocket("/ws/dm")
+async def ws_dm(websocket: WebSocket) -> None:
+    """1:1 대화방 WebSocket. 첫 메시지: {"type":"join","ws_token":"...","room_id":123}"""
+    await websocket.accept()
+    user_info: Optional[Dict[str, Any]] = None
+    room_id: Optional[int] = None
+    try:
+        raw = await websocket.receive_text()
+        data = json.loads(raw)
+        if data.get("type") != "join":
+            await websocket.send_text(json.dumps({"type": "error", "message": "Invalid join"}, ensure_ascii=False))
+            await websocket.close()
+            return
+        user_info = auth_module.verify_ws_token((data.get("ws_token") or "").strip())
+        if not user_info:
+            await websocket.send_text(json.dumps({"type": "error", "message": "로그인 만료"}, ensure_ascii=False))
+            await websocket.close()
+            return
+        user_id = user_info.get("user_id")
+        if not user_id:
+            await websocket.send_text(json.dumps({"type": "error", "message": "Invalid token"}, ensure_ascii=False))
+            await websocket.close()
+            return
+        room_id = int(data.get("room_id") or 0)
+        room = db.get_dm_room(room_id, user_id)
+        if not room:
+            await websocket.send_text(json.dumps({"type": "error", "message": "대화방을 찾을 수 없습니다."}, ensure_ascii=False))
+            await websocket.close()
+            return
+        # 기존 메시지 전송
+        messages = db.get_dm_messages(room_id, user_id)
+        for m in messages:
+            raw = m.get("created_at") or ""
+            ts = raw[-8:-3] if len(raw) >= 8 else _seoul_time_str()  # "HH:MM" from "YYYY-MM-DD HH:MM:SS"
+            await websocket.send_text(json.dumps({
+                "type": "chat",
+                "message_id": str(m["id"]),
+                "nickname": m["nickname"],
+                "text": m.get("text", ""),
+                "image_url": m.get("image_url"),
+                "timestamp": ts,
+                "is_me": m.get("is_me", False),
+                "is_history": True,
+            }, ensure_ascii=False))
+        # 접속 등록
+        if room_id not in _dm_connections:
+            _dm_connections[room_id] = []
+        db_user = db.get_user_by_id(user_id)
+        nickname = (db_user and db_user.get("name")) or user_info.get("name") or "User"
+        _dm_connections[room_id].append((websocket, {"id": user_id, "name": nickname}))
+
+        while True:
+            raw = await websocket.receive_text()
+            data = json.loads(raw)
+            if data.get("type") == "chat":
+                text = (data.get("text") or "").strip()[:2000]
+                image_url = (data.get("image_url") or "").strip()[:500]
+                if not text and not image_url:
+                    continue
+                # DB 저장 (Serena 없음 - 1:1은 유저 간만)
+                msg_id = db.save_dm_message(room_id, user_id, text, image_url or None)
+                ts = _seoul_time_str()
+                payload = {
+                    "type": "chat",
+                    "message_id": str(msg_id),
+                    "nickname": nickname,
+                    "text": text,
+                    "timestamp": ts,
+                }
+                if image_url:
+                    payload["image_url"] = image_url
+                # 같은 방의 다른 참여자에게 전송
+                room_obj = db.get_dm_room(room_id, user_id)
+                recipient_id = room_obj["other_user"]["id"] if room_obj else None
+                recipient_in_dm = False
+                for ws, u in _dm_connections.get(room_id, []):
+                    if ws is not websocket:
+                        if u.get("id") == recipient_id:
+                            recipient_in_dm = True
+                        try:
+                            p = {**payload, "is_me": False}
+                            await ws.send_text(json.dumps(p, ensure_ascii=False))
+                        except Exception:
+                            pass
+                    else:
+                        try:
+                            p = {**payload, "is_me": True}
+                            await websocket.send_text(json.dumps(p, ensure_ascii=False))
+                        except Exception:
+                            pass
+                # 수신자가 DM 탭을 열지 않았으면 멀티방 WebSocket으로 new_dm 알림
+                if recipient_id and not recipient_in_dm:
+                    sender_info = db.get_user_by_id(user_id)
+                    for ws_multi, u_multi in _room_connections:
+                        if u_multi.get("id") == recipient_id:
+                            try:
+                                await ws_multi.send_text(json.dumps({
+                                    "type": "new_dm",
+                                    "room_id": room_id,
+                                    "other_user": sender_info or {"id": user_id, "name": nickname, "username": None},
+                                    "preview": (text or "")[:50] or "(사진)",
+                                }, ensure_ascii=False))
+                            except Exception:
+                                pass
+                            break
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        print(f"DM WebSocket error: {e}")
+    finally:
+        if room_id and room_id in _dm_connections:
+            _dm_connections[room_id] = [(w, u) for w, u in _dm_connections[room_id] if w is not websocket]
+            if not _dm_connections[room_id]:
+                del _dm_connections[room_id]
 
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

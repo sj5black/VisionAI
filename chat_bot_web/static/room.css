@@ -384,6 +384,25 @@ body {
   flex-direction: column;
   gap: 8px;
   padding: 12px 14px 12px 14px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+.dmMessages::-webkit-scrollbar {
+  width: 5px;
+}
+
+.dmMessages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dmMessages::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+}
+
+.dmMessages::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .dmInputBar {
@@ -1007,15 +1026,25 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
 
 .roomMessages::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
+}
+
+.roomMessages::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .roomMessages::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+}
+
+.roomMessages::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
 }
 
 .roomMsg {
@@ -1156,18 +1185,31 @@ body {
   align-self: flex-start;
 }
 
-.unread-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 9px;
-  font-size: 11px;
-  font-weight: 600;
+.roomMsgTimeWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: flex-end;
+  gap: 2px;
   flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.roomMsgTimeWrap .roomMsgTimestamp {
+  margin-left: 0;
+}
+
+.unread-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  min-width: 0;
+  height: auto;
 }
 
 
@@ -1586,8 +1628,6 @@ body {
   }
 
   .unread-badge {
-    min-width: 14px;
-    height: 14px;
     font-size: 9px;
   }
 

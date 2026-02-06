@@ -422,12 +422,19 @@
 
   function setUnreadBadge(rowEl, unreadCount) {
     if (!rowEl) return;
-    const badge = rowEl.querySelector('.unread-badge');
+    var badge = rowEl.querySelector('.unread-badge');
+    var timeWrap = rowEl.querySelector('.roomMsgTimeWrap');
     if (unreadCount > 0) {
       if (badge) {
         badge.textContent = unreadCount;
+      } else if (timeWrap) {
+        var newBadge = document.createElement('span');
+        newBadge.className = 'unread-badge';
+        newBadge.textContent = unreadCount;
+        var tsEl = timeWrap.querySelector('.roomMsgTimestamp');
+        timeWrap.insertBefore(newBadge, tsEl || null);
       } else {
-        const newBadge = document.createElement('span');
+        var newBadge = document.createElement('span');
         newBadge.className = 'unread-badge';
         newBadge.textContent = unreadCount;
         rowEl.appendChild(newBadge);
@@ -493,14 +500,18 @@
 
   function tryShowNotification(title, body, tag) {
     try {
-      var n = new Notification(title, {
+      var opts = {
         body: body || '새 메시지',
-        tag: tag || 'chat'
-      });
+        tag: tag || 'chat',
+        requireInteraction: false,
+        silent: false
+      };
+      var n = new Notification(title, opts);
       n.onclick = function () {
         window.focus();
         n.close();
       };
+      setTimeout(function () { n.close(); }, 8000);
     } catch (e) {}
   }
 
@@ -614,6 +625,12 @@
     connectDm(roomId);
   }
 
+  function sendDmViewedRoom() {
+    if (wsDm && wsDm.readyState === WebSocket.OPEN && currentDmRoomId) {
+      wsDm.send(JSON.stringify({ type: 'viewed_room' }));
+    }
+  }
+
   function connectDm(roomId) {
     var url = (window.location.origin.replace(/^http/, 'ws') + '/ws/dm');
     wsDm = new WebSocket(url);
@@ -621,6 +638,7 @@
       var socket = this;
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: 'join', ws_token: wsToken, room_id: roomId }));
+        sendDmViewedRoom();
       }
     };
     wsDm.onmessage = function (ev) {
@@ -630,10 +648,6 @@
         if (d.type === 'chat') {
           var isMe = d.is_me === true || d.nickname === myNickname;
           appendDmMessage(isMe, d.nickname, d.text, d.image_url, d.timestamp, d.message_id, d.unread_count || 0);
-          // 상대방 메시지는 자동으로 읽음 처리
-          if (!isMe && d.message_id && wsDm && wsDm.readyState === WebSocket.OPEN) {
-            wsDm.send(JSON.stringify({ type: 'read', message_id: d.message_id }));
-          }
           if (!isMe && !d.is_history && document.hidden) {
             var dmPreview = (d.text && d.text.trim()) ? d.text.trim().slice(0, 50) + (d.text.length > 50 ? '...' : '') : '(사진)';
             showChatNotification('1:1 ' + (d.nickname || ''), dmPreview, 'dm-' + (d.message_id || ''));
@@ -715,6 +729,19 @@
     var isEmojiOnly = !imageUrl && isOnlyEmoji(text);
     var hasImage = !!imageUrl;
 
+    function makeTimeWrap() {
+      var wrap = document.createElement('div');
+      wrap.className = 'roomMsgTimeWrap';
+      if (unreadCount > 0) {
+        var badge = document.createElement('span');
+        badge.className = 'unread-badge';
+        badge.textContent = unreadCount;
+        wrap.appendChild(badge);
+      }
+      wrap.appendChild(ts);
+      return wrap;
+    }
+
     if (isMe) {
       if (hasImage) {
         var imgW = document.createElement('div');
@@ -731,13 +758,7 @@
           imgW.appendChild(c);
         }
         row.appendChild(imgW);
-        row.appendChild(ts);
-        if (unreadCount > 0) {
-          var badge = document.createElement('span');
-          badge.className = 'unread-badge';
-          badge.textContent = unreadCount;
-          row.appendChild(badge);
-        }
+        row.appendChild(makeTimeWrap());
         if (messageId) {
           imgW.addEventListener('contextmenu', function (e) {
             e.preventDefault();
@@ -749,13 +770,7 @@
         emojiDiv.className = 'roomMsgEmoji roomMsgEmoji--me';
         emojiDiv.textContent = text;
         row.appendChild(emojiDiv);
-        row.appendChild(ts);
-        if (unreadCount > 0) {
-          var badgeE = document.createElement('span');
-          badgeE.className = 'unread-badge';
-          badgeE.textContent = unreadCount;
-          row.appendChild(badgeE);
-        }
+        row.appendChild(makeTimeWrap());
         if (messageId) {
           emojiDiv.addEventListener('contextmenu', function (e) {
             e.preventDefault();
@@ -767,13 +782,7 @@
         b.className = 'roomBubble me';
         b.innerHTML = '<span class="roomMsgText">' + linkify(text || '') + '</span>';
         row.appendChild(b);
-        row.appendChild(ts);
-        if (unreadCount > 0) {
-          var badgeB = document.createElement('span');
-          badgeB.className = 'unread-badge';
-          badgeB.textContent = unreadCount;
-          row.appendChild(badgeB);
-        }
+        row.appendChild(makeTimeWrap());
         if (messageId) {
           b.addEventListener('contextmenu', function (e) {
             e.preventDefault();
@@ -1402,11 +1411,37 @@
 
   document.addEventListener('click', function () { hideParticipantDmBtns(); });
 
-  // 알림 켜기/끄기 버튼
+  // 알림 켜기/끄기 버튼 (켤 때 사용자 제스처로 권한 요청 → 허용 시 비활성 탭에서도 우측/하단 팝업 알림)
   if (notificationToggleBtn) {
     notificationToggleBtn.addEventListener('click', function () {
       var enabled = getNotificationEnabled();
-      setNotificationEnabled(!enabled);
+      if (enabled) {
+        setNotificationEnabled(false);
+        return;
+      }
+      if (!('Notification' in window)) {
+        setNotificationEnabled(false);
+        return;
+      }
+      if (Notification.permission === 'denied') {
+        alert('이 사이트의 알림이 브라우저에서 차단되어 있습니다.\n주소창 왼쪽 자물쇠(또는 설정) → 사이트 설정 → 알림을 허용해 주세요.');
+        return;
+      }
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().then(function (perm) {
+          if (perm === 'granted') {
+            setNotificationEnabled(true);
+          } else {
+            setNotificationEnabled(false);
+          }
+          updateNotificationIcon();
+        }).catch(function () {
+          setNotificationEnabled(false);
+          updateNotificationIcon();
+        });
+        return;
+      }
+      setNotificationEnabled(true);
     });
   }
 
@@ -1666,6 +1701,9 @@
     var disconnected = !ws || ws.readyState !== WebSocket.OPEN;
     if (inRoom && disconnected && myNickname) {
       connect();
+    }
+    if (inRoom && activeTabId && activeTabId.indexOf('dm-') === 0 && currentDmRoomId) {
+      sendDmViewedRoom();
     }
   });
 

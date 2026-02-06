@@ -1248,16 +1248,23 @@ async def ws_dm(websocket: WebSocket) -> None:
             ts = _utc_datetime_str_to_seoul_hhmm(raw)
             msg_id = m.get("id")
             message_id = f"{room_id}-{msg_id}"
-            await websocket.send_text(json.dumps({
+            is_me = m.get("is_me", False)
+            payload = {
                 "type": "chat",
                 "message_id": message_id,
                 "nickname": m["nickname"],
                 "text": m.get("text", ""),
                 "image_url": m.get("image_url"),
                 "timestamp": ts,
-                "is_me": m.get("is_me", False),
+                "is_me": is_me,
                 "is_history": True,
-            }, ensure_ascii=False))
+            }
+            # 내가 보낸 메시지 중 상대가 아직 읽지 않은 것은 unread_count 전달 (배지는 수신자 확인 시에만 사라짐)
+            if is_me:
+                status = _dm_message_read_status.get((room_id, message_id))
+                if status and not status.get("read"):
+                    payload["unread_count"] = 1
+            await websocket.send_text(json.dumps(payload, ensure_ascii=False))
         # 접속 등록 (같은 user_id의 기존 연결 제거하고 추가)
         db_user = db.get_user_by_id(user_id)
         nickname = (db_user and db_user.get("name")) or user_info.get("name") or "User"
@@ -1266,6 +1273,10 @@ async def ws_dm(websocket: WebSocket) -> None:
                 _dm_connections[room_id] = []
             _dm_connections[room_id] = [(ws, u) for ws, u in _dm_connections[room_id] if u.get("id") != user_id]
             _dm_connections[room_id].append((websocket, {"id": user_id, "name": nickname}))
+        # 재입장 시: 내가 보낸 미읽음 메시지의 sender_ws를 이 연결로 갱신 (read_update 수신 가능하도록)
+        for key, status in list(_dm_message_read_status.items()):
+            if key[0] == room_id and status.get("sender_id") == user_id and not status.get("read"):
+                status["sender_ws"] = websocket
 
         while True:
             raw = await websocket.receive_text()
@@ -1339,15 +1350,14 @@ async def ws_dm(websocket: WebSocket) -> None:
                             break
             
             elif data.get("type") == "read" and (data.get("message_id") or "").strip():
-                # DM 메시지 읽음 처리
+                # DM 메시지 읽음 처리 (개별 메시지)
                 message_id = data["message_id"]
                 key = (room_id, message_id)
                 if key in _dm_message_read_status:
                     status = _dm_message_read_status[key]
                     status["read"] = True
-                    # 발신자에게 읽음 업데이트 전송
                     sender_ws = status["sender_ws"]
-                    if sender_ws in [ws for ws, _ in _dm_connections.get(room_id, [])]:
+                    if sender_ws and sender_ws in [w for w, _ in _dm_connections.get(room_id, [])]:
                         try:
                             await sender_ws.send_text(json.dumps({
                                 "type": "read_update",
@@ -1356,8 +1366,30 @@ async def ws_dm(websocket: WebSocket) -> None:
                             }, ensure_ascii=False))
                         except Exception:
                             pass
-                    # 읽음 처리 완료되면 상태 삭제
                     del _dm_message_read_status[key]
+            
+            elif data.get("type") == "viewed_room":
+                # 상대가 해당 1:1 채팅 화면을 활성화했을 때만: 이 방에서 나에게 온 모든 미읽음 메시지를 읽음 처리
+                to_delete = []
+                for key, status in _dm_message_read_status.items():
+                    if key[0] != room_id:
+                        continue
+                    if status.get("sender_id") == user_id:
+                        continue
+                    status["read"] = True
+                    sender_ws = status.get("sender_ws")
+                    if sender_ws and sender_ws in [w for w, _ in _dm_connections.get(room_id, [])]:
+                        try:
+                            await sender_ws.send_text(json.dumps({
+                                "type": "read_update",
+                                "message_id": key[1],
+                                "unread_count": 0,
+                            }, ensure_ascii=False))
+                        except Exception:
+                            pass
+                    to_delete.append(key)
+                for k in to_delete:
+                    _dm_message_read_status.pop(k, None)
             
             elif data.get("type") == "edit" and (data.get("message_id") or "").strip():
                 # DM 메시지 수정 (본인 메시지만)
@@ -1411,10 +1443,10 @@ async def ws_dm(websocket: WebSocket) -> None:
                 _dm_connections[room_id] = [(w, u) for w, u in _dm_connections[room_id] if w is not websocket]
                 if not _dm_connections[room_id]:
                     del _dm_connections[room_id]
-        # 이 연결과 관련된 읽음 상태 정리
-        to_delete = [k for k, v in _dm_message_read_status.items() if k[0] == room_id and v.get("sender_ws") == websocket]
-        for k in to_delete:
-            _dm_message_read_status.pop(k, None)
+        # 발신자 퇴장 시: 읽음 상태는 유지하고 sender_ws만 None으로 (상대가 확인했을 때만 배지 사라지므로)
+        for v in _dm_message_read_status.values():
+            if v.get("sender_ws") == websocket:
+                v["sender_ws"] = None
 
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

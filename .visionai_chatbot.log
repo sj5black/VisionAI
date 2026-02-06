@@ -1,49 +1,34 @@
 INFO:     Will watch for changes in these directories: ['/home/teddy/VisionAI']
 INFO:     Uvicorn running on http://0.0.0.0:8004 (Press CTRL+C to quit)
-INFO:     Started reloader process [710934] using WatchFiles
-INFO:     Started server process [710937]
+INFO:     Started reloader process [716832] using WatchFiles
+INFO:     Started server process [716835]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     112.171.67.160:12908 - "GET /room HTTP/1.1" 200 OK
-INFO:     112.171.67.160:12908 - "GET /static/room.js HTTP/1.1" 200 OK
-INFO:     112.171.67.160:12908 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     112.171.67.160:12908 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     112.171.67.160:12908 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     112.171.67.160:12199 - "WebSocket /ws/room" [accepted]
+INFO:     112.171.67.160:6250 - "GET /room HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6250 - "GET /static/room.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12401 - "GET /static/room.js HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:6250 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6250 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6250 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10027 - "WebSocket /ws/room" [accepted]
 INFO:     connection open
-INFO:     112.171.67.160:11355 - "WebSocket /ws/room" [accepted]
+INFO:     112.171.67.160:5955 - "WebSocket /ws/room" [accepted]
 INFO:     connection open
-INFO:     112.171.67.160:9112 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     112.171.67.160:11286 - "GET /room HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     112.171.67.160:11286 - "GET /static/room.css HTTP/1.1" 200 OK
-INFO:     112.171.67.160:2752 - "GET /static/room.js HTTP/1.1" 200 OK
-INFO:     112.171.67.160:2752 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     112.171.67.160:11286 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     112.171.67.160:2752 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     112.171.67.160:2752 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     112.171.67.160:12005 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     112.171.67.160:9109 - "WebSocket /ws/room" [accepted]
+INFO:     112.171.67.160:3235 - "WebSocket /ws/dm" [accepted]
 INFO:     connection open
 INFO:     connection closed
-INFO:     112.171.67.160:3184 - "GET /room HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4141 - "GET /room HTTP/1.1" 200 OK
 INFO:     connection closed
-INFO:     112.171.67.160:4684 - "GET /static/room.js HTTP/1.1" 200 OK
-INFO:     112.171.67.160:3184 - "GET /static/room.css HTTP/1.1" 200 OK
-INFO:     112.171.67.160:4684 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     112.171.67.160:4684 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     112.171.67.160:3184 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     112.171.67.160:9203 - "WebSocket /ws/room" [accepted]
-INFO:     112.171.67.160:3184 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     connection open
-INFO:     112.171.67.160:9868 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     112.171.67.160:12559 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
 INFO:     connection closed
-INFO:     112.171.67.160:4407 - "WebSocket /ws/dm" [accepted]
+INFO:     112.171.67.160:4141 - "GET /static/room.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12847 - "GET /static/room.js HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12847 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12847 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4141 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:4141 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4690 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:5158 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:2288 - "WebSocket /ws/dm" [accepted]
 INFO:     connection open

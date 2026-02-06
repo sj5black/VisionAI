@@ -87,6 +87,7 @@ _conversations: Dict[str, Dict[str, Any]] = {}
 
 # 멀티 채팅방: (websocket, user_info) 목록. user_info = {id, name, email}
 _room_connections: List[tuple[WebSocket, Dict[str, Any]]] = []
+_room_connections_lock = asyncio.Lock()
 # 메시지 읽음 상태: {message_id: {"sender_ws": WebSocket, "read_by": Set[str], "total_participants": int}}
 _message_read_status: Dict[str, Dict[str, Any]] = {}
 # 메시지 저장 (수정/삭제용): {message_id: {"sender_nickname": str, "text": str}}
@@ -107,6 +108,9 @@ _chess_pending_task: Optional[asyncio.Task] = None
 
 # 1:1 DM: {room_id: [(websocket, user_info), ...]}
 _dm_connections: Dict[int, List[tuple[WebSocket, Dict[str, Any]]]] = {}
+_dm_connections_lock = asyncio.Lock()
+# DM 메시지 읽음 상태: {(room_id, message_id): {"sender_id": int, "sender_ws": WebSocket, "read": bool}}
+_dm_message_read_status: Dict[tuple[int, str], Dict[str, Any]] = {}
 
 
 def _get_captured_piece(board: chess.Board, move: chess.Move) -> Optional[str]:
@@ -208,6 +212,20 @@ SEOUL_TZ = timezone(timedelta(hours=9))
 def _seoul_time_str() -> str:
     """현재 서울(UTC+9) 기준 24시 형식 시간 반환 (HH:MM)."""
     return datetime.now(SEOUL_TZ).strftime("%H:%M")
+
+
+def _utc_datetime_str_to_seoul_hhmm(utc_str: str) -> str:
+    """DB 등에 저장된 UTC 시각 문자열('YYYY-MM-DD HH:MM:SS')을 서울(KST) HH:MM으로 변환.
+    다른 PC/서버에서 저장된 메시지도 서울 기준으로 표시하기 위함."""
+    if not utc_str or len(utc_str) < 16:
+        return _seoul_time_str()
+    try:
+        # naive UTC로 파싱 후 timezone 붙여서 서울로 변환
+        dt = datetime.strptime(utc_str[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        seoul = dt.astimezone(SEOUL_TZ)
+        return seoul.strftime("%H:%M")
+    except (ValueError, TypeError):
+        return _seoul_time_str()
 
 
 def _contains_korean(text: str) -> bool:
@@ -620,6 +638,28 @@ async def auth_logout(request: Request):
     return RedirectResponse(url="/", status_code=302)
 
 
+@app.post("/api/auth/withdraw")
+async def api_auth_withdraw(request: Request):
+    """회원탈퇴. 로그인 상태에서만 가능. 탈퇴 후 세션 삭제 및 홈으로 리다이렉트."""
+    user = await auth_module.get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+    try:
+        body = await request.json() or {}
+    except Exception:
+        body = {}
+    password = (body.get("password") or "").strip()
+    if not password:
+        raise HTTPException(status_code=400, detail="비밀번호를 입력해 주세요.")
+    db_user = db.get_user_by_username(user.get("username") or "")
+    if not db_user or not auth_module.verify_password(password, db_user["password_hash"]):
+        raise HTTPException(status_code=400, detail="비밀번호가 일치하지 않습니다.")
+    if not db.delete_user(user["id"]):
+        raise HTTPException(status_code=500, detail="탈퇴 처리에 실패했습니다.")
+    request.session.clear()
+    return RedirectResponse(url="/", status_code=302)
+
+
 @app.get("/api/auth/me")
 async def api_auth_me(request: Request):
     """현재 로그인 유저."""
@@ -816,8 +856,14 @@ async def ws_room(websocket: WebSocket) -> None:
             "name": db_user["name"],
         }
         nickname = user_info["name"]
-        _room_connections.append((websocket, user_info))
-        participants = _build_participants_list()
+        user_id = user_info["id"]
+        
+        # 같은 user_id의 기존 연결을 제거하고 새 연결 추가 (로그아웃 후 재로그인 시 중복 방지)
+        async with _room_connections_lock:
+            _room_connections[:] = [(ws, u) for ws, u in _room_connections if u.get("id") != user_id]
+            _room_connections.append((websocket, user_info))
+            participants = _build_participants_list()
+        
         await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=websocket)
         await websocket.send_text(json.dumps({"type": "participants", "list": participants}, ensure_ascii=False))
         await websocket.send_text(json.dumps({"type": "serena_status", "present": _serena_invited}, ensure_ascii=False))
@@ -1134,7 +1180,8 @@ async def ws_room(websocket: WebSocket) -> None:
         print(f"WebSocket connection error for {nickname}: {e}")
     finally:
         if user_info is not None:
-            _room_connections[:] = [(w, u) for w, u in _room_connections if w is not websocket]
+            async with _room_connections_lock:
+                _room_connections[:] = [(w, u) for w, u in _room_connections if w is not websocket]
             # 퇴장한 유저가 읽지 않은 메시지의 읽음 상태 업데이트
             for message_id, status in list(_message_read_status.items()):
                 if websocket == status["sender_ws"]:
@@ -1159,7 +1206,8 @@ async def ws_room(websocket: WebSocket) -> None:
                     if unread_count == 0:
                         del _message_read_status[message_id]
                         _room_messages.pop(message_id, None)
-            participants = _build_participants_list()
+            async with _room_connections_lock:
+                participants = _build_participants_list()
             await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=None)
             await _room_broadcast({"type": "system", "message": f"{nickname}님이 퇴장했습니다."}, exclude_ws=None)
 
@@ -1193,14 +1241,16 @@ async def ws_dm(websocket: WebSocket) -> None:
             await websocket.send_text(json.dumps({"type": "error", "message": "대화방을 찾을 수 없습니다."}, ensure_ascii=False))
             await websocket.close()
             return
-        # 기존 메시지 전송
+        # 기존 메시지 전송 (저장 시각은 UTC이므로 서울 시간으로 변환해 전송)
         messages = db.get_dm_messages(room_id, user_id)
         for m in messages:
             raw = m.get("created_at") or ""
-            ts = raw[-8:-3] if len(raw) >= 8 else _seoul_time_str()  # "HH:MM" from "YYYY-MM-DD HH:MM:SS"
+            ts = _utc_datetime_str_to_seoul_hhmm(raw)
+            msg_id = m.get("id")
+            message_id = f"{room_id}-{msg_id}"
             await websocket.send_text(json.dumps({
                 "type": "chat",
-                "message_id": str(m["id"]),
+                "message_id": message_id,
                 "nickname": m["nickname"],
                 "text": m.get("text", ""),
                 "image_url": m.get("image_url"),
@@ -1208,12 +1258,14 @@ async def ws_dm(websocket: WebSocket) -> None:
                 "is_me": m.get("is_me", False),
                 "is_history": True,
             }, ensure_ascii=False))
-        # 접속 등록
-        if room_id not in _dm_connections:
-            _dm_connections[room_id] = []
+        # 접속 등록 (같은 user_id의 기존 연결 제거하고 추가)
         db_user = db.get_user_by_id(user_id)
         nickname = (db_user and db_user.get("name")) or user_info.get("name") or "User"
-        _dm_connections[room_id].append((websocket, {"id": user_id, "name": nickname}))
+        async with _dm_connections_lock:
+            if room_id not in _dm_connections:
+                _dm_connections[room_id] = []
+            _dm_connections[room_id] = [(ws, u) for ws, u in _dm_connections[room_id] if u.get("id") != user_id]
+            _dm_connections[room_id].append((websocket, {"id": user_id, "name": nickname}))
 
         while True:
             raw = await websocket.receive_text()
@@ -1226,23 +1278,39 @@ async def ws_dm(websocket: WebSocket) -> None:
                 # DB 저장 (Serena 없음 - 1:1은 유저 간만)
                 msg_id = db.save_dm_message(room_id, user_id, text, image_url or None)
                 ts = _seoul_time_str()
+                message_id = f"{room_id}-{msg_id}"
                 payload = {
                     "type": "chat",
-                    "message_id": str(msg_id),
+                    "message_id": message_id,
                     "nickname": nickname,
                     "text": text,
                     "timestamp": ts,
                 }
                 if image_url:
                     payload["image_url"] = image_url
+                
                 # 같은 방의 다른 참여자에게 전송
                 room_obj = db.get_dm_room(room_id, user_id)
                 recipient_id = room_obj["other_user"]["id"] if room_obj else None
                 recipient_in_dm = False
+                
+                # 수신자가 DM 채팅창을 열고 있는지 확인
+                for ws, u in _dm_connections.get(room_id, []):
+                    if ws is not websocket and u.get("id") == recipient_id:
+                        recipient_in_dm = True
+                        break
+                
+                # 읽음 상태 초기화 (수신자가 채팅창 열고 있으면 읽음 처리)
+                unread_count = 0 if recipient_in_dm else 1
+                _dm_message_read_status[(room_id, message_id)] = {
+                    "sender_id": user_id,
+                    "sender_ws": websocket,
+                    "read": recipient_in_dm,
+                }
+                
+                # 발신자와 수신자에게 메시지 전송
                 for ws, u in _dm_connections.get(room_id, []):
                     if ws is not websocket:
-                        if u.get("id") == recipient_id:
-                            recipient_in_dm = True
                         try:
                             p = {**payload, "is_me": False}
                             await ws.send_text(json.dumps(p, ensure_ascii=False))
@@ -1250,7 +1318,7 @@ async def ws_dm(websocket: WebSocket) -> None:
                             pass
                     else:
                         try:
-                            p = {**payload, "is_me": True}
+                            p = {**payload, "is_me": True, "unread_count": unread_count}
                             await websocket.send_text(json.dumps(p, ensure_ascii=False))
                         except Exception:
                             pass
@@ -1269,15 +1337,84 @@ async def ws_dm(websocket: WebSocket) -> None:
                             except Exception:
                                 pass
                             break
+            
+            elif data.get("type") == "read" and (data.get("message_id") or "").strip():
+                # DM 메시지 읽음 처리
+                message_id = data["message_id"]
+                key = (room_id, message_id)
+                if key in _dm_message_read_status:
+                    status = _dm_message_read_status[key]
+                    status["read"] = True
+                    # 발신자에게 읽음 업데이트 전송
+                    sender_ws = status["sender_ws"]
+                    if sender_ws in [ws for ws, _ in _dm_connections.get(room_id, [])]:
+                        try:
+                            await sender_ws.send_text(json.dumps({
+                                "type": "read_update",
+                                "message_id": message_id,
+                                "unread_count": 0,
+                            }, ensure_ascii=False))
+                        except Exception:
+                            pass
+                    # 읽음 처리 완료되면 상태 삭제
+                    del _dm_message_read_status[key]
+            
+            elif data.get("type") == "edit" and (data.get("message_id") or "").strip():
+                # DM 메시지 수정 (본인 메시지만)
+                message_id_str = data["message_id"]
+                new_text = (data.get("text") or "").strip()[:2000]
+                parts = message_id_str.split("-", 1)
+                if len(parts) != 2:
+                    continue
+                try:
+                    msg_id = int(parts[1])
+                except ValueError:
+                    continue
+                if db.update_dm_message(room_id, msg_id, user_id, text=new_text):
+                    for ws, _ in _dm_connections.get(room_id, []):
+                        try:
+                            await ws.send_text(json.dumps({
+                                "type": "edit",
+                                "message_id": message_id_str,
+                                "text": new_text,
+                            }, ensure_ascii=False))
+                        except Exception:
+                            pass
+            
+            elif data.get("type") == "delete" and (data.get("message_id") or "").strip():
+                # DM 메시지 삭제 (본인 메시지만)
+                message_id_str = data["message_id"]
+                parts = message_id_str.split("-", 1)
+                if len(parts) != 2:
+                    continue
+                try:
+                    msg_id = int(parts[1])
+                except ValueError:
+                    continue
+                if db.delete_dm_message(room_id, msg_id, user_id):
+                    for ws, _ in _dm_connections.get(room_id, []):
+                        try:
+                            await ws.send_text(json.dumps({
+                                "type": "delete",
+                                "message_id": message_id_str,
+                            }, ensure_ascii=False))
+                        except Exception:
+                            pass
+    
     except WebSocketDisconnect:
         pass
     except Exception as e:
         print(f"DM WebSocket error: {e}")
     finally:
         if room_id and room_id in _dm_connections:
-            _dm_connections[room_id] = [(w, u) for w, u in _dm_connections[room_id] if w is not websocket]
-            if not _dm_connections[room_id]:
-                del _dm_connections[room_id]
+            async with _dm_connections_lock:
+                _dm_connections[room_id] = [(w, u) for w, u in _dm_connections[room_id] if w is not websocket]
+                if not _dm_connections[room_id]:
+                    del _dm_connections[room_id]
+        # 이 연결과 관련된 읽음 상태 정리
+        to_delete = [k for k, v in _dm_message_read_status.items() if k[0] == room_id and v.get("sender_ws") == websocket]
+        for k in to_delete:
+            _dm_message_read_status.pop(k, None)
 
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

@@ -36,9 +36,68 @@ body {
   flex: 1;
   min-height: 0;
   width: 100%;
+  position: relative;
+}
+
+/* 채팅창 숨김 시 완전히 접기 */
+.room-page .room-layout.chat-panel-hidden .room-chat-panel {
+  flex: 0 0 0;
+  min-width: 0;
+  max-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border-right: none;
+  opacity: 0;
+}
+
+.room-page .room-layout.chat-panel-hidden .chat-panel-show-btn {
+  display: flex;
+}
+
+.chat-panel-show-btn {
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 200;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 48px;
+  padding: 20px 8px;
+  border: 1px solid var(--border);
+  border-left: none;
+  border-radius: 0 12px 12px 0;
+  background: rgba(29, 155, 240, 0.15);
+  backdrop-filter: blur(10px);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s ease;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
+}
+
+.chat-panel-show-btn:hover {
+  background: rgba(29, 155, 240, 0.3);
+  width: 52px;
+  box-shadow: 3px 0 16px rgba(29, 155, 240, 0.4);
+}
+
+.chat-panel-show-btn svg {
+  flex-shrink: 0;
+}
+
+.chat-panel-show-label {
+  font-weight: 600;
+  letter-spacing: 1px;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
 }
 
 .room-page .room-chat-panel {
+  position: relative;
   flex: 0 0 45%;
   min-width: 320px;
   max-width: 640px;
@@ -52,6 +111,7 @@ body {
   border-right: 1px solid var(--border);
   box-sizing: border-box;
   overflow: hidden;
+  transition: flex 0.3s ease, min-width 0.3s ease, max-width 0.3s ease, padding 0.3s ease;
 }
 
 .room-page .room-iframe {
@@ -221,10 +281,14 @@ body {
 .dmChatHeaderBar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 8px;
+  padding: 12px 20px;
+  margin: 0 12px 12px 12px;
+  background: var(--bg-secondary);
+  border-bottom: 2px solid var(--border);
+  border-radius: 10px;
+  flex-shrink: 0;
 }
 
 .dmBackLink {
@@ -289,10 +353,28 @@ body {
 }
 
 .dmChatHeader {
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
   font-weight: 600;
-  margin-bottom: 8px;
+  font-size: 1.1em;
+  color: var(--text);
+  flex: 1;
+}
+
+.dmCloseBtn {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.dmCloseBtn:hover {
+  background: var(--bg-hover);
+  color: var(--primary);
 }
 
 .dmMessages {
@@ -1405,6 +1487,26 @@ body {
     padding: 6px 4px 6px 6px;
   }
 
+  /* 모바일에서 펼치기 버튼을 화면 왼쪽 상단에 가로 형태로 */
+  .chat-panel-show-btn {
+    top: 16px;
+    transform: none;
+    width: auto;
+    flex-direction: row;
+    padding: 10px 14px;
+    gap: 6px;
+  }
+
+  .chat-panel-show-btn:hover {
+    width: auto;
+  }
+
+  .chat-panel-show-label {
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
+    letter-spacing: 0.5px;
+  }
+
   .room-page .room-chat-panel .card {
     padding: 10px 8px;
   }
@@ -1609,6 +1711,10 @@ body {
 }
 
 .link-leave:hover {
+  color: #fca5a5;
+}
+
+.link-withdraw:hover {
   color: #fca5a5;
 }
 

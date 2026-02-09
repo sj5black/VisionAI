@@ -1,17 +1,16 @@
 """
-Step 3: 표정·행동 분석 — OpenFace 2.0 (Action Units) 기반
+Step 3: 표정·행동 분석 — 다중 백엔드 지원
 
-- OpenFace 2.0 호환: pyfaceau 사용 (얼굴 위치, head pose, gaze, AU intensity/presence)
-- AU 조합 → 표정: 진짜 웃음(AU12+AU6), 가짜 웃음(AU12 only), 집중(AU4+AU7), 놀람(AU1+AU2) 등
-- 추가 학습 없음
+지원 백엔드:
+- openclip: OpenCLIP zero-shot (ViT-B-32) — 동물 표정/자세 (기존 방식)
+- deepface: DeepFace — 7가지 기본 감정 (이미지 전용)
+- pyfaceau: OpenFace 2.0 — AU + head pose (영상 전용, 이미지는 임시 비디오 변환)
 """
 
 from __future__ import annotations
 from typing import Optional, Tuple
 from dataclasses import dataclass
 import numpy as np
-
-from .openface_analyzer import analyze_frame as _openface_analyze
 
 
 @dataclass
@@ -24,22 +23,20 @@ class EmotionResult:
     combined_state: str
 
 
-# 파이프라인/API에서 참조하는 라벨 목록 (OpenFace AU 기반)
-EXPRESSION_LABELS = [
-    "neutral", "real_smile", "fake_smile", "focused", "surprised",
-    "sad", "displeased", "attention",
-]
-POSE_LABELS = ["front", "looking_down", "looking_up", "looking_side"]
+# 각 백엔드별 라벨
+from .emotion_categories import EXPRESSION_LABELS, POSE_LABELS
+from .openclip_analyzer import EMOTION_CLASSES_OPENCLIP, POSE_CLASSES_OPENCLIP
 
 
 class EmotionAnalyzer:
     """
-    OpenFace 2.0 (pyfaceau) 기반 표정·행동 분석기.
-    AU intensity → 표정 라벨, head pose → 자세 라벨.
+    다중 백엔드 지원 표정·행동 분석기.
+    
+    지원 백엔드:
+    - openclip: 기존 OpenCLIP zero-shot 방식
+    - deepface: DeepFace 감정 분석
+    - pyfaceau: OpenFace 2.0 AU 분석
     """
-
-    EMOTION_CLASSES = EXPRESSION_LABELS
-    POSE_CLASSES = POSE_LABELS
 
     def __init__(
         self,
@@ -47,12 +44,37 @@ class EmotionAnalyzer:
         device: str = "auto",
         use_swin_when_no_model: bool = False,
         use_openclip_when_no_model: bool = False,
+        emotion_backend: str = "openclip",  # openclip | deepface | pyfaceau
     ):
         """
-        OpenFace만 사용. model_path / use_swin / use_openclip 인자는 호환용으로 무시.
+        Args:
+            emotion_backend: 사용할 백엔드 ("openclip", "deepface", "pyfaceau")
         """
-        self._emotion_backend_name = "OpenFace 2.0 (AU)"
-        print("✓ 감정 분석: OpenFace 2.0 (Action Units) — 진짜/가짜 웃음, 집중, 놀람 등")
+        self.device = device
+        self.backend = (emotion_backend or "openclip").lower()
+        
+        if self.backend == "openclip":
+            self._emotion_backend_name = "OpenCLIP (기존 방식)"
+            self.EMOTION_CLASSES = EMOTION_CLASSES_OPENCLIP
+            self.POSE_CLASSES = POSE_CLASSES_OPENCLIP
+            print("✓ 감정 분석: OpenCLIP (Vision-Language, 16 emotions + 18 poses)")
+        elif self.backend == "deepface":
+            self._emotion_backend_name = "DeepFace (이미지)"
+            self.EMOTION_CLASSES = EXPRESSION_LABELS
+            self.POSE_CLASSES = POSE_LABELS
+            print("✓ 감정 분석: DeepFace (7가지 기본 감정)")
+        elif self.backend == "pyfaceau":
+            self._emotion_backend_name = "OpenFace 2.0 (AU + pose)"
+            self.EMOTION_CLASSES = EXPRESSION_LABELS
+            self.POSE_CLASSES = POSE_LABELS
+            print("✓ 감정 분석: OpenFace 2.0 (Action Units + head pose)")
+        else:
+            # 기본값
+            self.backend = "openclip"
+            self._emotion_backend_name = "OpenCLIP (기본)"
+            self.EMOTION_CLASSES = EMOTION_CLASSES_OPENCLIP
+            self.POSE_CLASSES = POSE_CLASSES_OPENCLIP
+            print("✓ 감정 분석: OpenCLIP (기본)")
 
     @property
     def emotion_backend_name(self) -> str:
@@ -66,17 +88,51 @@ class EmotionAnalyzer:
     ) -> EmotionResult:
         """
         이미지(및 선택적 bbox)에서 표정·자세 분석.
-        OpenFace 2.0 AU → 표정, head pose → 자세.
+        백엔드에 따라 다른 분석 방법 사용.
         """
-        out = _openface_analyze(image, bbox=bbox)
-        return EmotionResult(
-            emotion=out.expression,
-            emotion_confidence=out.expression_confidence,
-            pose=out.pose,
-            pose_confidence=out.pose_confidence,
-            combined_state=out.combined_state,
-        )
+        if self.backend == "openclip":
+            from .openclip_analyzer import analyze_image_openclip
+            result = analyze_image_openclip(image, bbox, device=self.device, species=species)
+            return EmotionResult(
+                emotion=result.expression,
+                emotion_confidence=result.expression_confidence,
+                pose=result.pose,
+                pose_confidence=result.pose_confidence,
+                combined_state=result.combined_state,
+            )
+        
+        elif self.backend == "deepface":
+            from .deepface_analyzer import analyze_image
+            result = analyze_image(image, bbox)
+            return EmotionResult(
+                emotion=result.expression,
+                emotion_confidence=result.expression_confidence,
+                pose=result.pose,
+                pose_confidence=result.pose_confidence,
+                combined_state=result.combined_state,
+            )
+        
+        elif self.backend == "pyfaceau":
+            from .openface_analyzer import analyze_frame
+            result = analyze_frame(image, bbox)
+            return EmotionResult(
+                emotion=result.expression,
+                emotion_confidence=result.expression_confidence,
+                pose=result.pose,
+                pose_confidence=result.pose_confidence,
+                combined_state=result.combined_state,
+            )
+        
+        else:
+            # fallback
+            return EmotionResult(
+                emotion="neutral",
+                emotion_confidence=0.0,
+                pose="sitting",
+                pose_confidence=0.0,
+                combined_state="neutral",
+            )
 
     def save_model(self, save_path: str) -> None:
-        """OpenFace는 사전 학습 모델만 사용하므로 저장 없음."""
-        print("⚠ OpenFace 모드에서는 저장할 학습 가중치가 없습니다.")
+        """사전 학습 모델만 사용하므로 저장 없음."""
+        print(f"⚠ {self.backend} 모드에서는 저장할 학습 가중치가 없습니다.")

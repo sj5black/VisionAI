@@ -16,8 +16,12 @@ open_clip_torch
 # Video analysis (VisionAI webapp 영상 표정·기분 분석)
 opencv-python
 
-# OpenFace 2.0 호환 표정/행동 분석 (Action Units, head pose, gaze)
+# OpenFace 2.0 호환 표정/행동 분석 (Action Units, head pose, gaze) - 영상 전용
 pyfaceau
+
+# 이미지 표정 분석 - 이미지 전용
+deepface
+tf-keras  # deepface 의존성
 
 openai>=1.0.0
 python-dotenv>=1.0.0

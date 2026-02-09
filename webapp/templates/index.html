@@ -34,6 +34,16 @@
             </select>
           </div>
 
+          <div class="row" id="emotionBackendRow">
+            <label class="label" for="emotionBackend">표정·자세 분석 모델</label>
+            <select id="emotionBackend" name="emotion_backend">
+              <option value="openclip" selected>OpenCLIP (기존 방식, 16 감정 + 18 자세)</option>
+              <option value="deepface">DeepFace (7가지 기본 감정)</option>
+              <option value="pyfaceau">OpenFace 2.0 (AU + head pose)</option>
+            </select>
+            <span class="hint">VisionAI Pipeline 사용 시 적용됩니다</span>
+          </div>
+
           <div class="row">
             <label class="label" for="threshold">임계값(Threshold)</label>
             <input id="threshold" name="threshold" type="number" min="0" max="1" step="0.05" value="0.5" />
@@ -59,6 +69,15 @@
           <div class="row">
             <label class="label" for="videoFile">영상 파일</label>
             <input id="videoFile" name="video" type="file" accept="video/mp4,video/webm,video/quicktime,video/x-msvideo" required />
+          </div>
+          <div class="row">
+            <label class="label" for="videoEmotionBackend">표정·자세 분석 모델</label>
+            <select id="videoEmotionBackend" name="emotion_backend">
+              <option value="openclip" selected>OpenCLIP (기존 방식, 16 감정 + 18 자세)</option>
+              <option value="deepface">DeepFace (7가지 기본 감정)</option>
+              <option value="pyfaceau">OpenFace 2.0 (AU + head pose)</option>
+            </select>
+            <span class="hint">영상 프레임별 분석에 사용할 모델</span>
           </div>
           <div class="row">
             <label class="label" for="sampleFps">초당 샘플 수</label>
@@ -127,16 +146,16 @@
         <div id="tableWrap"></div>
         
         <div id="pipelineInfo" class="notice" style="display: none; margin-top: 1rem;">
-          <b>VisionAI Pipeline</b> (OpenFace 2.0 표정·행동 분석) 추가 정보:
+          <b>VisionAI Pipeline</b> 추가 정보:
           <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
-            <li><b>표정/자세 분석</b>: <span id="emotionBackendLabel">OpenFace 2.0 (AU)</span></li>
+            <li><b>표정/자세 분석</b>: <span id="emotionBackendLabel">-</span></li>
             <li><b>행동 예측</b>: 다음 5초 이내 예상 행동</li>
             <li>처리 시간: <span id="processingTime">-</span>초</li>
           </ul>
-          <p style="margin: 0.75rem 0 0.25rem 0;"><b>탐지 가능한 표정 (AU 기반)</b></p>
-          <p id="pipelineEmotionList" class="pipeline-class-list result-text-white" style="margin: 0; padding-left: 1rem;">neutral, real_smile(진짜 웃음), fake_smile(가짜 웃음), focused(집중), surprised(놀람), sad, displeased(찡그림), attention</p>
-          <p style="margin: 0.75rem 0 0.25rem 0;"><b>Head pose</b></p>
-          <p id="pipelinePoseList" class="pipeline-class-list result-text-white" style="margin: 0 0 0.5rem 0; padding-left: 1rem;">front, looking_down, looking_up, looking_side</p>
+          <p style="margin: 0.75rem 0 0.25rem 0;"><b>탐지 가능한 표정</b></p>
+          <p id="pipelineEmotionList" class="pipeline-class-list result-text-white" style="margin: 0; padding-left: 1rem;">-</p>
+          <p style="margin: 0.75rem 0 0.25rem 0;"><b>탐지 가능한 자세</b></p>
+          <p id="pipelinePoseList" class="pipeline-class-list result-text-white" style="margin: 0 0 0.5rem 0; padding-left: 1rem;">-</p>
         </div>
       </section>
     </main>

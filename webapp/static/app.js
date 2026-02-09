@@ -204,6 +204,25 @@ document.addEventListener("DOMContentLoaded", () => {
         if (data.emotion_backend) {
           var backendEl = document.getElementById("emotionBackendLabel");
           if (backendEl) backendEl.textContent = data.emotion_backend;
+          
+          // 백엔드별 감정/자세 라벨 업데이트
+          var emotionListEl = $("pipelineEmotionList");
+          var poseListEl = $("pipelinePoseList");
+          var backend = String(data.emotion_backend).toLowerCase();
+          
+          if (backend.includes("openclip")) {
+            emotionListEl.textContent = "relaxed, happy, content, curious, alert, excited, playful, sleepy, bored, fearful, anxious, stressed, nervous, aggressive, dominant, submissive, affectionate (16종)";
+            poseListEl.textContent = "sitting, standing, lying, running, jumping, walking, crouching, stretching, sleeping, eating, drinking, sniffing, grooming, playing, begging, hiding, rolling, stalking (18종)";
+          } else if (backend.includes("deepface")) {
+            emotionListEl.textContent = "happy, sad, angry, surprise, fear, disgust, neutral → real_smile, sad, displeased, surprised, attention, neutral (7종)";
+            poseListEl.textContent = "front (기본값, DeepFace는 head pose 미지원)";
+          } else if (backend.includes("openface") || backend.includes("pyfaceau")) {
+            emotionListEl.textContent = "neutral, real_smile(진짜 웃음), fake_smile(가짜 웃음), focused(집중), surprised(놀람), sad, displeased(찡그림), attention (8종, AU 기반)";
+            poseListEl.textContent = "front, looking_down, looking_up, looking_side (4종, head pose)";
+          } else {
+            emotionListEl.textContent = "-";
+            poseListEl.textContent = "-";
+          }
         }
         if (data.processing_time) {
           $("processingTime").textContent = Number(data.processing_time).toFixed(3);

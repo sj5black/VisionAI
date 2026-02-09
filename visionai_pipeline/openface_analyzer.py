@@ -1,6 +1,7 @@
 """
-OpenFace 2.0 (pyfaceau) 기반 표정·행동 분석
+OpenFace 2.0 (pyfaceau) 기반 영상 표정·행동 분석
 
+- 영상 전용 (이미지는 deepface_analyzer 사용)
 - 얼굴 위치, head pose, gaze, Action Units (AU) intensity/presence
 - AU 조합 → 표정: 진짜 웃음(AU12+AU6), 가짜 웃음(AU12 only), 집중(AU4+AU7), 놀람(AU1+AU2) 등
 - 추가 학습 없음, OpenFace 2.0 출력만 사용
@@ -11,9 +12,17 @@ from typing import Dict, Optional, Tuple, Any
 from dataclasses import dataclass
 import numpy as np
 import os
+import tempfile
 from pathlib import Path
 
 from .emotion_categories import get_state_from_emotion_pose
+
+# OpenCV import (optional, for video writing)
+try:
+    import cv2
+    CV2_AVAILABLE = True
+except ImportError:
+    CV2_AVAILABLE = False
 
 # AU 강도 임계값 (0~5 스케일, OpenFace 2.0)
 AU_THRESHOLD = 1.5
@@ -98,24 +107,60 @@ def _head_pose_to_pose_label(pose: Optional[Tuple[float, float, float]]) -> Tupl
     return "front", 0.8
 
 
+def analyze_video(video_path: str, max_frames: Optional[int] = None):
+    """
+    영상 파일을 pyfaceau로 분석하여 DataFrame 반환.
+    
+    Args:
+        video_path: 영상 파일 경로
+        max_frames: 최대 처리 프레임 수 (None이면 전체)
+    
+    Returns:
+        pandas.DataFrame: frame, timestamp, success, AU01_r ~ AU45_r, pose_Tx, pose_Ty, pose_Tz 등
+    """
+    try:
+        from pyfaceau import FullPythonAUPipeline
+    except ImportError:
+        print("⚠ 영상 표정 분석을 위해 pyfaceau가 필요합니다: pip install pyfaceau")
+        return None
+    
+    weights_dir = _get_weights_dir()
+    
+    try:
+        pipeline = FullPythonAUPipeline(
+            pdm_file=str(weights_dir / "In-the-wild_aligned_PDM_68.txt"),
+            au_models_dir=str(weights_dir / "AU_predictors"),
+            triangulation_file=str(weights_dir / "tris_68_full.txt"),
+            patch_expert_file=str(weights_dir / "svr_patches_0.25_general.txt"),
+        )
+        
+        df = pipeline.process_video(video_path, max_frames=max_frames)
+        return df
+    
+    except Exception as e:
+        print(f"⚠ pyfaceau 영상 분석 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
 def analyze_frame(
     image: np.ndarray,
     bbox: Optional[Tuple[float, float, float, float]] = None,
 ) -> OpenFaceResult:
     """
     단일 이미지(또는 얼굴 영역)에 대해 OpenFace 2.0 AU 분석 후 표정·자세 반환.
+    
+    pyfaceau는 비디오 전용이므로, 이미지를 1프레임 비디오로 변환 후 처리.
 
     Args:
         image: RGB (H, W, 3)
         bbox: (x1, y1, x2, y2) 사람 bbox. None이면 전체 이미지.
     """
-    try:
-        from pyfaceau import FullPythonAUPipeline
-    except ImportError:
-        if not getattr(analyze_frame, "_warned_pyfaceau", False):
-            print("⚠ OpenFace 2.0 표정 분석을 위해 pyfaceau가 필요합니다: pip install pyfaceau")
-            print("  설치 후 가중치 다운로드: python -m pyfaceau.download_weights")
-            analyze_frame._warned_pyfaceau = True
+    if not CV2_AVAILABLE:
+        if not getattr(analyze_frame, "_warned_cv2", False):
+            print("⚠ OpenFace 2.0 분석을 위해 opencv-python이 필요합니다: pip install opencv-python")
+            analyze_frame._warned_cv2 = True
         return OpenFaceResult(
             success=False,
             expression="neutral",
@@ -127,12 +172,13 @@ def analyze_frame(
             head_pose=None,
         )
 
-    weights_dir = _get_weights_dir()
-    if not weights_dir.exists():
-        if not getattr(analyze_frame, "_warned_weights", False):
-            print("⚠ OpenFace 2.0 가중치가 없습니다. 다운로드: python -m pyfaceau.download_weights")
-            print("  또는 PYFACEAU_WEIGHTS_DIR 환경 변수로 경로 지정")
-            analyze_frame._warned_weights = True
+    try:
+        from pyfaceau import FullPythonAUPipeline
+    except ImportError:
+        if not getattr(analyze_frame, "_warned_pyfaceau", False):
+            print("⚠ OpenFace 2.0 표정 분석을 위해 pyfaceau가 필요합니다: pip install pyfaceau")
+            print("  설치 후 가중치 다운로드: python -m pyfaceau.download_weights")
+            analyze_frame._warned_pyfaceau = True
         return OpenFaceResult(
             success=False,
             expression="neutral",
@@ -166,14 +212,104 @@ def analyze_frame(
             combined_state="neutral",
         )
 
+    # FullPythonAUPipeline 초기화 (캐싱)
+    if not hasattr(analyze_frame, "_pipeline"):
+        try:
+            weights_dir = _get_weights_dir()
+            analyze_frame._pipeline = FullPythonAUPipeline(
+                pdm_file=str(weights_dir / "In-the-wild_aligned_PDM_68.txt"),
+                au_models_dir=str(weights_dir / "AU_predictors"),
+                triangulation_file=str(weights_dir / "tris_68_full.txt"),
+                patch_expert_file=str(weights_dir / "svr_patches_0.25_general.txt"),
+            )
+            if not getattr(analyze_frame, "_init_logged", False):
+                print("✓ OpenFace 2.0 FullPythonAUPipeline 초기화 완료")
+                analyze_frame._init_logged = True
+        except Exception as e:
+            if not getattr(analyze_frame, "_warned_init", False):
+                print(f"⚠ OpenFace 2.0 초기화 실패: {e}")
+                print("  가중치 다운로드: python -m pyfaceau.download_weights")
+                analyze_frame._warned_init = True
+            return OpenFaceResult(
+                success=False,
+                expression="neutral",
+                expression_confidence=0.0,
+                pose="front",
+                pose_confidence=0.0,
+                combined_state="neutral",
+            )
+
     try:
-        pipeline = FullPythonAUPipeline(
-            pdm_file=str(weights_dir / "In-the-wild_aligned_PDM_68.txt"),
-            au_models_dir=str(weights_dir / "AU_predictors"),
-            triangulation_file=str(weights_dir / "tris_68_full.txt"),
-            patch_expert_file=str(weights_dir / "svr_patches_0.25_general.txt"),
+        # 1. 이미지를 1프레임 비디오로 저장
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmpfile:
+            temp_video_path = tmpfile.name
+        
+        # RGB → BGR 변환 (opencv는 BGR 사용)
+        bgr_roi = cv2.cvtColor(roi, cv2.COLOR_RGB2BGR)
+        h, w = bgr_roi.shape[:2]
+        
+        # 비디오 writer 생성 (1 frame, 1 fps)
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        out = cv2.VideoWriter(temp_video_path, fourcc, 1.0, (w, h))
+        out.write(bgr_roi)
+        out.release()
+        
+        # 2. pyfaceau로 처리
+        df = analyze_frame._pipeline.process_video(temp_video_path, max_frames=1)
+        
+        # 3. 임시 파일 삭제
+        os.unlink(temp_video_path)
+        
+        # 4. 결과 추출
+        if df.empty or not df.iloc[0].get("success", False):
+            return OpenFaceResult(
+                success=False,
+                expression="neutral",
+                expression_confidence=0.0,
+                pose="front",
+                pose_confidence=0.0,
+                combined_state="neutral",
+            )
+        
+        row = df.iloc[0]
+        
+        # AU intensities 추출
+        au_cols = [c for c in df.columns if c.startswith("AU") and c.endswith("_r")]
+        au_dict = {col: float(row[col]) for col in au_cols if col in row}
+        
+        # head pose 추출
+        if "pose_Tx" in row and "pose_Ty" in row and "pose_Tz" in row:
+            head_pose = (float(row["pose_Tx"]), float(row["pose_Ty"]), float(row["pose_Tz"]))
+        else:
+            head_pose = None
+        
+        expression, expr_conf = _au_to_expression(au_dict)
+        pose_label, pose_conf = _head_pose_to_pose_label(head_pose)
+        combined_state = get_state_from_emotion_pose(expression, pose_label)
+        
+        return OpenFaceResult(
+            success=True,
+            expression=expression,
+            expression_confidence=expr_conf,
+            pose=pose_label,
+            pose_confidence=pose_conf,
+            combined_state=combined_state,
+            au_intensities=au_dict,
+            head_pose=head_pose,
         )
-    except Exception:
+    
+    except Exception as e:
+        if not getattr(analyze_frame, "_warned_analyze", False):
+            print(f"⚠ OpenFace 2.0 분석 실패: {e}")
+            import traceback
+            traceback.print_exc()
+            analyze_frame._warned_analyze = True
+        # 임시 파일 정리
+        try:
+            if 'temp_video_path' in locals():
+                os.unlink(temp_video_path)
+        except:
+            pass
         return OpenFaceResult(
             success=False,
             expression="neutral",
@@ -182,45 +318,3 @@ def analyze_frame(
             pose_confidence=0.0,
             combined_state="neutral",
         )
-
-    result = pipeline.process_frame(roi, frame_num=0)
-    if not result.get("success"):
-        return OpenFaceResult(
-            success=False,
-            expression="neutral",
-            expression_confidence=0.0,
-            pose="front",
-            pose_confidence=0.0,
-            combined_state="neutral",
-        )
-
-    au_raw = result.get("au_intensities")
-    if isinstance(au_raw, dict):
-        au_dict = {k: float(v) for k, v in au_raw.items()}
-    elif hasattr(au_raw, "__iter__") and not isinstance(au_raw, (str, bytes)):
-        # 리스트/배열인 경우 OpenFace 컬럼 순서에 맞춰 매핑 (AU01_r ~ AU45_r)
-        au_names = ["01", "02", "04", "05", "06", "07", "09", "10", "12", "14", "15", "17", "20", "23", "25", "26", "45"]
-        arr = list(au_raw)[: len(au_names)]
-        au_dict = {f"AU{n}_r": float(arr[i]) if i < len(arr) else 0.0 for i, n in enumerate(au_names)}
-    else:
-        au_dict = {}
-
-    expression, expr_conf = _au_to_expression(au_dict)
-    pose_tuple = result.get("pose")
-    if isinstance(pose_tuple, (list, tuple)) and len(pose_tuple) >= 3:
-        head_pose = (float(pose_tuple[0]), float(pose_tuple[1]), float(pose_tuple[2]))
-    else:
-        head_pose = None
-    pose_label, pose_conf = _head_pose_to_pose_label(head_pose)
-    combined_state = get_state_from_emotion_pose(expression, pose_label)
-
-    return OpenFaceResult(
-        success=True,
-        expression=expression,
-        expression_confidence=expr_conf,
-        pose=pose_label,
-        pose_confidence=pose_conf,
-        combined_state=combined_state,
-        au_intensities=au_dict,
-        head_pose=head_pose,
-    )

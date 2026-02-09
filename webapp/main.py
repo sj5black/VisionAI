@@ -109,12 +109,12 @@ def _get_animal_analyzer(device: Optional[str]) -> Optional[AnimalBehaviorExpres
 
 def _get_pipeline(device: Optional[str], emotion_backend: str = "openclip") -> Optional[Any]:
     """
-    🆕 Lazy-load VisionAI Pipeline. emotion_backend: "openclip" | "swin"
+    🆕 Lazy-load VisionAI Pipeline. emotion_backend: "openclip" | "deepface" | "pyfaceau"
     """
     if not PIPELINE_AVAILABLE:
         return None
     backend = (emotion_backend or "openclip").strip().lower()
-    if backend not in ("openclip", "swin"):
+    if backend not in ("openclip", "deepface", "pyfaceau", "swin"):
         backend = "openclip"
     key = (device or "auto", backend)
     cached = _pipeline_cache.get(key)
@@ -306,29 +306,164 @@ def _mood_summary_ko(emotion_counts: Dict[str, int], dominant_emotion: str) -> s
 
 def _handle_video_analysis(
     video: UploadFile,
-    emotion_backend: str = "openclip",
+    emotion_backend: str = "openclip",  # 영상 분석 모델 선택
     sample_fps: float = 2.0,
     max_duration_sec: float = 30.0,
     conf_threshold: float = 0.5,
 ) -> Dict[str, Any]:
     """
     짧은 영상을 프레임 단위로 샘플링해 표정·자세를 분석하고, 요약 반환.
+    emotion_backend: "openclip" | "deepface" | "pyfaceau"
     """
     if not CV2_AVAILABLE:
         raise HTTPException(
             status_code=503,
             detail="Video analysis requires OpenCV (cv2). Install: pip install opencv-python",
         )
+    
+    backend = (emotion_backend or "openclip").strip().lower()
+    
+    # pyfaceau는 영상 파일을 직접 처리
+    if backend == "pyfaceau":
+        return _handle_video_analysis_pyfaceau(video, sample_fps, max_duration_sec)
+    
+    # openclip/deepface는 프레임별 처리
+    return _handle_video_analysis_pipeline(video, backend, sample_fps, max_duration_sec, conf_threshold)
+
+
+def _handle_video_analysis_pyfaceau(
+    video: UploadFile,
+    sample_fps: float = 2.0,
+    max_duration_sec: float = 30.0,
+) -> Dict[str, Any]:
+    """pyfaceau로 영상 전체 분석 (빠른 방식)"""
+    try:
+        from visionai_pipeline.openface_analyzer import analyze_video, _au_to_expression, _head_pose_to_pose_label
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="Video analysis requires pyfaceau. Install: pip install pyfaceau && python -m pyfaceau.download_weights",
+        )
+
+    file_id = uuid4().hex
+    ext = (Path(video.filename or "").suffix or ".mp4").lower()
+    if ext not in {".mp4", ".webm", ".mov", ".avi", ".mkv"}:
+        ext = ".mp4"
+    upload_path = UPLOAD_DIR / f"{file_id}{ext}"
+    try:
+        with upload_path.open("wb") as f:
+            while True:
+                chunk = video.file.read(1024 * 1024)
+                if not chunk:
+                    break
+                f.write(chunk)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save video: {e}") from e
+
+    # 영상 정보 확인
+    cap = cv2.VideoCapture(str(upload_path))
+    if not cap.isOpened():
+        raise HTTPException(status_code=400, detail="Could not open video file. Unsupported format or corrupted file.")
+    video_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+    duration_sec = total_frames / video_fps if video_fps > 0 else 0
+    cap.release()
+
+    # pyfaceau로 분석 (max_frames 제한)
+    max_frames_to_analyze = int(min(duration_sec, max_duration_sec) * video_fps)
+    start_wall = time.time()
+    
+    df = analyze_video(str(upload_path), max_frames=max_frames_to_analyze)
+    
+    if df is None or df.empty:
+        raise HTTPException(status_code=500, detail="Video analysis failed. Check server logs.")
+    
+    processing_time = time.time() - start_wall
+    
+    # DataFrame에서 결과 추출
+    all_emotions: List[str] = []
+    all_poses: List[str] = []
+    frame_results: List[Dict[str, Any]] = []
+    
+    # AU 컬럼 추출
+    au_cols = [c for c in df.columns if c.startswith("AU") and c.endswith("_r")]
+    
+    for idx, row in df.iterrows():
+        if not row.get("success", False):
+            frame_results.append({
+                "timestamp": round(row.get("timestamp", idx / video_fps), 2),
+                "emotion": "—",
+                "pose": "—",
+            })
+            continue
+        
+        # AU → expression
+        au_dict = {col: float(row[col]) for col in au_cols if col in row}
+        expression, _ = _au_to_expression(au_dict)
+        all_emotions.append(expression)
+        
+        # head pose → pose_label
+        if "pose_Tx" in row and "pose_Ty" in row and "pose_Tz" in row:
+            head_pose = (float(row["pose_Tx"]), float(row["pose_Ty"]), float(row["pose_Tz"]))
+            pose_label, _ = _head_pose_to_pose_label(head_pose)
+        else:
+            pose_label = "front"
+        all_poses.append(pose_label)
+        
+        frame_results.append({
+            "timestamp": round(row.get("timestamp", idx / video_fps), 2),
+            "emotion": expression,
+            "pose": pose_label,
+        })
+    
+    # 통계 집계
+    emotion_counts: Dict[str, int] = {}
+    for x in all_emotions:
+        if x and x != "—":
+            emotion_counts[x] = emotion_counts.get(x, 0) + 1
+    pose_counts: Dict[str, int] = {}
+    for x in all_poses:
+        if x and x != "—":
+            pose_counts[x] = pose_counts.get(x, 0) + 1
+    dominant_emotion = max(emotion_counts, key=emotion_counts.get) if emotion_counts else None
+    dominant_pose = max(pose_counts, key=pose_counts.get) if pose_counts else None
+    mood_summary = _mood_summary_ko(emotion_counts, dominant_emotion or "")
+
+    return {
+        "video_analysis": True,
+        "file_id": file_id,
+        "duration_sec": round(duration_sec, 2),
+        "frames_analyzed": len(frame_results),
+        "processing_time_sec": round(processing_time, 2),
+        "emotion_backend": "OpenFace 2.0 (pyfaceau)",
+        "summary": {
+            "dominant_emotion": dominant_emotion,
+            "dominant_pose": dominant_pose,
+            "emotion_counts": emotion_counts,
+            "pose_counts": pose_counts,
+            "mood_summary": mood_summary,
+        },
+        "frames": frame_results,
+        "video_url": f"/files/{file_id}/video",
+    }
+
+
+def _handle_video_analysis_pipeline(
+    video: UploadFile,
+    emotion_backend: str,
+    sample_fps: float = 2.0,
+    max_duration_sec: float = 30.0,
+    conf_threshold: float = 0.5,
+) -> Dict[str, Any]:
+    """pipeline.process_frame으로 영상 분석 (OpenCLIP/DeepFace 사용)"""
     if not PIPELINE_AVAILABLE:
         raise HTTPException(
             status_code=503,
             detail="VisionAI Pipeline is not available.",
         )
-    backend = (emotion_backend or "openclip").strip().lower()
-    if backend not in ("openclip", "swin"):
-        backend = "openclip"
+    
     device = os.getenv("VISIONAI_DEVICE")
-    pipeline = _get_pipeline(device, emotion_backend=backend)
+    pipeline = _get_pipeline(device, emotion_backend=emotion_backend)
     if pipeline is None:
         raise HTTPException(status_code=503, detail="VisionAI Pipeline is not available.")
 
@@ -421,7 +556,7 @@ def _handle_video_analysis(
         "duration_sec": round(duration_sec, 2),
         "frames_analyzed": len(frames_to_process),
         "processing_time_sec": round(processing_time, 2),
-        "emotion_backend": emotion_backend_name,
+        "emotion_backend": emotion_backend_name or emotion_backend,
         "summary": {
             "dominant_emotion": dominant_emotion,
             "dominant_pose": dominant_pose,
@@ -451,7 +586,7 @@ def api_detect(
     max_detections: int = Form(100),
     model: str = Form("fasterrcnn_resnet50_fpn_v2"),
     use_pipeline: bool = Form(False),  # 🆕 파이프라인 사용 여부
-    emotion_backend: str = Form("openclip"),  # 🆕 표정·자세 분석: openclip | swin
+    emotion_backend: str = Form("openclip"),  # 🆕 표정·자세 분석: openclip | deepface | pyfaceau
 ) -> Dict[str, Any]:
     # Some clients (e.g., curl) may send application/octet-stream for images like .webp.
     # We allow it if the filename extension is an allowed image type.

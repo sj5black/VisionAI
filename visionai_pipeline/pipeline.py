@@ -1,17 +1,18 @@
 """
-VisionAI 통합 파이프라인
+VisionAI 통합 파이프라인 - 사람 표정·자세 분석 및 행동 예측
 
-5단계를 하나로 통합:
-1. Object Detection (YOLOv8)
-2. Keypoint Detection (YOLOv8-pose)
-3. Emotion/Pose Analysis (MobileNetV3)
-4. Temporal Action Recognition (규칙 기반)
-5. Behavior Prediction (LSTM)
+5단계:
+1. Object Detection (YOLOv8-pose, 사람 전용)
+2. Keypoint Detection (YOLOv8-pose) - 신체 키포인트
+3. Emotion/Pose Analysis - 표정·자세 (OpenFace 2.0 AU)
+4. Temporal Action Recognition - 시간축 행동 인식
+5. Behavior Prediction - 이후 행동 예측
 """
 
 from __future__ import annotations
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
+import os
 import time
 import numpy as np
 from PIL import Image
@@ -40,6 +41,7 @@ class PipelineResult:
     # 메타데이터
     timestamp: float
     processing_time: float
+    emotion_backend: Optional[str] = None  # 감정/자세 분석 백엔드 표시명 (OpenFace 2.0)
     
     def to_dict(self) -> Dict[str, Any]:
         """딕셔너리로 변환"""
@@ -49,13 +51,14 @@ class PipelineResult:
             'action': self.action,
             'prediction': self.prediction,
             'timestamp': self.timestamp,
-            'processing_time': self.processing_time
+            'processing_time': self.processing_time,
+            'emotion_backend': self.emotion_backend,
         }
 
 
 class VisionAIPipeline:
     """
-    통합 VisionAI 파이프라인
+    사람 표정·자세 분석 및 이후 행동 예측 파이프라인.
     
     Usage:
         pipeline = VisionAIPipeline(device='cuda')
@@ -76,7 +79,8 @@ class VisionAIPipeline:
         enable_prediction: bool = True,
         emotion_model_path: Optional[str] = None,
         temporal_model_path: Optional[str] = None,
-        prediction_model_path: Optional[str] = None
+        prediction_model_path: Optional[str] = None,
+        emotion_backend: Optional[str] = None
     ):
         """
         Args:
@@ -87,6 +91,7 @@ class VisionAIPipeline:
             emotion_model_path: 감정 분석 모델 경로
             temporal_model_path: 시간 축 모델 경로
             prediction_model_path: 예측 모델 경로
+            emotion_backend: (호환용, 무시) 이제 OpenFace 2.0만 사용
         """
         print("=" * 60)
         print("VisionAI Pipeline 초기화 중...")
@@ -98,15 +103,15 @@ class VisionAIPipeline:
         self.enable_prediction = enable_prediction
         
         # Step 1 & 2: Object Detection + Keypoint Detection
-        print("\n[1/4] 객체 탐지 모델 로딩 (YOLOv8n)...")
+        print("\n[1/4] 객체 탐지 모델 로딩 (YOLOv8n-pose, 사람 전용)...")
         self.detector = ObjectDetector(device=device)
         
-        # Step 3: Emotion & Pose Analysis
+        # Step 3: Emotion & Pose Analysis (OpenFace 2.0 AU 기반)
         if enable_emotion:
-            print("\n[2/4] 감정/표정 분석 모델 로딩 (OpenCLIP 또는 학습 모델)...")
+            print("\n[2/4] 표정/자세 분석 모델 로딩 (OpenFace 2.0, Action Units)...")
             self.emotion_analyzer = EmotionAnalyzer(
                 model_path=emotion_model_path,
-                device=device
+                device=device,
             )
         else:
             self.emotion_analyzer = None
@@ -172,8 +177,8 @@ class VisionAIPipeline:
         """
         start_time = time.time()
         
-        # Step 1 & 2: Object Detection + Keypoint Detection
-        detections = self.detector.detect_animals(image, conf_threshold)
+        # Step 1 & 2: Object Detection + Keypoint Detection (사람 탐지)
+        detections = self.detector.detect_persons(image, conf_threshold)
         
         detection_dicts = []
         emotion_dicts = []
@@ -188,10 +193,10 @@ class VisionAIPipeline:
             }
             detection_dicts.append(det_dict)
             
-            # Step 3: Emotion & Pose Analysis (species 전달 시 OpenCLIP 정확도 향상)
+            # Step 3: Emotion & Pose Analysis (OpenFace 2.0 AU)
             if self.enable_emotion and self.emotion_analyzer:
                 emotion_result = self.emotion_analyzer.analyze(
-                    image, det.bbox, species=det.class_name
+                    image, det.bbox, species="person"
                 )
                 emotion_dict = {
                     'class_name': det.class_name,
@@ -242,6 +247,12 @@ class VisionAIPipeline:
                 }
         
         processing_time = time.time() - start_time
+        emotion_backend = None
+        if self.emotion_analyzer is not None:
+            emotion_backend = getattr(
+                self.emotion_analyzer, 'emotion_backend_name',
+                getattr(self.emotion_analyzer, '_emotion_backend_name', None)
+            )
         
         return PipelineResult(
             detections=detection_dicts,
@@ -249,7 +260,8 @@ class VisionAIPipeline:
             action=action_dict,
             prediction=prediction_dict,
             timestamp=timestamp,
-            processing_time=processing_time
+            processing_time=processing_time,
+            emotion_backend=emotion_backend,
         )
     
     def visualize(

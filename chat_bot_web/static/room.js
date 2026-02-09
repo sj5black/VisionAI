@@ -17,6 +17,7 @@
   const serenaInviteBtn = document.getElementById('serenaInviteBtn');
   const chessGameBtn = document.getElementById('chessGameBtn');
   const chessPanel = document.getElementById('chessPanel');
+  const visionaiFrame = document.getElementById('visionaiFrame');
   const chessBoard = document.getElementById('chessBoard');
   const chessStatus = document.getElementById('chessStatus');
   const chessStartBtn = document.getElementById('chessStartBtn');
@@ -43,6 +44,9 @@
 
   var chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, mode: 'serena', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [] };
   var chessSelected = null;
+
+  var gomokuState = { board: null, turn: 'black', status: null, blackPlayer: null, whitePlayer: null, mode: 'serena', lastMove: null };
+  var GOMOKU_SIZE = 15;
 
   function createNickRow(nickname) {
     var row = document.createElement('div');
@@ -101,6 +105,12 @@
   const notificationIconOn = document.getElementById('notificationIconOn');
   const notificationIconOff = document.getElementById('notificationIconOff');
 
+  const imageLightbox = document.getElementById('imageLightbox');
+  const imageLightboxImg = document.getElementById('imageLightboxImg');
+  const imageLightboxContainer = imageLightbox ? imageLightbox.querySelector('.image-lightbox__container') : null;
+  const imageLightboxBackdrop = imageLightbox ? imageLightbox.querySelector('.image-lightbox__backdrop') : null;
+  const imageLightboxClose = imageLightbox ? imageLightbox.querySelector('.image-lightbox__close') : null;
+
   const chessPvpBtn = document.getElementById('chessPvpBtn');
   const chessStartPvpBtn = document.getElementById('chessStartPvpBtn');
   const chessPvpSelect = document.getElementById('chessPvpSelect');
@@ -111,11 +121,26 @@
 
   var participantListArr = [];
 
+  const gomokuGameBtn = document.getElementById('gomokuGameBtn');
+  const gomokuPvpBtn = document.getElementById('gomokuPvpBtn');
+  const gomokuPanel = document.getElementById('gomokuPanel');
+  const gomokuBoard = document.getElementById('gomokuBoard');
+  const gomokuStatus = document.getElementById('gomokuStatus');
+  const gomokuStartBtn = document.getElementById('gomokuStartBtn');
+  const gomokuStartPvpBtn = document.getElementById('gomokuStartPvpBtn');
+  const gomokuResignBtn = document.getElementById('gomokuResignBtn');
+  const gomokuPanelClose = document.getElementById('gomokuPanelClose');
+  const gomokuPvpSelect = document.getElementById('gomokuPvpSelect');
+  const gomokuPvpOpponent = document.getElementById('gomokuPvpOpponent');
+  const gomokuPvpConfirm = document.getElementById('gomokuPvpConfirm');
+
   function updateSerenaBtn() {
     if (!serenaInviteBtn) return;
     serenaInviteBtn.textContent = serenaPresent ? 'Serena 강퇴' : 'Serena 초대';
     if (chessGameBtn) chessGameBtn.style.display = serenaPresent ? 'inline-block' : 'none';
     if (chessPvpBtn) chessPvpBtn.style.display = 'inline-block';
+    if (gomokuGameBtn) gomokuGameBtn.style.display = serenaPresent ? 'inline-block' : 'none';
+    if (gomokuPvpBtn) gomokuPvpBtn.style.display = 'inline-block';
   }
 
   var CHESS_PIECES = { K: '\u2654', Q: '\u2655', R: '\u2656', B: '\u2657', N: '\u2658', P: '\u2659', k: '\u265A', q: '\u265B', r: '\u265C', b: '\u265D', n: '\u265E', p: '\u265F' };
@@ -299,6 +324,96 @@
     else if (s === 'resign_black') chessStatus.textContent = (chessState.whitePlayer || '흰색') + ' 승리! (검은색 기권)';
     else if (s === 'draw') chessStatus.textContent = '무승부';
     else chessStatus.textContent = '-';
+  }
+
+  function renderGomokuBoard() {
+    if (!gomokuBoard) return;
+    gomokuBoard.innerHTML = '';
+    var board = gomokuState.board;
+    if (!board || !board.length) {
+      board = [];
+      for (var i = 0; i < GOMOKU_SIZE; i++) {
+        var row = [];
+        for (var j = 0; j < GOMOKU_SIZE; j++) row.push(0);
+        board.push(row);
+      }
+    }
+    var active = gomokuState.status === 'active';
+    var myTurnBlack = active && gomokuState.turn === 'black' && gomokuState.blackPlayer === myNickname;
+    var myTurnWhite = active && gomokuState.turn === 'white' && gomokuState.whitePlayer === myNickname;
+    var lastMove = gomokuState.lastMove;
+    for (var r = 0; r < GOMOKU_SIZE; r++) {
+      for (var c = 0; c < GOMOKU_SIZE; c++) {
+        var cell = document.createElement('div');
+        cell.className = 'gomokuCell';
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+        var val = board && board[r] && board[r][c];
+        if (val === 1) { cell.classList.add('black'); cell.textContent = ''; }
+        else if (val === 2) { cell.classList.add('white'); cell.textContent = ''; }
+        else {
+          cell.textContent = '';
+          var canPlace = active && (myTurnBlack || myTurnWhite);
+          if (canPlace) cell.classList.add('playable');
+          cell.style.cursor = canPlace ? 'pointer' : 'default';
+        }
+        if (lastMove && lastMove[0] === r && lastMove[1] === c) cell.classList.add('last-move');
+        cell.addEventListener('click', function (ev) {
+          var row = parseInt(this.dataset.row, 10);
+          var col = parseInt(this.dataset.col, 10);
+          onGomokuCellClick(row, col);
+        });
+        gomokuBoard.appendChild(cell);
+      }
+    }
+  }
+
+  function onGomokuCellClick(row, col) {
+    if (gomokuState.status !== 'active') return;
+    var myTurnBlack = gomokuState.turn === 'black' && gomokuState.blackPlayer === myNickname;
+    var myTurnWhite = gomokuState.turn === 'white' && gomokuState.whitePlayer === myNickname;
+    if (!myTurnBlack && !myTurnWhite) return;
+    var board = gomokuState.board;
+    if (!board || !board[row] || board[row][col] !== 0) return;
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'gomoku_move', row: row, col: col }));
+  }
+
+  function updateGomokuStatus() {
+    if (!gomokuStatus) return;
+    var s = gomokuState.status;
+    if (!gomokuState.board) { gomokuStatus.textContent = 'Serena를 초대한 뒤 새 게임을 시작하세요.'; return; }
+    if (s === 'active') {
+      var bp = gomokuState.blackPlayer || '흑';
+      var wp = gomokuState.whitePlayer || '백';
+      gomokuStatus.textContent = gomokuState.turn === 'black' ? bp + ' (흑) 차례' : wp + ' (백) 차례';
+    } else if (s === 'win_black') gomokuStatus.textContent = (gomokuState.blackPlayer || '흑') + ' 승리! (오목)';
+    else if (s === 'win_white') gomokuStatus.textContent = (gomokuState.whitePlayer || '백') + ' 승리! (오목)';
+    else if (s === 'resign_black') gomokuStatus.textContent = (gomokuState.whitePlayer || '백') + ' 승리! (흑 기권)';
+    else if (s === 'resign_white') gomokuStatus.textContent = (gomokuState.blackPlayer || '흑') + ' 승리! (백 기권)';
+    else if (s === 'draw') gomokuStatus.textContent = '무승부';
+    else gomokuStatus.textContent = '-';
+  }
+
+  function updateGomokuPanelTitle() {
+    var el = document.getElementById('gomokuPanelTitle');
+    if (!el) return;
+    if (gomokuState.blackPlayer) {
+      var title = (gomokuState.mode === 'serena') ? (gomokuState.blackPlayer + ' vs Serena') : (gomokuState.blackPlayer + ' vs ' + gomokuState.whitePlayer);
+      el.textContent = '● ' + title;
+    } else el.textContent = '● 오목 (대기 중)';
+  }
+
+  function updateGomokuButtons() {
+    if (gomokuStartBtn) {
+      gomokuStartBtn.style.display = serenaPresent ? 'inline-block' : 'none';
+      var canStart = serenaPresent && (!gomokuState.board || gomokuState.status !== 'active' || gomokuState.blackPlayer === myNickname);
+      gomokuStartBtn.disabled = !canStart;
+    }
+    if (gomokuStartPvpBtn) {
+      gomokuStartPvpBtn.style.display = (!gomokuState.board || gomokuState.status !== 'active') ? 'inline-block' : 'none';
+      gomokuStartPvpBtn.disabled = !!(gomokuState.board && gomokuState.status === 'active' && gomokuState.blackPlayer !== myNickname);
+    }
+    if (gomokuPvpSelect) gomokuPvpSelect.style.display = (gomokuPvpSelect.dataset.visible === '1') ? 'flex' : 'none';
   }
 
   function showSerenaPopup() {
@@ -513,6 +628,102 @@
       };
       setTimeout(function () { n.close(); }, 8000);
     } catch (e) {}
+  }
+
+  var imageLightboxState = { scale: 1, tx: 0, ty: 0, dragging: false, startX: 0, startY: 0, startTx: 0, startTy: 0 };
+
+  function applyImageLightboxTransform() {
+    if (!imageLightboxImg) return;
+    var s = imageLightboxState;
+    imageLightboxImg.style.transform = 'translate(' + s.tx + 'px,' + s.ty + 'px) scale(' + s.scale + ')';
+  }
+
+  function openImageLightbox(src) {
+    if (!imageLightbox || !imageLightboxImg || !src) return;
+    imageLightboxState = { scale: 1, tx: 0, ty: 0, dragging: false, startX: 0, startY: 0, startTx: 0, startTy: 0 };
+    imageLightboxImg.src = src;
+    applyImageLightboxTransform();
+    imageLightbox.style.display = 'flex';
+    imageLightbox.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeImageLightbox() {
+    if (!imageLightbox) return;
+    imageLightbox.style.display = 'none';
+    imageLightbox.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    imageLightboxImg.src = '';
+  }
+
+  function setupImageLightbox() {
+    if (!imageLightbox || !imageLightboxImg) return;
+    var container = imageLightboxContainer;
+    var s = imageLightboxState;
+
+    function onWheel(e) {
+      e.preventDefault();
+      var delta = e.deltaY > 0 ? -0.15 : 0.15;
+      s.scale = Math.max(0.5, Math.min(5, s.scale + delta));
+      applyImageLightboxTransform();
+    }
+
+    function onMouseDown(e) {
+      if (e.button !== 0) return;
+      s.dragging = true;
+      s.startX = e.clientX;
+      s.startY = e.clientY;
+      s.startTx = s.tx;
+      s.startTy = s.ty;
+    }
+
+    function onMouseMove(e) {
+      if (!s.dragging) return;
+      s.tx = s.startTx + (e.clientX - s.startX);
+      s.ty = s.startTy + (e.clientY - s.startY);
+      applyImageLightboxTransform();
+    }
+
+    function onMouseUp() {
+      s.dragging = false;
+    }
+
+    if (container) {
+      container.addEventListener('wheel', onWheel, { passive: false });
+    }
+    imageLightboxImg.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    if (imageLightboxBackdrop) imageLightboxBackdrop.addEventListener('click', closeImageLightbox);
+    if (imageLightboxClose) imageLightboxClose.addEventListener('click', closeImageLightbox);
+    document.addEventListener('keydown', function onKey(e) {
+      if (e.key === 'Escape' && imageLightbox && imageLightbox.style.display === 'flex') {
+        closeImageLightbox();
+      }
+    });
+  }
+
+  function handleChatImageClick(e) {
+    if (e.button !== 0) return;
+    if (!e.target || typeof e.target.closest !== 'function') return;
+    var wrap = e.target.closest('.roomMsgImageLargeWrap');
+    if (!wrap) return;
+    var img = wrap.querySelector('.roomMsgImageLarge') || wrap.querySelector('img');
+    if (!img || !img.src || String(img.src).trim() === '') return;
+    var container = e.target.closest('#roomMessages') || e.target.closest('#dmMessages');
+    if (!container) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openImageLightbox(img.src);
+  }
+
+  document.addEventListener('click', function (e) {
+    handleChatImageClick(e);
+  }, true);
+
+  if (imageLightbox && imageLightboxImg) {
+    setupImageLightbox();
   }
 
   function addDmTab(roomId, otherUser) {
@@ -1165,7 +1376,24 @@
           updateChessButtons();
           updateChessPanelTitle();
           if (data.status === 'active' && data.white_player && data.white_player !== myNickname) {
-            if (chessPanel) chessPanel.style.display = 'block';
+            if (chessPanel) { chessPanel.style.display = 'flex'; if (visionaiFrame) visionaiFrame.classList.add('room-iframe--hidden'); if (gomokuPanel) gomokuPanel.style.display = 'none'; }
+          }
+          return;
+        }
+        if (data.type === 'gomoku_state') {
+          gomokuState.board = data.board || null;
+          gomokuState.turn = data.turn || 'black';
+          gomokuState.status = data.status || null;
+          gomokuState.blackPlayer = data.black_player || null;
+          gomokuState.whitePlayer = data.white_player || null;
+          gomokuState.mode = data.mode || 'serena';
+          gomokuState.lastMove = data.last_move || null;
+          renderGomokuBoard();
+          updateGomokuStatus();
+          updateGomokuButtons();
+          updateGomokuPanelTitle();
+          if (data.status === 'active' && (data.black_player === myNickname || data.white_player === myNickname)) {
+            if (gomokuPanel) { gomokuPanel.style.display = 'flex'; if (visionaiFrame) visionaiFrame.classList.add('room-iframe--hidden'); if (chessPanel) chessPanel.style.display = 'none'; }
           }
           return;
         }
@@ -1258,7 +1486,6 @@
     } else {
       if (multiPanel) multiPanel.style.display = 'flex';
       if (dmPanel) dmPanel.style.display = 'none';
-      connect();
       if (roomInput) roomInput.focus();
     }
   }
@@ -1627,10 +1854,35 @@
     });
   }
 
+  function setChessPanelInVisionArea(visible) {
+    if (!chessPanel) return;
+    if (visible) {
+      chessPanel.style.display = 'flex';
+      if (visionaiFrame) visionaiFrame.classList.add('room-iframe--hidden');
+      if (gomokuPanel) gomokuPanel.style.display = 'none';
+    } else {
+      chessPanel.style.display = 'none';
+      if (visionaiFrame) visionaiFrame.classList.remove('room-iframe--hidden');
+    }
+  }
+
+  function setGomokuPanelInVisionArea(visible) {
+    if (!gomokuPanel) return;
+    if (visible) {
+      gomokuPanel.style.display = 'flex';
+      if (visionaiFrame) visionaiFrame.classList.add('room-iframe--hidden');
+      if (chessPanel) chessPanel.style.display = 'none';
+    } else {
+      gomokuPanel.style.display = 'none';
+      if (visionaiFrame) visionaiFrame.classList.remove('room-iframe--hidden');
+    }
+  }
+
   if (chessGameBtn) {
     chessGameBtn.addEventListener('click', function () {
-      chessPanel.style.display = chessPanel.style.display === 'none' ? 'block' : 'none';
-      if (chessPanel.style.display === 'block') {
+      var show = chessPanel.style.display === 'none' || !chessPanel.style.display;
+      setChessPanelInVisionArea(show);
+      if (show) {
         renderChessBoard();
         renderCapturedPieces();
         updateChessStatus();
@@ -1641,8 +1893,9 @@
   }
   if (chessPvpBtn) {
     chessPvpBtn.addEventListener('click', function () {
-      chessPanel.style.display = chessPanel.style.display === 'none' ? 'block' : 'none';
-      if (chessPanel.style.display === 'block') {
+      var show = chessPanel.style.display === 'none' || !chessPanel.style.display;
+      setChessPanelInVisionArea(show);
+      if (show) {
         renderChessBoard();
         renderCapturedPieces();
         updateChessStatus();
@@ -1652,7 +1905,7 @@
     });
   }
   if (chessPanelClose) {
-    chessPanelClose.addEventListener('click', function () { chessPanel.style.display = 'none'; });
+    chessPanelClose.addEventListener('click', function () { setChessPanelInVisionArea(false); });
   }
   if (chessStartBtn) {
     chessStartBtn.addEventListener('click', function () {
@@ -1688,6 +1941,70 @@
   if (chessResignBtn) {
     chessResignBtn.addEventListener('click', function () {
       if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'chess_resign' }));
+    });
+  }
+
+  if (gomokuGameBtn) {
+    gomokuGameBtn.addEventListener('click', function () {
+      var show = gomokuPanel.style.display === 'none' || !gomokuPanel.style.display;
+      setGomokuPanelInVisionArea(show);
+      if (show) {
+        renderGomokuBoard();
+        updateGomokuStatus();
+        updateGomokuButtons();
+        updateGomokuPanelTitle();
+      }
+    });
+  }
+  if (gomokuPvpBtn) {
+    gomokuPvpBtn.addEventListener('click', function () {
+      var show = gomokuPanel.style.display === 'none' || !gomokuPanel.style.display;
+      setGomokuPanelInVisionArea(show);
+      if (show) {
+        renderGomokuBoard();
+        updateGomokuStatus();
+        updateGomokuButtons();
+        updateGomokuPanelTitle();
+      }
+    });
+  }
+  if (gomokuPanelClose) {
+    gomokuPanelClose.addEventListener('click', function () { setGomokuPanelInVisionArea(false); });
+  }
+  if (gomokuStartBtn) {
+    gomokuStartBtn.addEventListener('click', function () {
+      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'gomoku_start' }));
+    });
+  }
+  if (gomokuStartPvpBtn) {
+    gomokuStartPvpBtn.addEventListener('click', function () {
+      if (gomokuPvpSelect) {
+        gomokuPvpSelect.dataset.visible = gomokuPvpSelect.dataset.visible === '1' ? '0' : '1';
+        gomokuPvpSelect.style.display = gomokuPvpSelect.dataset.visible === '1' ? 'flex' : 'none';
+        if (gomokuPvpOpponent && gomokuPvpSelect.dataset.visible === '1') {
+          gomokuPvpOpponent.innerHTML = participantListArr.map(function (p) {
+            var n = p && p.name;
+            return n ? '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>' : '';
+          }).join('') || '<option value="">참여자 없음</option>';
+        }
+      }
+    });
+  }
+  if (gomokuPvpConfirm && gomokuPvpOpponent) {
+    gomokuPvpConfirm.addEventListener('click', function () {
+      var opp = gomokuPvpOpponent.value;
+      if (opp && ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'gomoku_start_pvp', opponent: opp }));
+        if (gomokuPvpSelect) {
+          gomokuPvpSelect.dataset.visible = '0';
+          gomokuPvpSelect.style.display = 'none';
+        }
+      }
+    });
+  }
+  if (gomokuResignBtn) {
+    gomokuResignBtn.addEventListener('click', function () {
+      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'gomoku_resign' }));
     });
   }
 
@@ -1975,4 +2292,29 @@
       return;
     }
   }, true);
+
+  function loadVisionAiBackend() {
+    var iframe = document.getElementById('visionaiFrame');
+    var labelEl = document.getElementById('visionaiBackendLabel');
+    if (!iframe || !iframe.src || !labelEl) return;
+    try {
+      var origin = new URL(iframe.src).origin;
+      fetch(origin + '/api/emotion-backend', { credentials: 'omit' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data && data.emotion_backend) {
+            labelEl.textContent = data.emotion_backend;
+          }
+        })
+        .catch(function () { labelEl.textContent = '—'; });
+    } catch (e) { labelEl.textContent = '—'; }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      setTimeout(loadVisionAiBackend, 800);
+    });
+  } else {
+    setTimeout(loadVisionAiBackend, 800);
+  }
 })();

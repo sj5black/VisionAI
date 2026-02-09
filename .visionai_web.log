@@ -1057,3 +1057,566 @@ INFO:     112.171.67.160:1503 - "GET / HTTP/1.1" 200 OK
 INFO:     112.171.67.160:5120 - "GET / HTTP/1.1" 200 OK
 INFO:     112.171.67.160:5120 - "GET /static/styles.css HTTP/1.1" 200 OK
 INFO:     112.171.67.160:8412 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     211.36.140.67:64992 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.140.67:12670 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.140.67:45671 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12936 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5651 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5651 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3109 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2063 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2063 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1883 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11048 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4086 - "GET / HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [194292]
+nohup: ignoring input
+INFO:     Started server process [722724]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:5811 - "GET / HTTP/1.1" 200 OK
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n)...
+✓ YOLOv8n 모델 로드 완료 (device: cuda)
+
+[2/4] 감정/표정 분석 모델 로딩 (Swin Transformer 또는 학습 모델)...
+✓ 감정 분석: Swin Transformer (Swin-T) 사용 — 표정/자세 분석
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:9620 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9620 - "GET /files/be1b3a88e4e84428a387463fa2cf21ac/annotated?t=1770355885472 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2717 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2717 - "GET /files/0db764a706a648a6ab5392ee9a47c247/annotated?t=1770355909295 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6413 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6413 - "GET /files/aca5c586f1724953819c925e51d69c81/annotated?t=1770355915087 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1631 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1631 - "GET /files/411a6dad3e3245fe9f118a4fdb32d2d8/annotated?t=1770355922053 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6198 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:55754 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:57540 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:59592 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58942 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58418 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58418 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:58421 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:47302 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:52484 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58842 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58736 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.140.80:43558 - "GET / HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [722724]
+nohup: ignoring input
+INFO:     Started server process [737578]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n)...
+✓ YOLOv8n 모델 로드 완료 (device: cuda)
+
+[2/4] 감정/표정 분석 모델 로딩 (Swin Transformer 또는 학습 모델)...
+✓ 감정 분석: Swin Transformer (Swin-T) 사용 — 표정/자세 분석
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:14106 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14106 - "GET /files/6628fd34bc2a4ae494d351ea0a694daf/annotated?t=1770364703267 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [737578]
+nohup: ignoring input
+INFO:     Started server process [739128]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:2369 - "GET / HTTP/1.1" 200 OK
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n)...
+✓ YOLOv8n 모델 로드 완료 (device: cuda)
+
+[2/4] 감정/표정 분석 모델 로딩 (Swin Transformer 또는 학습 모델)...
+✓ 감정 분석: OpenCLIP zero-shot (ViT-B-32, 17감정/18자세) — 의미 있는 유사도 점수
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:7764 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7764 - "GET /files/005a53b0a85e4006aa148020908fdd59/annotated?t=1770365211624 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [739128]
+nohup: ignoring input
+INFO:     Started server process [740189]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:13664 - "GET / HTTP/1.1" 200 OK
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n)...
+✓ YOLOv8n 모델 로드 완료 (device: cuda)
+
+[2/4] 감정/표정 분석 모델 로딩 (Swin Transformer 또는 학습 모델)...
+✓ 감정 분석: OpenCLIP zero-shot (ViT-B-32, 17감정/18자세) — 의미 있는 유사도 점수
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:8651 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8651 - "GET /files/1109ea977618458d9440fceed03b769a/annotated?t=1770365619037 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1724 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1724 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1724 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:1724 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1724 - "GET /files/c62b5fde21f04dc2a2adec89ed7fdcb0/annotated?t=1770365664897 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [740189]
+nohup: ignoring input
+INFO:     Started server process [741378]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:6659 - "GET / HTTP/1.1" 200 OK
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n)...
+✓ YOLOv8n 모델 로드 완료 (device: cuda)
+
+[2/4] 감정/표정 분석 모델 로딩 (Swin Transformer 또는 학습 모델)...
+✓ 감정 분석: OpenCLIP zero-shot (ViT-B-32, 17감정/18자세) — 의미 있는 유사도 점수
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:11162 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.36.140.86:20123 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.140.86:37170 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.36.140.86:16293 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.140.86:10318 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.36.140.86:34464 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.140.86:8934 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:39874 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:39874 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     210.179.94.144:39888 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     210.179.94.144:57132 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:57018 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:57018 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:57018 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:57032 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:63650 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:63650 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     210.179.94.144:63656 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     110.8.30.36:1765 - "GET / HTTP/1.1" 200 OK
+INFO:     110.8.30.36:1765 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     110.8.30.36:6699 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     110.8.30.36:13266 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:37947 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:37998 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:38385 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     45.194.92.38:60058 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     45.194.92.38:60062 - "POST /_next HTTP/1.1" 404 Not Found
+INFO:     45.194.92.38:60074 - "POST /api HTTP/1.1" 404 Not Found
+INFO:     45.194.92.38:60084 - "POST /_next/server HTTP/1.1" 404 Not Found
+INFO:     45.194.92.38:37916 - "POST /app HTTP/1.1" 404 Not Found
+INFO:     45.194.92.38:37928 - "POST /api/route HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     123.160.223.75:7658 - "GET / HTTP/1.1" 200 OK
+INFO:     123.160.223.74:22036 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     18.191.52.107:37798 - "GET / HTTP/1.1" 200 OK
+INFO:     3.14.72.188:38734 - "GET / HTTP/1.1" 200 OK
+INFO:     18.219.216.206:50166 - "GET / HTTP/1.1" 200 OK
+INFO:     18.191.52.107:53812 - "GET / HTTP/1.1" 200 OK
+INFO:     3.14.72.188:57324 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     18.219.216.206:45718 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [741378]
+INFO:     Started server process [6655]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:3136 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14479 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:3136 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3397 - "GET / HTTP/1.1" 200 OK
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n)...
+✓ YOLOv8n 모델 로드 완료 (device: cuda)
+
+[2/4] 감정/표정 분석 모델 로딩 (Swin Transformer 또는 학습 모델)...
+✓ 감정 분석: OpenCLIP zero-shot (ViT-B-32, 17감정/18자세) — 의미 있는 유사도 점수
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:11013 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6847 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6847 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3007 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5554 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:59470 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:59470 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:59472 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:59482 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:51268 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:51272 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:49224 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:49226 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:45222 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:45236 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.200.20:60026 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.200.20:60032 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.200.20:41694 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.200.20:41696 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11938 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11938 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:4509 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4509 - "GET /files/5cd85258e1a748b2bfbd8237d58f3906/annotated?t=1770604010278 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14809 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14809 - "GET /files/c127e720fef945babfff5e190e4a9a66/annotated?t=1770605481225 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6263 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6263 - "GET /files/579ce56a245147bb81e54130032b4e08/annotated?t=1770605503985 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3064 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3064 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8187 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4314 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8739 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8739 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:13641 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8739 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8739 - "GET /files/780190daf7a9410c8fb61ab4fe6b677b/annotated?t=1770605787455 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4059 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4059 - "GET /files/f443251e707d48acac6040af47cd3b7a/annotated?t=1770605797370 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12231 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12231 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:12160 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10705 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10705 - "GET /files/f6675e5494004b508881e2db2574be1d/annotated?t=1770609700762 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13632 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13632 - "GET /files/fc657938971949e19b18643f09404dc4/annotated?t=1770609725484 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [6655]
+nohup: ignoring input
+INFO:     Started server process [25298]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:7647 - "GET / HTTP/1.1" 200 OK
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n-pose, 사람 전용)...
+✓ YOLOv8n·YOLOv8n-pose 모델 로드 완료 (device: cuda)
+
+[2/4] 표정/자세 분석 모델 로딩 (OpenCLIP 또는 Swin)...
+✓ 감정 분석: OpenCLIP zero-shot (ViT-B-32, 17감정/18자세) — 의미 있는 유사도 점수
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:10985 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7647 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7647 - "GET /files/3e6e96d165a84269a98c4e2283562456/annotated?t=1770609886451 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [25298]
+nohup: ignoring input
+INFO:     Started server process [25886]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:3255 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3255 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13612 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n-pose, 사람 전용)...
+✓ YOLOv8n·YOLOv8n-pose 모델 로드 완료 (device: cuda)
+
+[2/4] 표정/자세 분석 모델 로딩 (OpenCLIP 또는 Swin)...
+✓ 감정 분석: OpenCLIP zero-shot (ViT-B-32, 17감정/18자세) — 의미 있는 유사도 점수
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:6721 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12885 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12885 - "GET /files/a1359bbb573c44a1b7e86b9707d44ec3/annotated?t=1770610083481 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12020 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12020 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3654 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8572 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12971 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12971 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2150 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11916 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1156 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1156 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9257 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1859 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5907 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5907 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11836 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5815 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2788 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2788 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2861 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4414 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3724 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7621 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:53960 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:53960 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:64043 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:61609 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2180 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2180 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:4550 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4574 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4574 - "GET /files/4f4e2eac1e3f4771a7fdf9d59c30c0d3/annotated?t=1770612318436 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7292 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7292 - "GET /files/f41f75e277264c9593db41d950cbe0c8/annotated?t=1770612446601 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3558 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3558 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:6939 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2490 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2490 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11083 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9605 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2772 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2772 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:9603 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10033 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10033 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2598 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9686 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1803 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1803 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:2582 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11490 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7408 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7779 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7779 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3711 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11336 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13558 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13558 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:2194 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.200.20:48898 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.200.20:48908 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.200.20:42230 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.200.20:42232 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7488 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7488 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13397 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10175 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:64868 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:64868 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:53460 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.200.20:58374 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.200.20:58380 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10241 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10241 - "GET /files/8faabafbb2414442bd05fa34fd705e6d/annotated?t=1770614963491 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13350 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13350 - "GET /files/ea162ea6a5924787b2af829072247997/annotated?t=1770615012584 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12052 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12052 - "GET /files/c723d0b58af9456d96d1522c3b436aa6/annotated?t=1770615085146 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12052 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12052 - "GET /files/e780be26bcb045f8bc3564f262e2b1ba/annotated?t=1770615089543 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [25886]
+nohup: ignoring input
+INFO:     Started server process [39177]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:9063 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9063 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:3515 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n-pose, 사람 전용)...
+✓ YOLOv8n·YOLOv8n-pose 모델 로드 완료 (device: cuda)
+
+[2/4] 표정/자세 분석 모델 로딩 (OpenCLIP 또는 Swin)...
+✓ 감정 분석: OpenCLIP zero-shot (ViT-B-32, 17감정/18자세) — 의미 있는 유사도 점수
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:3128 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10322 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10322 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:2786 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n-pose, 사람 전용)...
+✓ YOLOv8n·YOLOv8n-pose 모델 로드 완료 (device: cuda)
+
+[2/4] 표정/자세 분석 모델 로딩 (Swin Transformer)...
+✓ 감정 분석: Swin Transformer (Swin-T) 사용 — 표정/자세 분석
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:10211 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10211 - "GET /files/908714eb4b4040f8ab1481435646a293/annotated?t=1770615558043 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1719 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1719 - "GET /files/16261af931e14e678706972245bd0850/annotated?t=1770615572764 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13786 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13786 - "GET /files/6ea77ca413f84e81be7c40114e108861/annotated?t=1770615581959 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7652 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7652 - "GET /files/90239393656b4b91959406fde82f40fd/annotated?t=1770615667610 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39177]
+nohup: ignoring input
+INFO:     Started server process [41077]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:1999 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1999 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7775 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n-pose, 사람 전용)...
+✓ YOLOv8n·YOLOv8n-pose 모델 로드 완료 (device: cuda)
+
+[2/4] 표정/자세 분석 모델 로딩 (OpenCLIP 또는 Swin)...
+✓ 감정 분석: OpenCLIP zero-shot (ViT-B-32, 17감정/18자세) — 의미 있는 유사도 점수
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:12748 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1602 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1602 - "GET /files/b1f75baf1c5946c4bf6bdfbf10baabbd/video?t=1770616159899 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:6203 - "GET /files/b1f75baf1c5946c4bf6bdfbf10baabbd/video?t=1770616159899 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:6203 - "GET /files/b1f75baf1c5946c4bf6bdfbf10baabbd/video?t=1770616159899 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:6203 - "GET /files/b1f75baf1c5946c4bf6bdfbf10baabbd/video?t=1770616159899 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:13801 - "GET /files/b1f75baf1c5946c4bf6bdfbf10baabbd/video?t=1770616159899 HTTP/1.1" 206 Partial Content
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n-pose, 사람 전용)...
+✓ YOLOv8n·YOLOv8n-pose 모델 로드 완료 (device: cuda)
+
+[2/4] 표정/자세 분석 모델 로딩 (Swin Transformer)...
+✓ 감정 분석: Swin Transformer (Swin-T) 사용 — 표정/자세 분석
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:11422 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11422 - "GET /files/2a06107933a64ddfb8dee935974f33f3/video?t=1770616201078 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:12307 - "GET /files/2a06107933a64ddfb8dee935974f33f3/video?t=1770616201078 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:12307 - "GET /files/2a06107933a64ddfb8dee935974f33f3/video?t=1770616201078 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:12307 - "GET /files/2a06107933a64ddfb8dee935974f33f3/video?t=1770616201078 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:10962 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10962 - "GET /files/33aec7121e15407caf8c2e7393d8289a/video?t=1770616334307 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:14162 - "GET /files/33aec7121e15407caf8c2e7393d8289a/video?t=1770616334307 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:14162 - "GET /files/33aec7121e15407caf8c2e7393d8289a/video?t=1770616334307 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:14162 - "GET /files/33aec7121e15407caf8c2e7393d8289a/video?t=1770616334307 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:2220 - "GET /files/33aec7121e15407caf8c2e7393d8289a/video?t=1770616334307 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:8305 - "GET /files/33aec7121e15407caf8c2e7393d8289a/video?t=1770616334307 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:9704 - "GET /files/33aec7121e15407caf8c2e7393d8289a/video?t=1770616334307 HTTP/1.1" 206 Partial Content
+INFO:     211.234.200.20:44136 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.200.20:44142 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     91.231.89.199:40509 - "GET / HTTP/1.1" 200 OK
+INFO:     91.231.89.179:57031 - "GET /favicon.ico HTTP/1.1" 404 Not Found

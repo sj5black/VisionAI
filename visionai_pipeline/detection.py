@@ -1,9 +1,8 @@
 """
 Step 1 & 2: Object Detection + Keypoint Detection using YOLOv8
 
-YOLOv8n을 사용하여 경량화:
-- 객체 탐지 (개/고양이 위치)
-- Keypoint 탐지 (얼굴/신체 부위)
+- 사람 탐지: YOLOv8n-pose (사람 전용 단일 클래스, 키포인트 포함) → 표정·자세·행동 예측용
+- 기타 객체: YOLOv8n (COCO 80클래스) → 동물 등 detect_animals()용
 """
 
 from __future__ import annotations
@@ -27,7 +26,8 @@ class ObjectDetector:
     """
     YOLOv8 기반 객체 탐지 + Keypoint 탐지
     
-    경량화를 위해 YOLOv8n (nano) 사용
+    - 사람 탐지: YOLOv8n-pose (사람 전용, 키포인트 포함)
+    - 동물 등: YOLOv8n (COCO 80클래스)
     """
     
     def __init__(self, device: str = "auto"):
@@ -39,7 +39,7 @@ class ObjectDetector:
         self.model = None
         self.pose_model = None
         self._load_models()
-        
+    
     def _get_device(self, device: str) -> str:
         """디바이스 자동 선택"""
         if device == "auto":
@@ -55,17 +55,16 @@ class ObjectDetector:
         """YOLOv8 모델 로드"""
         try:
             from ultralytics import YOLO
-            # YOLOv8n - 가장 경량 모델 (6.3 MB)
-            self.model = YOLO('yolov8n.pt')
-            # YOLOv8n-pose - Keypoint 탐지용
+            # 사람 탐지 전용: YOLOv8n-pose (단일 클래스 person + 키포인트)
             self.pose_model = YOLO('yolov8n-pose.pt')
+            # 동물 등 기타: YOLOv8n (COCO 80클래스)
+            self.model = YOLO('yolov8n.pt')
             
-            # 디바이스로 이동
             if self.device != "cpu":
                 self.model.to(self.device)
                 self.pose_model.to(self.device)
                 
-            print(f"✓ YOLOv8n 모델 로드 완료 (device: {self.device})")
+            print(f"✓ YOLOv8n·YOLOv8n-pose 모델 로드 완료 (device: {self.device})")
         except ImportError:
             raise ImportError(
                 "ultralytics 패키지가 필요합니다. "
@@ -84,7 +83,7 @@ class ObjectDetector:
         Args:
             image: RGB 이미지 (H, W, 3)
             conf_threshold: 신뢰도 임계값
-            classes: 탐지할 클래스 ID (None이면 전체, [15,16]=고양이/개)
+            classes: 탐지할 클래스 ID (None이면 전체, [0]=person)
             
         Returns:
             탐지된 객체 리스트
@@ -92,7 +91,7 @@ class ObjectDetector:
         # 1단계: 객체 탐지
         results = self.model(image, conf=conf_threshold, classes=classes, verbose=False)
         
-        # 2단계: Pose 탐지 (동물 객체에 대해)
+        # 2단계: Pose 탐지 (사람 키포인트)
         pose_results = self.pose_model(image, conf=conf_threshold, verbose=False)
         
         detections = []
@@ -105,7 +104,14 @@ class ObjectDetector:
                 
             for i, box in enumerate(boxes):
                 class_id = int(box.cls[0].item())
-                class_name = result.names[class_id]
+                # 사람 전용(classes=[0]): 라벨을 항상 person으로 통일 (오분류 방지)
+                if classes == [0]:
+                    class_id = 0
+                    class_name = "person"
+                else:
+                    if classes is not None and class_id not in classes:
+                        continue
+                    class_name = result.names[class_id]
                 confidence = float(box.conf[0].item())
                 x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
                 
@@ -126,13 +132,50 @@ class ObjectDetector:
         
         return detections
     
+    def detect_persons(
+        self,
+        image: np.ndarray,
+        conf_threshold: float = 0.5
+    ) -> List[Detection]:
+        """
+        사람(person)만 탐지. YOLOv8-pose(사람 전용 단일 클래스)만 사용하여
+        dog 등 오탐을 원천 차단. 박스 + 키포인트를 한 번에 반환.
+        
+        Args:
+            image: RGB 이미지
+            conf_threshold: 신뢰도 임계값
+            
+        Returns:
+            탐지된 사람 리스트 (class_name="person", keypoints 포함)
+        """
+        pose_results = self.pose_model(image, conf=conf_threshold, verbose=False)
+        detections = []
+        for result in pose_results:
+            if result.boxes is None or len(result.boxes) == 0:
+                continue
+            kpts_data = result.keypoints.data if result.keypoints is not None else None
+            for i, box in enumerate(result.boxes):
+                x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                confidence = float(box.conf[0].item())
+                keypoints = None
+                if kpts_data is not None and i < len(kpts_data):
+                    keypoints = kpts_data[i].cpu().numpy()
+                detections.append(Detection(
+                    class_id=0,
+                    class_name="person",
+                    confidence=confidence,
+                    bbox=(float(x1), float(y1), float(x2), float(y2)),
+                    keypoints=keypoints,
+                ))
+        return detections
+
     def detect_animals(
         self,
         image: np.ndarray,
         conf_threshold: float = 0.5
     ) -> List[Detection]:
         """
-        개/고양이만 탐지 (COCO: 15=cat, 16=dog)
+        동물만 탐지 (COCO: 15=cat, 16=dog 등). 레거시/동물 전용 분석용.
         
         Args:
             image: RGB 이미지
@@ -141,8 +184,7 @@ class ObjectDetector:
         Returns:
             탐지된 동물 리스트
         """
-        # COCO 클래스: 15=cat, 16=dog, 17=horse 등
-        animal_classes = [15, 16, 17, 18, 19, 20, 21, 22, 23]  # 주요 동물들
+        animal_classes = [15, 16, 17, 18, 19, 20, 21, 22, 23]
         return self.detect(image, conf_threshold, classes=animal_classes)
     
     def visualize(

@@ -30,12 +30,14 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
-/* 멀티 채팅방: 왼쪽 채팅창(넓게), 오른쪽 VisionAI iframe */
+/* 멀티 채팅방: 왼쪽 채팅창(라운지/1:1), 오른쪽 VisionAI(꽉 참) */
 .room-page .room-layout {
   display: flex;
   flex: 1;
   min-height: 0;
   width: 100%;
+  height: 100vh;
+  height: 100dvh;
   position: relative;
 }
 
@@ -114,11 +116,323 @@ body {
   transition: flex 0.3s ease, min-width 0.3s ease, max-width 0.3s ease, padding 0.3s ease;
 }
 
+.room-iframe-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.room-page .visionai-backend-bar {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(15, 20, 25, 0.95);
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+
+.room-page .visionai-backend-bar strong {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.room-vision-content {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
 .room-page .room-iframe {
   flex: 1;
   min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
   border: none;
   background: #0f1419;
+  display: block;
+}
+
+.room-vision-content .room-iframe.room-iframe--hidden {
+  display: none;
+}
+
+/* 체스 패널이 Vision AI 영역에 올 때: 전체 영역 채우기 */
+.chessPanel.chessPanel--vision {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--card);
+  border: none;
+}
+
+.chessPanel.chessPanel--vision .chessBoardWrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+/* Vision 영역: 8x8이 항상 전부 보이도록 뷰포트 기준 상한 적용 + 크기 확대 */
+.chessPanel.chessPanel--vision .chessBoardRow {
+  gap: 16px;
+  align-items: center;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+/* 헤더·백엔드바·패딩 제외한 높이 안에 체스판이 무조건 들어가도록 */
+.chessPanel.chessPanel--vision .chessBoard {
+  --chess-max: min(560px, calc(100vh - 150px), calc(100dvh - 150px));
+  width: var(--chess-max);
+  height: var(--chess-max);
+  min-width: 200px;
+  min-height: 200px;
+  max-width: var(--chess-max);
+  max-height: var(--chess-max);
+  flex-shrink: 0;
+}
+
+.chessPanel.chessPanel--vision .chessSquare {
+  font-size: min(36px, 5vw);
+}
+
+.chessPanel.chessPanel--vision .chessCaptured {
+  min-width: 56px;
+  max-width: 100px;
+  width: 100px;
+  min-height: 120px;
+  padding: 10px 8px;
+  font-size: 22px;
+  flex-direction: column;
+  align-items: center;
+  align-content: flex-start;
+  gap: 4px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.chessPanel.chessPanel--vision .chessCapturedPieceWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+}
+
+.chessPanel.chessPanel--vision .chessCapturedCount {
+  font-size: 13px;
+}
+
+/* ---------- 오목 패널 (Vision 영역) ---------- */
+.gomokuPanel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--card);
+  border: none;
+}
+
+.gomokuPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.gomokuPanelHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.gomokuPanelHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gomokuPanelTitle {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.gomokuStatusInline {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.gomokuStartBtn, .gomokuResignBtn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.gomokuStartBtn:hover, .gomokuResignBtn:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--accent);
+}
+
+.gomokuPanelClose {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--muted);
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.gomokuPanelClose:hover {
+  color: var(--text);
+}
+
+.gomokuBoardWrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 14px;
+}
+
+.gomokuBoard {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+  aspect-ratio: 1;
+  --gomoku-max: min(420px, calc(100vh - 150px), calc(100dvh - 150px));
+  width: var(--gomoku-max);
+  height: var(--gomoku-max);
+  min-width: 200px;
+  min-height: 200px;
+  max-width: var(--gomoku-max);
+  max-height: var(--gomoku-max);
+  flex-shrink: 0;
+  background: #2d6b27;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  padding: 2px;
+  gap: 0;
+}
+
+.gomokuCell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  cursor: default;
+  border-radius: 2px;
+}
+
+.gomokuCell.playable:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.gomokuCell.black {
+  background: #e6c200;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+.gomokuCell.white {
+  background: #6eb5e0;
+  border: 1px solid rgba(0,0,0,0.2);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+}
+
+.gomokuCell.last-move.black,
+.gomokuCell.last-move.white {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.gomokuPvpSelect {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.gomokuPvpLabel {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.gomokuPvpOpponent {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.gomokuPvpConfirm {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+}
+
+.gomokuGameBtn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.gomokuGameBtn:hover {
+  background: rgba(99, 102, 241, 0.35);
 }
 
 .container {
@@ -814,15 +1128,16 @@ body {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
-  aspect-ratio: 1;
-  width: 100%;
-  max-width: min(560px, 90vw);
-  max-height: min(560px, 65vh);
-  min-width: 200px;
-  margin: 0 auto 10px;
+  /* 정사각형 유지하면서 뷰포트/패널 안에 전부 보이도록 한쪽만 제한 후 동일 적용 */
+  width: min(320px, 85vw, 42vh);
+  height: min(320px, 85vw, 42vh);
+  min-width: 160px;
+  min-height: 160px;
+  margin: 0 auto 8px;
   border: 2px solid var(--border);
   border-radius: 4px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .chessSquare {
@@ -831,7 +1146,7 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: min(36px, 4.5vw);
+  font-size: min(22px, 2.8vw);
   user-select: none;
 }
 
@@ -1315,6 +1630,7 @@ body {
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
+  cursor: pointer;
 }
 
 .roomMsgImageLarge {
@@ -1322,6 +1638,78 @@ body {
   max-height: 360px;
   border-radius: 12px;
   display: block;
+  pointer-events: auto;
+}
+
+/* 이미지 확대 팝업 (스크롤/드래그로 이동·확대) */
+.image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.9);
+  touch-action: none;
+}
+
+.image-lightbox__backdrop {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+}
+
+.image-lightbox__container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+.image-lightbox__img {
+  display: block;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  transition: transform 0.1s ease-out;
+  cursor: grab;
+  transform-origin: center center;
+}
+
+.image-lightbox__img:active {
+  cursor: grabbing;
+}
+
+.image-lightbox__close {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10001;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.2s;
+}
+
+.image-lightbox__close:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .roomMsgImageCaption {

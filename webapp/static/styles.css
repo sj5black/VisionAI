@@ -102,16 +102,28 @@ button:disabled {
   color: var(--muted);
 }
 
-.grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr;
+.imagesCompareRow {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  align-items: flex-start;
 }
 
-@media (min-width: 900px) {
-  .grid {
-    grid-template-columns: 1fr 1fr;
-  }
+.imageCompareCol {
+  flex: 1;
+  min-width: 260px;
+}
+
+.imageCompareCol .imageWrap {
+  min-height: 120px;
+}
+
+.imageCompareLabel {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--muted);
 }
 
 .imageWrap {
@@ -168,6 +180,19 @@ table {
   font-size: 14px;
 }
 
+table .table-caption,
+table caption.table-caption {
+  caption-side: top;
+  padding: 8px 0 6px 0;
+  text-align: left;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+table caption.table-caption strong {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 th,
 td {
   padding: 10px 8px;
@@ -183,5 +208,113 @@ th {
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   color: rgba(255, 255, 255, 0.8);
+}
+
+/* 결과 영역: emotion, pose 등 글씨 흰색 */
+.result-text-white,
+#tableWrap td,
+#tableWrap th,
+#tableWrap caption {
+  color: #fff;
+}
+
+#tableWrap .muted {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* 탭 */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: 20px;
+  margin-bottom: 0;
+}
+
+.tab {
+  padding: 10px 18px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--muted);
+  border-radius: 10px 10px 0 0;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.tab:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tab.active {
+  background: var(--card);
+  color: var(--accent2);
+  border-bottom-color: var(--card);
+  margin-bottom: -1px;
+}
+
+.panel {
+  margin-top: 0;
+}
+
+.cardTitle {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+}
+
+/* 영상 분석 결과 */
+.videoResult h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+}
+
+.videoPreviewRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.videoSummaryBox {
+  flex: 1;
+  min-width: 240px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.videoSummaryBox p {
+  margin: 0 0 8px 0;
+}
+
+.videoSummaryBox p:last-child {
+  margin-bottom: 0;
+}
+
+.moodSummary {
+  font-size: 15px;
+  color: var(--accent2);
+  font-weight: 500;
+}
+
+.videoDetails {
+  padding: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.videoDetails summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.counts {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text);
 }
 

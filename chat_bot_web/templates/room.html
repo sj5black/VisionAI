@@ -12,10 +12,10 @@
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
       </svg>
-      <span class="chat-panel-show-label">채팅</span>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <!-- <span class="chat-panel-show-label">채팅</span> -->
+      <!-- <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="9 18 15 12 9 6"></polyline>
-      </svg>
+      </svg> -->
     </button>
     <main class="container room-chat-panel">
     <header class="header">
@@ -151,34 +151,8 @@
         <button type="button" id="serenaInviteBtn" class="serenaInviteBtn" title="Serena 초대">Serena 초대</button>
         <button type="button" id="chessGameBtn" class="chessGameBtn" title="Serena와 체스" style="display: none;">♔ Serena</button>
         <button type="button" id="chessPvpBtn" class="chessGameBtn" title="1:1 체스" style="display: none;">♔ 1:1</button>
-      </div>
-      <div id="chessPanel" class="chessPanel" style="display: none;">
-        <div class="chessPanelHeader">
-          <div class="chessPanelHeaderLeft">
-            <span id="chessPanelTitle" class="chessPanelTitle">♔ Serena vs (대기 중)</span>
-            <span id="chessStatus" class="chessStatusInline">-</span>
-          </div>
-          <div class="chessPanelHeaderRight">
-            <div class="chessActions chessActionsTop">
-              <button type="button" id="chessStartBtn" class="chessStartBtn">새 게임 (Serena)</button>
-              <button type="button" id="chessStartPvpBtn" class="chessStartBtn chessStartPvpBtn" style="display: none;">1:1 도전</button>
-              <button type="button" id="chessResignBtn" class="chessResignBtn">기권</button>
-            </div>
-            <button type="button" id="chessPanelClose" class="chessPanelClose" title="닫기">&times;</button>
-          </div>
-        </div>
-        <div class="chessBoardWrap">
-          <div class="chessBoardRow">
-            <div id="chessCapturedLeft" class="chessCaptured chessCapturedLeft" title="흰색이 따먹은 기물"></div>
-            <div id="chessBoard" class="chessBoard"></div>
-            <div id="chessCapturedRight" class="chessCaptured chessCapturedRight" title="검은색이 따먹은 기물"></div>
-          </div>
-          <div id="chessPvpSelect" class="chessPvpSelect" style="display: none;">
-            <span class="chessPvpLabel">대상 선택:</span>
-            <select id="chessPvpOpponent" class="chessPvpOpponent"></select>
-            <button type="button" id="chessPvpConfirm" class="chessPvpConfirm">도전</button>
-          </div>
-        </div>
+        <button type="button" id="gomokuGameBtn" class="gomokuGameBtn" title="Serena와 오목" style="display: none;">● Serena</button>
+        <button type="button" id="gomokuPvpBtn" class="gomokuGameBtn" title="1:1 오목" style="display: none;">● 1:1</button>
       </div>
       <div id="roomMessages" class="roomMessages"></div>
       <div class="roomInputBar">
@@ -212,7 +186,73 @@
       </div>
     </section>
   </main>
-  <iframe class="room-iframe" src="http://175.197.131.234:8003/" title="VisionAI 객체 탐지"></iframe>
+  <div class="room-iframe-wrap">
+    <div id="visionaiBackendBar" class="visionai-backend-bar">
+      감정/자세 백엔드: <span id="visionaiBackendLabel">—</span>
+    </div>
+    <div class="room-vision-content">
+      <iframe id="visionaiFrame" class="room-iframe" src="http://175.197.131.234:8003/" title="VisionAI 객체 탐지"></iframe>
+      <div id="chessPanel" class="chessPanel chessPanel--vision" style="display: none;">
+        <div class="chessPanelHeader">
+          <div class="chessPanelHeaderLeft">
+            <span id="chessPanelTitle" class="chessPanelTitle">♔ Serena vs (대기 중)</span>
+            <span id="chessStatus" class="chessStatusInline">-</span>
+          </div>
+          <div class="chessPanelHeaderRight">
+            <div class="chessActions chessActionsTop">
+              <button type="button" id="chessStartBtn" class="chessStartBtn">새 게임 (Serena)</button>
+              <button type="button" id="chessStartPvpBtn" class="chessStartBtn chessStartPvpBtn" style="display: none;">1:1 도전</button>
+              <button type="button" id="chessResignBtn" class="chessResignBtn">기권</button>
+            </div>
+            <button type="button" id="chessPanelClose" class="chessPanelClose" title="닫기">&times;</button>
+          </div>
+        </div>
+        <div class="chessBoardWrap">
+          <div class="chessBoardRow">
+            <div id="chessCapturedLeft" class="chessCaptured chessCapturedLeft" title="흰색이 잡은 기물"></div>
+            <div id="chessBoard" class="chessBoard"></div>
+            <div id="chessCapturedRight" class="chessCaptured chessCapturedRight" title="검은색이 잡은 기물"></div>
+          </div>
+          <div id="chessPvpSelect" class="chessPvpSelect" style="display: none;">
+            <span class="chessPvpLabel">대상 선택:</span>
+            <select id="chessPvpOpponent" class="chessPvpOpponent"></select>
+            <button type="button" id="chessPvpConfirm" class="chessPvpConfirm">도전</button>
+          </div>
+        </div>
+      </div>
+      <div id="gomokuPanel" class="gomokuPanel gomokuPanel--vision" style="display: none;">
+        <div class="gomokuPanelHeader">
+          <div class="gomokuPanelHeaderLeft">
+            <span id="gomokuPanelTitle" class="gomokuPanelTitle">● 오목 (대기 중)</span>
+            <span id="gomokuStatus" class="gomokuStatusInline">-</span>
+          </div>
+          <div class="gomokuPanelHeaderRight">
+            <button type="button" id="gomokuStartBtn" class="gomokuStartBtn">새 게임 (Serena)</button>
+            <button type="button" id="gomokuStartPvpBtn" class="gomokuStartBtn gomokuStartPvpBtn" style="display: none;">1:1 도전</button>
+            <button type="button" id="gomokuResignBtn" class="gomokuResignBtn">기권</button>
+            <button type="button" id="gomokuPanelClose" class="gomokuPanelClose" title="닫기">&times;</button>
+          </div>
+        </div>
+        <div class="gomokuBoardWrap">
+          <div id="gomokuBoard" class="gomokuBoard"></div>
+          <div id="gomokuPvpSelect" class="gomokuPvpSelect" style="display: none;">
+            <span class="gomokuPvpLabel">대상 선택:</span>
+            <select id="gomokuPvpOpponent" class="gomokuPvpOpponent"></select>
+            <button type="button" id="gomokuPvpConfirm" class="gomokuPvpConfirm">도전</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="imageLightbox" class="image-lightbox" style="display: none;" aria-hidden="true">
+    <div class="image-lightbox__backdrop"></div>
+    <div class="image-lightbox__container">
+      <img id="imageLightboxImg" class="image-lightbox__img" src="" alt="확대 이미지" draggable="false" />
+    </div>
+    <button type="button" class="image-lightbox__close" title="닫기">&times;</button>
+  </div>
+
   <script src="/static/room.js"></script>
 </body>
 </html>

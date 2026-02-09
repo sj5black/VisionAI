@@ -30,7 +30,7 @@ function renderTypes(types) {
   }
 }
 
-function renderTable(objects, isPipeline) {
+function renderTable(objects, isPipeline, emotionBackend) {
   const wrap = $("tableWrap");
   if (!objects || objects.length === 0) {
     wrap.innerHTML = '<div class="muted">탐지 결과가 없습니다.</div>';
@@ -88,8 +88,14 @@ function renderTable(objects, isPipeline) {
     ? `<th>emotion*</th><th>pose*</th><th>state*</th><th>predicted next*</th>`
     : `<th>behavior*</th><th>expression*</th><th>state*</th><th>next actions*</th>`;
 
+  const caption =
+    isPipeline && emotionBackend && String(emotionBackend).trim()
+      ? `<caption class="table-caption">감정/자세 백엔드: <strong>${escapeHtml(emotionBackend)}</strong></caption>`
+      : "";
+
   wrap.innerHTML = `
     <table>
+      ${caption}
       <thead>
         <tr>
           <th>#</th>
@@ -117,6 +123,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = $("uploadForm");
   const imageInput = $("image");
   const submitBtn = $("submitBtn");
+  const modelSelect = $("model");
+  const tabImage = $("tabImage");
+  const tabVideo = $("tabVideo");
+  const panelImage = $("panelImage");
+  const panelVideo = $("panelVideo");
+  const imageResultsSection = $("imageResultsSection");
+
+  function showTab(tab) {
+    const isImage = tab === "image";
+    if (tabImage) tabImage.classList.toggle("active", isImage);
+    if (tabVideo) tabVideo.classList.toggle("active", !isImage);
+    if (panelImage) panelImage.style.display = isImage ? "" : "none";
+    if (panelVideo) panelVideo.style.display = isImage ? "none" : "";
+    if (imageResultsSection) imageResultsSection.style.display = isImage ? "" : "none";
+  }
+  if (tabImage) tabImage.addEventListener("click", () => showTab("image"));
+  if (tabVideo) tabVideo.addEventListener("click", () => showTab("video"));
 
   imageInput.addEventListener("change", async () => {
     const file = imageInput.files && imageInput.files[0];
@@ -163,23 +186,29 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // 🆕 Pipeline 모드 체크
       const isPipeline = data.pipeline_enabled || data.model === "visionai_pipeline";
-      renderTable(data.objects, isPipeline);
+      renderTable(data.objects, isPipeline, data.emotion_backend);
 
       const notice = $("animalNotice");
       const pipelineInfo = $("pipelineInfo");
       
       if (isPipeline) {
         // 🆕 VisionAI Pipeline 사용
+        const emotionBackend = data.emotion_backend && String(data.emotion_backend).trim();
+        const backendLabel = emotionBackend ? emotionBackend : "감정/자세 분석";
         notice.style.display = "block";
         notice.innerHTML =
           "<b>🆕 VisionAI Pipeline</b>을 사용한 분석 결과입니다. " +
-          "YOLOv8 기반 객체 탐지 + MobileNetV3 감정/자세 분석 + 행동 예측 (~10MB 경량 모델)";
+          "YOLOv8 사람 탐지 + <b>OpenFace 2.0 (AU)</b> 표정·자세 + 행동 예측";
         
         pipelineInfo.style.display = "block";
+        if (data.emotion_backend) {
+          var backendEl = document.getElementById("emotionBackendLabel");
+          if (backendEl) backendEl.textContent = data.emotion_backend;
+        }
         if (data.processing_time) {
           $("processingTime").textContent = Number(data.processing_time).toFixed(3);
         }
-      } else if (data.animal_insights_enabled) {
+        } else if (data.animal_insights_enabled) {
         notice.style.display = "block";
         notice.innerHTML =
           "<b>*동물 행동/표정/상태</b>는 이미지 기반 <b>추정(Zero-shot)</b> 결과입니다. " +
@@ -188,7 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         notice.style.display = "block";
         notice.innerHTML =
-          "<b>동물 행동/표정 분석</b> 기능이 현재 서버에서 비활성화되어 있습니다. " +
+          "<b>표정/자세 분석</b> 기능이 현재 서버에서 비활성화되어 있습니다. " +
           "(open_clip_torch 미설치 또는 로드 실패).";
         pipelineInfo.style.display = "none";
       }
@@ -201,5 +230,90 @@ document.addEventListener("DOMContentLoaded", () => {
       submitBtn.disabled = false;
     }
   });
+
+  // 영상 분석
+  const videoForm = $("videoForm");
+  const videoSubmitBtn = $("videoSubmitBtn");
+  const videoFileInput = $("videoFile");
+  function setVideoStatus(msg) {
+    const el = $("videoStatus");
+    if (el) el.textContent = msg;
+  }
+  if (videoForm && videoSubmitBtn) {
+    videoForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const file = videoFileInput && videoFileInput.files && videoFileInput.files[0];
+      if (!file) return;
+      videoSubmitBtn.disabled = true;
+      setVideoStatus("영상 분석 중... (프레임 수에 따라 시간이 걸립니다)");
+      const videoResultEl = $("videoResult");
+      try {
+        const fd = new FormData(videoForm);
+        fd.set("video", file);
+        const res = await fetch("/api/analyze-video", { method: "POST", body: fd });
+        let data = null;
+        let text = null;
+        try {
+          data = await res.json();
+        } catch (_) {
+          text = await res.text().catch(() => null);
+        }
+        if (!res.ok) {
+          const msg = (data && data.detail) || (text && text.trim()) || "Request failed";
+          throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+        }
+        if (!data || !data.video_analysis) throw new Error("Invalid response");
+        const summary = data.summary || {};
+        const videoPreview = $("videoPreview");
+        if (videoPreview) {
+          videoPreview.src = data.video_url ? data.video_url + "?t=" + Date.now() : "";
+          videoPreview.load();
+        }
+        const moodEl = $("videoMoodSummary");
+        if (moodEl) moodEl.textContent = summary.mood_summary || "—";
+        const emoEl = $("videoDominantEmotion");
+        if (emoEl) emoEl.textContent = summary.dominant_emotion || "—";
+        const poseEl = $("videoDominantPose");
+        if (poseEl) poseEl.textContent = summary.dominant_pose || "—";
+        const framesEl = $("videoFramesCount");
+        if (framesEl) framesEl.textContent = String(data.frames_analyzed || 0);
+        const timeEl = $("videoProcessingTime");
+        if (timeEl) timeEl.textContent = String(data.processing_time_sec ?? "—");
+        const backendEl = $("videoBackend");
+        if (backendEl) backendEl.textContent = data.emotion_backend || "—";
+        const emotionCountsEl = $("videoEmotionCounts");
+        if (emotionCountsEl && summary.emotion_counts) {
+          const items = Object.entries(summary.emotion_counts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([k, v]) => k + ": " + v + "회");
+          emotionCountsEl.innerHTML = "<p>" + (items.length ? items.join(", ") : "—") + "</p>";
+        }
+        const poseCountsEl = $("videoPoseCounts");
+        if (poseCountsEl && summary.pose_counts) {
+          const items = Object.entries(summary.pose_counts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([k, v]) => k + ": " + v + "회");
+          poseCountsEl.innerHTML = "<p>" + (items.length ? items.join(", ") : "—") + "</p>";
+        }
+        const frameTableWrap = $("videoFrameTableWrap");
+        if (frameTableWrap && data.frames && data.frames.length) {
+          let html = '<table><caption class="table-caption">시간(초) · 표정 · 자세</caption><thead><tr><th>시간(초)</th><th>표정</th><th>자세</th></tr></thead><tbody>';
+          data.frames.slice(0, 50).forEach(function (f) {
+            html += "<tr><td>" + escapeHtml(String(f.timestamp)) + "</td><td>" + escapeHtml(String(f.emotion)) + "</td><td>" + escapeHtml(String(f.pose)) + "</td></tr>";
+          });
+          if (data.frames.length > 50) html += "<tr><td colspan=\"3\">… 외 " + (data.frames.length - 50) + "프레임</td></tr>";
+          html += "</tbody></table>";
+          frameTableWrap.innerHTML = html;
+        }
+        if (videoResultEl) videoResultEl.style.display = "block";
+        setVideoStatus("완료: " + (data.frames_analyzed || 0) + "프레임 분석");
+      } catch (err) {
+        console.error(err);
+        setVideoStatus("실패: " + (err && err.message ? err.message : String(err)));
+      } finally {
+        videoSubmitBtn.disabled = false;
+      }
+    });
+  }
 });
 

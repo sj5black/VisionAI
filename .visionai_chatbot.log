@@ -1,34 +1,121 @@
 INFO:     Will watch for changes in these directories: ['/home/teddy/VisionAI']
 INFO:     Uvicorn running on http://0.0.0.0:8004 (Press CTRL+C to quit)
-INFO:     Started reloader process [716832] using WatchFiles
-INFO:     Started server process [716835]
+INFO:     Started reloader process [41292] using WatchFiles
+INFO:     Started server process [41295]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     112.171.67.160:6250 - "GET /room HTTP/1.1" 200 OK
-INFO:     112.171.67.160:6250 - "GET /static/room.css HTTP/1.1" 200 OK
-INFO:     112.171.67.160:12401 - "GET /static/room.js HTTP/1.1" 304 Not Modified
-INFO:     112.171.67.160:6250 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     112.171.67.160:6250 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     112.171.67.160:6250 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     112.171.67.160:10027 - "WebSocket /ws/room" [accepted]
+INFO:     112.171.67.160:4981 - "GET /room HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10563 - "GET /static/room.js HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4981 - "GET /static/room.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10563 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10563 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4981 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:4981 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12093 - "WebSocket /ws/room" [accepted]
 INFO:     connection open
-INFO:     112.171.67.160:5955 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     112.171.67.160:3235 - "WebSocket /ws/dm" [accepted]
+INFO:     112.171.67.160:1654 - "WebSocket /ws/dm" [accepted]
 INFO:     connection open
 INFO:     connection closed
-INFO:     112.171.67.160:4141 - "GET /room HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7310 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+WARNING:  WatchFiles detected changes in 'visionai_pipeline/emotion_categories.py'. Reloading...
+INFO:     Shutting down
 INFO:     connection closed
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [41295]
+INFO:     Started server process [42996]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     112.171.67.160:5933 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+WARNING:  WatchFiles detected changes in 'visionai_pipeline/openface_analyzer.py'. Reloading...
+INFO:     Shutting down
 INFO:     connection closed
-INFO:     112.171.67.160:4141 - "GET /static/room.css HTTP/1.1" 200 OK
-INFO:     112.171.67.160:12847 - "GET /static/room.js HTTP/1.1" 200 OK
-INFO:     112.171.67.160:12847 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     112.171.67.160:12847 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     112.171.67.160:4141 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     112.171.67.160:4141 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     112.171.67.160:4690 - "WebSocket /ws/room" [accepted]
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [42996]
+INFO:     Started server process [43285]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'visionai_pipeline/emotion.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43285]
+INFO:     Started server process [43384]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'visionai_pipeline/pipeline.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43384]
+INFO:     Started server process [43515]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'visionai_pipeline/pipeline.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43515]
+INFO:     Started server process [43615]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'visionai_pipeline/pipeline.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43615]
+INFO:     Started server process [43617]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'visionai_pipeline/pipeline.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43617]
+INFO:     Started server process [43626]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'visionai_pipeline/openface_analyzer.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43626]
+INFO:     Started server process [43805]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'visionai_pipeline/openface_analyzer.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43805]
+INFO:     Started server process [43859]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     162.216.150.64:62822 - "GET / HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'visionai_pipeline/temporal.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [43859]
+INFO:     Started server process [43947]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     211.234.200.20:36222 - "WebSocket /ws/room" [accepted]
 INFO:     connection open
-INFO:     112.171.67.160:5158 - "WebSocket /ws/room" [accepted]
+INFO:     211.234.200.20:18440 - "GET /room HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     211.234.200.20:21870 - "GET /static/room.css HTTP/1.1" 304 Not Modified
+INFO:     211.234.200.20:18440 - "GET /static/room.js HTTP/1.1" 304 Not Modified
+INFO:     211.234.200.20:18440 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     211.234.200.20:18440 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     211.234.200.20:18440 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     211.234.200.20:36244 - "WebSocket /ws/room" [accepted]
 INFO:     connection open
-INFO:     112.171.67.160:2288 - "WebSocket /ws/dm" [accepted]
+INFO:     211.234.200.20:36258 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:13982 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:5013 - "WebSocket /ws/dm" [accepted]
 INFO:     connection open

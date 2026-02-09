@@ -12,6 +12,8 @@ from typing import List, Dict, Optional
 from dataclasses import dataclass
 from collections import deque
 import torch
+
+from visionai_pipeline.emotion_categories import get_emotion_group, get_pose_group
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
@@ -282,53 +284,13 @@ class TemporalAnalyzer:
     ) -> str:
         """
         자세, 감정, 움직임 강도로 행동 추론.
-        확장된 감정/자세 카테고리를 시맨틱 그룹으로 매핑하여 처리.
+        OpenFace 2.0 AU 기반 표정/자세는 emotion_categories의 그룹 매핑으로 처리.
         """
-        # 시맨틱 매핑: 확장된 감정 -> 5가지 핵심 그룹
-        calm_emotions = {'relaxed', 'happy', 'content', 'sleepy', 'bored', 'submissive', 'affectionate'}
-        alert_emotions = {'curious', 'alert'}
-        playful_emotions = {'excited', 'playful'}
-        fearful_emotions = {'fearful', 'anxious', 'stressed', 'nervous'}
-        aggressive_emotions = {'aggressive', 'dominant'}
-
-        def emotion_group(e: str) -> str:
-            e = (e or '').lower()
-            if e in calm_emotions:
-                return 'relaxed'
-            if e in alert_emotions:
-                return 'alert'
-            if e in playful_emotions:
-                return 'playful'
-            if e in fearful_emotions:
-                return 'fearful'
-            if e in aggressive_emotions:
-                return 'aggressive'
-            return 'relaxed'  # 기본
-
-        # 시맨틱 매핑: 확장된 자세 -> 핵심 그룹
-        rest_poses = {'lying', 'sleeping', 'hiding'}
-        stationary_poses = {'sitting', 'standing', 'crouching', 'begging', 'stretching'}
-        feeding_poses = {'eating', 'drinking'}
-        walk_poses = {'walking', 'sniffing', 'grooming', 'rolling'}
-        fast_poses = {'running', 'jumping', 'playing', 'stalking'}
-
-        def pose_group(p: str) -> str:
-            p = (p or '').lower()
-            if p in rest_poses:
-                return 'lying'
-            if p in feeding_poses:
-                return 'eating'
-            if p in walk_poses:
-                return 'walking'
-            if p in fast_poses:
-                return 'running' if p in {'running', 'stalking'} else 'running'
-            return 'sitting' if p in stationary_poses else 'standing'
-
-        emo = emotion_group(dominant_emotion)
-        pos = pose_group(dominant_pose)
+        emo = get_emotion_group(dominant_emotion)
+        pos = get_pose_group(dominant_pose)
 
         # 먹기 행동: eating/drinking 자세
-        if dominant_pose in feeding_poses:
+        if pos == "eating":
             return 'eating'
 
         # 움직임이 거의 없음

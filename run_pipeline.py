@@ -168,9 +168,9 @@ def process_video(
     print("분석 요약")
     print("=" * 60)
     
-    # 탐지된 동물 수
+    # 탐지된 사람 수
     total_detections = sum(len(r['detections']) for r in results)
-    print(f"총 탐지: {total_detections}개")
+    print(f"총 탐지(사람): {total_detections}개")
     
     # 감정 분포
     if results and results[0]['emotions']:
@@ -195,18 +195,18 @@ def process_video(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="VisionAI Pipeline - 동물 행동 예측",
+        description="VisionAI Pipeline - 사람 표정·자세 분석 및 행동 예측",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 예시:
-  # 단일 이미지 분석
-  python run_pipeline.py --image dog.jpg --output result.jpg
+  # 단일 이미지 분석 (사람 탐지 → 표정·자세 → 행동 예측)
+  python run_pipeline.py --image person.jpg --output result.jpg
   
   # 비디오 분석 (5 FPS 샘플링)
-  python run_pipeline.py --video cat_video.mp4 --output result.mp4 --fps 5
+  python run_pipeline.py --video video.mp4 --output result.mp4 --fps 5
   
-  # 경량화 모드 (감정/시간축/예측 비활성화)
-  python run_pipeline.py --image dog.jpg --no-emotion --no-temporal --no-prediction
+  # 경량화 모드 (표정/시간축/예측 비활성화)
+  python run_pipeline.py --image person.jpg --no-emotion --no-temporal --no-prediction
         """
     )
     
@@ -235,9 +235,11 @@ def main():
     parser.add_argument('--no-prediction', action='store_true',
                         help='행동 예측 비활성화')
     
-    # 모델 경로
+    # 모델 경로 및 백엔드
     parser.add_argument('--emotion-model', type=str,
                         help='감정 분석 모델 경로')
+    parser.add_argument('--emotion-backend', type=str, choices=['openclip', 'swin'],
+                        help='감정/자세 분석 백엔드: openclip(기본) 또는 swin. 미지정 시 OpenCLIP 우선.')
     parser.add_argument('--temporal-model', type=str,
                         help='시간 축 모델 경로')
     parser.add_argument('--prediction-model', type=str,
@@ -253,7 +255,8 @@ def main():
         enable_prediction=not args.no_prediction,
         emotion_model_path=args.emotion_model,
         temporal_model_path=args.temporal_model,
-        prediction_model_path=args.prediction_model
+        prediction_model_path=args.prediction_model,
+        emotion_backend=args.emotion_backend
     )
     
     # 처리

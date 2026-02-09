@@ -32,6 +32,13 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+# .env를 프로젝트 루트에서 명시 로드 (Serena 초대 등 OPENAI_* 사용)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(ROOT / ".env")
+except ImportError:
+    pass
+
 import chess
 
 from english_chat_bot import (
@@ -106,6 +113,12 @@ _serena_pending_task: Optional[asyncio.Task] = None
 _chess_game: Optional[Dict[str, Any]] = None
 _chess_pending_task: Optional[asyncio.Task] = None
 
+# 오목 게임: 15x15, 0=빈칸 1=흑 2=백. 흑 선공.
+# {"board": List[List[int]], "black_player": str, "white_player": str, "mode": "serena"|"pvp", "status": str, "turn": "black"|"white"}
+GOMOKU_SIZE = 15
+_gomoku_game: Optional[Dict[str, Any]] = None
+_gomoku_pending_task: Optional[asyncio.Task] = None
+
 # 1:1 DM: {room_id: [(websocket, user_info), ...]}
 _dm_connections: Dict[int, List[tuple[WebSocket, Dict[str, Any]]]] = {}
 _dm_connections_lock = asyncio.Lock()
@@ -114,13 +127,342 @@ _dm_message_read_status: Dict[tuple[int, str], Dict[str, Any]] = {}
 
 
 def _get_captured_piece(board: chess.Board, move: chess.Move) -> Optional[str]:
-    """캡처된 기물 기호 반환 (push 전에 호출)."""
+    """캡처된 기물 기호 반환 (push 전에 호출). 앙파상 포함."""
     if not board.is_capture(move):
         return None
     p = board.piece_at(move.to_square)
     if p is None and board.is_en_passant(move):
         p = chess.Piece(chess.PAWN, not board.turn)
     return p.symbol() if p else None
+
+
+def _normalize_uci_promotion(board: chess.Board, uci: str) -> str:
+    """4자리 UCI가 폰 프로모션인 경우 자동으로 퀸(q) 지정. 폰 진화."""
+    uci = (uci or "").strip().lower()[:10]
+    if len(uci) != 4:
+        return uci
+    try:
+        from_sq = chess.parse_square(uci[:2])
+        to_sq = chess.parse_square(uci[2:4])
+    except ValueError:
+        return uci
+    piece = board.piece_at(from_sq)
+    if piece is None or piece.piece_type != chess.PAWN:
+        return uci
+    to_rank = chess.square_rank(to_sq)
+    from_rank = chess.square_rank(from_sq)
+    if piece.color == chess.WHITE and from_rank == 6 and to_rank == 7:
+        return uci + "q"
+    if piece.color == chess.BLACK and from_rank == 1 and to_rank == 0:
+        return uci + "q"
+    return uci
+
+
+def _gomoku_empty_board() -> List[List[int]]:
+    """15x15 빈 오목판 (0=빈칸, 1=흑, 2=백)."""
+    return [[0] * GOMOKU_SIZE for _ in range(GOMOKU_SIZE)]
+
+
+def _gomoku_line_info(
+    board: List[List[int]], r: int, c: int, color: int, dr: int, dc: int
+) -> tuple[int, bool, bool]:
+    """(r,c)를 포함해 (dr,dc) 방향으로 연속된 color 개수, 왼쪽/오른쪽 끝 개방 여부."""
+    count = 1
+    # 양의 방향
+    step = 1
+    while True:
+        nr, nc = r + dr * step, c + dc * step
+        if 0 <= nr < GOMOKU_SIZE and 0 <= nc < GOMOKU_SIZE and board[nr][nc] == color:
+            count += 1
+            step += 1
+        else:
+            right_open = (
+                not (0 <= nr < GOMOKU_SIZE and 0 <= nc < GOMOKU_SIZE)
+                or board[nr][nc] == 0
+            )
+            break
+    # 음의 방향
+    step = 1
+    while True:
+        nr, nc = r - dr * step, c - dc * step
+        if 0 <= nr < GOMOKU_SIZE and 0 <= nc < GOMOKU_SIZE and board[nr][nc] == color:
+            count += 1
+            step += 1
+        else:
+            left_open = (
+                not (0 <= nr < GOMOKU_SIZE and 0 <= nc < GOMOKU_SIZE)
+                or board[nr][nc] == 0
+            )
+            break
+    return (count, left_open, right_open)
+
+
+def _gomoku_check_win(board: List[List[int]], r: int, c: int, color: int) -> bool:
+    """(r,c)에 color 돌을 둔 뒤 5목 달성 여부."""
+    for dr, dc in (0, 1), (1, 0), (1, 1), (1, -1):
+        count = 1
+        for sign in (1, -1):
+            for step in range(1, 5):
+                nr, nc = r + sign * dr * step, c + sign * dc * step
+                if 0 <= nr < GOMOKU_SIZE and 0 <= nc < GOMOKU_SIZE and board[nr][nc] == color:
+                    count += 1
+                else:
+                    break
+        if count >= 5:
+            return True
+    return False
+
+
+def _gomoku_renju_forbidden_black(board: List[List[int]], r: int, c: int) -> bool:
+    """렌주 룰: 흑이 (r,c)에 두면 금수인지. 금수면 True."""
+    color = 1
+    open_fours = 0
+    open_threes = 0
+    for dr, dc in (0, 1), (1, 0), (1, 1), (1, -1):
+        cnt, left_open, right_open = _gomoku_line_info(board, r, c, color, dr, dc)
+        if cnt >= 6:
+            return True  # 장목(overline) 금수
+        if cnt == 4 and (left_open or right_open):
+            open_fours += 1
+        if cnt == 3 and left_open and right_open:
+            open_threes += 1
+    if open_fours >= 2:
+        return True  # 쌍사 금수
+    if open_threes >= 2:
+        return True  # 쌍삼 금수
+    return False
+
+
+GOMOKU_SYSTEM = """You are Serena, an expert Gomoku (Renju rules) player. You play WHITE (second player) on a 15x15 board (rows/cols 0-14).
+
+**RENJU RULES:**
+- Win: Get exactly 5 stones in a row (horizontal/vertical/diagonal)
+- BLACK (opponent) has forbidden moves: overline (6+ in a row), double-three, double-four
+- WHITE (you) has NO forbidden moves - you can freely make double-three, double-four, overline
+
+**WINNING STRATEGY (Priority Order):**
+1. **WIN NOW**: If you can make 5-in-a-row this turn, do it immediately
+
+2. **BLOCK OPPONENT'S GUARANTEED WIN**: If opponent has an open four (4 stones with both ends open, guaranteed win next turn), BLOCK IT
+
+3. **PREVENT OPPONENT'S FORK (CRITICAL)**: 
+   - Scan all empty cells to find positions where BLACK could create TWO open threes simultaneously (double open-three fork)
+   - If such a position exists, OCCUPY IT IMMEDIATELY to prevent the fork
+   - This is a preventive defense - stop the threat before it happens
+
+4. **BLOCK OPPONENT'S OPEN THREE**:
+   - If BLACK has an open three (3 stones with both ends open in horizontal/vertical/diagonal), you MUST block one end
+   - Open three becomes open four next turn, which forces you to defend
+   - Check ALL directions: horizontal (—), vertical (|), diagonal (/ and \)
+
+5. **CREATE OPEN FOUR**: Make 4-in-a-row with at least one open end - forces opponent to block, gives you tempo
+
+6. **CREATE YOUR FORK (DOUBLE-THREAT)**: Make a move that creates TWO threats simultaneously (fork) - opponent can only block one
+
+7. **BUILD OPEN THREE**: Make 3-in-a-row with both ends open - can become open four next turn
+
+8. **CONTROL CENTER**: Occupy or control the center area (rows/cols 5-9) for maximum influence
+
+9. **EXTEND YOUR LINES**: Build connected stones that can extend in multiple directions
+
+**TACTICAL PATTERNS:**
+- Look for "4-3" patterns (open four + open three = guaranteed win)
+- Create "3-3" patterns (two open threes crossing) - you can do this (BLACK cannot)
+- Force opponent into defensive positions
+- Connect your stones to maximize future options
+
+**DEFENSIVE PRIORITIES (CRITICAL - CHECK THESE FIRST):**
+⚠️ **OPPONENT'S OPEN THREE DETECTION:**
+   - Scan the board for BLACK's open three patterns: B B B with both ends empty (. B B B .)
+   - Check 4 directions: horizontal (row), vertical (col), diagonal-down (\), diagonal-up (/)
+   - If found, place your stone at one of the open ends to block it
+
+⚠️ **OPPONENT'S FORK PREVENTION:**
+   - For each empty cell, simulate: "If BLACK plays here, would it create 2+ open threes?"
+   - If YES, that cell is a FORK POSITION - you must occupy it NOW
+   - This prevents BLACK from creating an unstoppable double threat
+
+**THINKING PROCESS:**
+1. Check if you can win immediately (your 5-in-a-row)
+2. **DEFENSE FIRST**: Check BLACK's open fours → open threes → potential fork positions
+3. **OFFENSE SECOND**: Look for your open four opportunities, fork creation
+4. Evaluate strategic positioning (center control, line extensions)
+5. Calculate 2-3 moves ahead for both players
+6. Choose the move with highest strategic value
+
+You MUST reply with ONLY two integers separated by space: row col (0-14), e.g. "7 7" for center. Think carefully, then output only the coordinates."""
+
+
+def _gomoku_board_to_str(board: List[List[int]]) -> str:
+    """보드를 LLM에 줄 문자열로 (B=흑 W=백 . =빈칸)."""
+    lines = []
+    for r in range(GOMOKU_SIZE):
+        row = []
+        for c in range(GOMOKU_SIZE):
+            v = board[r][c]
+            row.append("B" if v == 1 else "W" if v == 2 else ".")
+        lines.append("".join(row))
+    return "\n".join(lines)
+
+
+def _call_serena_gomoku(board: List[List[int]]) -> Optional[tuple[int, int]]:
+    """OPENAI_CHESS_MODEL로 Serena 오목 수 반환 (동기). (row, col) 0-14. 실패 시 None."""
+    try:
+        client = get_client()
+        model = os.getenv("OPENAI_CHESS_MODEL") or os.getenv("OPENAI_MODEL")
+        if not model:
+            return None
+        model = model.strip()
+        empty = [(i, j) for i in range(GOMOKU_SIZE) for j in range(GOMOKU_SIZE) if board[i][j] == 0]
+        if not empty:
+            return None
+        board_str = _gomoku_board_to_str(board)
+        legal_str = ", ".join(f"{r},{c}" for r, c in empty[:40])
+        # 최근 수 정보 추가
+        last_black = None
+        for r in range(GOMOKU_SIZE):
+            for c in range(GOMOKU_SIZE):
+                if board[r][c] == 1:
+                    last_black = (r, c)
+        last_move_info = f"Last BLACK move: {last_black[0]} {last_black[1]}" if last_black else "No BLACK moves yet"
+        
+        user_content = f"""Current board state (B=BLACK/opponent, W=WHITE/you, .=empty), row 0 at top:
+{board_str}
+
+{last_move_info}
+
+Legal empty cells (first 40): {legal_str}
+
+**MANDATORY ANALYSIS CHECKLIST (in order):**
+
+🏆 **1. WIN CHECK**: Can you make 5-in-a-row right now?
+
+🛡️ **2. CRITICAL DEFENSE - BLACK'S OPEN FOUR**: 
+   - Scan for BLACK's 4-in-a-row with open end(s): . B B B B . or B B B B .
+   - If found → BLOCK IT IMMEDIATELY
+
+🚨 **3. CRITICAL DEFENSE - BLACK'S OPEN THREE**:
+   - Scan ALL 4 directions (horizontal, vertical, diagonal \, diagonal /)
+   - Look for BLACK's open three pattern: . B B B . (both ends empty)
+   - If found → BLOCK one end (place stone at one of the dots)
+   - Example patterns to detect:
+     * Horizontal: . B B B .
+     * Vertical: . (top) B B B . (bottom)
+     * Diagonal: . B B B . (in any diagonal line)
+
+⚠️ **4. PREVENT BLACK'S FORK (DOUBLE OPEN-THREE)**:
+   - For each empty cell, simulate: "If BLACK plays here, would it create 2 or more open threes?"
+   - Check if that position connects multiple BLACK stones to form multiple threats
+   - If ANY cell allows BLACK to make a fork → OCCUPY that cell NOW
+   - This prevents BLACK from creating an unstoppable attack
+
+⚔️ **5. OFFENSE - YOUR OPPORTUNITIES**:
+   - Can you create an open four?
+   - Can you create YOUR fork (two threats)?
+   - Can you build an open three?
+
+📍 **6. STRATEGIC POSITIONING**: Center control, line extensions
+
+Reply with ONLY two numbers: row col (0-14), e.g. "7 7"."""
+        use_responses_api = any(x in model.lower() for x in ['gpt-5-mini', 'gpt-5-nano', 'gpt-5.1', 'gpt-5.2'])
+        text = ""
+        if use_responses_api:
+            try:
+                resp = client.responses.create(
+                    model=model,
+                    input=f"{GOMOKU_SYSTEM}\n\n{user_content}",
+                    max_output_tokens=200,
+                )
+                text = (getattr(resp, "output_text", None) or "") or ""
+                if not text and getattr(resp, "output", None):
+                    for item in resp.output or []:
+                        content = getattr(item, "content", None)
+                        for c in (content if isinstance(content, (list, tuple)) else [content] or []):
+                            if c and getattr(c, "text", None):
+                                text = str(c.text)
+                                break
+                        if text:
+                            break
+            except Exception:
+                use_responses_api = False
+        if not use_responses_api or not text.strip():
+            resp = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": GOMOKU_SYSTEM},
+                    {"role": "user", "content": user_content},
+                ],
+                max_completion_tokens=200,
+            )
+            text = (resp.choices[0].message.content or "").strip()
+        m = re.search(r"\b(\d{1,2})\s+(\d{1,2})\b", text)
+        if m:
+            r, c = int(m.group(1)), int(m.group(2))
+            if 0 <= r < GOMOKU_SIZE and 0 <= c < GOMOKU_SIZE and board[r][c] == 0:
+                return (r, c)
+    except Exception as e:
+        print(f"Serena gomoku error: {e}")
+    return None
+
+
+def _gomoku_serena_move(board: List[List[int]]) -> Optional[tuple[int, int]]:
+    """Serena(백) 수: LLM 실패 시 빈 칸 중 랜덤."""
+    move = _call_serena_gomoku(board)
+    if move is not None:
+        return move
+    empty = [(i, j) for i in range(GOMOKU_SIZE) for j in range(GOMOKU_SIZE) if board[i][j] == 0]
+    if not empty:
+        return None
+    return secrets.choice(empty)
+
+
+async def _play_gomoku_serena_move() -> None:
+    """오목 Serena(백) 차례일 때 OPENAI_CHESS_MODEL로 한 수 두고 브로드캐스트."""
+    global _gomoku_game, _gomoku_pending_task
+    if not _gomoku_game or _gomoku_game.get("status") != "active":
+        return
+    if _gomoku_game.get("turn") != "white":
+        return
+    board = _gomoku_game["board"]
+    empty = [(i, j) for i in range(GOMOKU_SIZE) for j in range(GOMOKU_SIZE) if board[i][j] == 0]
+    if not empty:
+        return
+    loop = asyncio.get_event_loop()
+    move = None
+    try:
+        move = await asyncio.wait_for(
+            loop.run_in_executor(None, lambda: _gomoku_serena_move(board)),
+            timeout=SERENA_GOMOKU_TIMEOUT,
+        )
+    except asyncio.TimeoutError:
+        print("Serena gomoku: AI timeout (60s), using random move")
+        move = secrets.choice(empty)
+    if not move:
+        return
+    _gomoku_pending_task = None
+    r, c = move
+    board[r][c] = 2
+    status = "active"
+    if _gomoku_check_win(board, r, c, 2):
+        status = "win_white"
+    else:
+        empty_count = sum(1 for row in board for cell in row if cell == 0)
+        if empty_count == 0:
+            status = "draw"
+        else:
+            _gomoku_game["turn"] = "black"
+    _gomoku_game["status"] = status
+    _gomoku_game["last_move"] = [r, c]
+    await _room_broadcast({
+        "type": "gomoku_state",
+        "board": [row[:] for row in board],
+        "turn": _gomoku_game.get("turn", "black"),
+        "status": status,
+        "black_player": _gomoku_game.get("black_player"),
+        "white_player": _gomoku_game.get("white_player"),
+        "mode": _gomoku_game.get("mode", "serena"),
+        "last_move": [r, c],
+    }, exclude_ws=None)
 
 
 class StartResponse(BaseModel):
@@ -268,35 +610,39 @@ def _call_serena(recent_messages: List[Dict[str, str]]) -> Optional[str]:
         else:
             user_instruction = "Respond in English only. Do NOT provide Korean-to-English translation or language guidance in this reply. If the last user message in English has grammar or naturalness issues, briefly and kindly suggest a correction or more natural phrasing (e.g. one short tip), then continue the conversation."
         
-        # gpt-5-mini, gpt-5-nano는 Responses API 사용
+        # gpt-5-mini, gpt-5-nano는 Responses API 사용 (실패 시 Chat Completions 폴백)
         use_responses_api = any(x in model.lower() for x in ['gpt-5-mini', 'gpt-5-nano', 'gpt-5.1', 'gpt-5.2'])
-        
+        user_content = f"Recent chat messages:\n{conv}\n\n{user_instruction}"
+
         if use_responses_api:
-            # Responses API (최신 모델용)
-            print(f"🔄 Using Responses API for model: {model}")
-            input_text = f"{SERENA_SYSTEM}\n\nRecent chat:\n{conv}\n\n{user_instruction}"
-            resp = client.responses.create(
-                model=model,
-                input=input_text,
-                max_output_tokens=300,
-            )
-            if hasattr(resp, 'output_text') and resp.output_text:
-                return resp.output_text.strip()
-            elif hasattr(resp, 'output') and resp.output:
-                # output이 list인 경우
-                for item in resp.output:
-                    if hasattr(item, 'content') and item.content:
-                        for content_item in item.content:
-                            if hasattr(content_item, 'text'):
-                                return content_item.text.strip()
-        else:
-            # Chat Completions API (기존 모델용)
+            try:
+                print(f"🔄 Using Responses API for model: {model}")
+                input_text = f"{SERENA_SYSTEM}\n\nRecent chat:\n{conv}\n\n{user_instruction}"
+                resp = client.responses.create(
+                    model=model,
+                    input=input_text,
+                    max_output_tokens=300,
+                )
+                if hasattr(resp, 'output_text') and resp.output_text:
+                    return resp.output_text.strip()
+                if hasattr(resp, 'output') and resp.output:
+                    for item in resp.output:
+                        if hasattr(item, 'content') and item.content:
+                            for content_item in item.content:
+                                if hasattr(content_item, 'text'):
+                                    return content_item.text.strip()
+            except Exception as resp_err:
+                print(f"⚠ Serena Responses API failed, falling back to Chat Completions: {resp_err}")
+                use_responses_api = False
+
+        if not use_responses_api:
+            # Chat Completions API (기본 또는 폴백)
             print(f"💬 Using Chat Completions API for model: {model}")
             resp = client.chat.completions.create(
                 model=model,
                 messages=[
                     {"role": "system", "content": SERENA_SYSTEM},
-                    {"role": "user", "content": f"Recent chat messages:\n{conv}\n\n{user_instruction}"},
+                    {"role": "user", "content": user_content},
                 ],
                 max_completion_tokens=300,
             )
@@ -309,7 +655,8 @@ def _call_serena(recent_messages: List[Dict[str, str]]) -> Optional[str]:
     return None
 
 
-SERENA_RESPONSE_TIMEOUT = 30  # Serena 응답 타임아웃 (초)
+SERENA_RESPONSE_TIMEOUT = 30  # Serena 채팅/체스 응답 타임아웃 (초)
+SERENA_GOMOKU_TIMEOUT = 60  # Serena 오목 AI 타임아웃 (초) - 전략적 사고 시간
 
 CHESS_SYSTEM = """You are Serena playing chess (black pieces). You ONLY reply with ONE valid UCI move from the legal moves list. Format: 4 chars like e7e5 or g8f6. No other text."""
 
@@ -403,6 +750,7 @@ async def _play_serena_chess_move() -> None:
             print("Serena chess: AI returned invalid/empty, using random move")
     if not uci or not _chess_game or _chess_game.get("status") != "active":
         return
+    uci = _normalize_uci_promotion(board, uci)
     try:
         move = chess.Move.from_uci(uci)
         if move not in board.legal_moves:
@@ -828,7 +1176,7 @@ async def ws_room(websocket: WebSocket) -> None:
     - {"type":"edit","message_id":"...","text":"..."}  (발신자만)
     - {"type":"delete","message_id":"..."}            (발신자만)
     """
-    global _serena_invited, _serena_pending_task, _chess_game, _chess_pending_task
+    global _serena_invited, _serena_pending_task, _chess_game, _chess_pending_task, _gomoku_game, _gomoku_pending_task
     await websocket.accept()
     user_info: Optional[Dict[str, Any]] = None
     try:
@@ -882,6 +1230,17 @@ async def ws_room(websocket: WebSocket) -> None:
                 "in_check": b.is_check(),
                 "white_captured": _chess_game.get("white_captured", []),
                 "black_captured": _chess_game.get("black_captured", []),
+            }, ensure_ascii=False))
+        if _gomoku_game and _gomoku_game.get("status"):
+            await websocket.send_text(json.dumps({
+                "type": "gomoku_state",
+                "board": [row[:] for row in _gomoku_game["board"]],
+                "turn": _gomoku_game.get("turn", "black"),
+                "status": _gomoku_game.get("status"),
+                "black_player": _gomoku_game.get("black_player"),
+                "white_player": _gomoku_game.get("white_player"),
+                "mode": _gomoku_game.get("mode", "serena"),
+                "last_move": _gomoku_game.get("last_move"),
             }, ensure_ascii=False))
         await _room_broadcast({"type": "system", "message": f"{nickname}님이 입장했습니다."}, exclude_ws=None)
         
@@ -1019,7 +1378,12 @@ async def ws_room(websocket: WebSocket) -> None:
                             _chess_pending_task.cancel()
                             _chess_pending_task = None
                         _chess_game = None
+                        _gomoku_game = None
+                        if _gomoku_pending_task and not _gomoku_pending_task.done():
+                            _gomoku_pending_task.cancel()
+                            _gomoku_pending_task = None
                         await _room_broadcast({"type": "chess_state", "fen": None, "status": None}, exclude_ws=None)
+                        await _room_broadcast({"type": "gomoku_state", "board": None, "status": None}, exclude_ws=None)
                         await _room_broadcast({"type": "system", "message": "Serena님이 퇴장했습니다."}, exclude_ws=None)
                         participants = _build_participants_list()
                         await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=None)
@@ -1093,6 +1457,7 @@ async def ws_room(websocket: WebSocket) -> None:
                     if not _chess_game or _chess_game.get("status") != "active":
                         continue
                     board: chess.Board = _chess_game["board"]
+                    uci = _normalize_uci_promotion(board, uci)
                     mode = _chess_game.get("mode", "serena")
                     white_p = _chess_game.get("white_player")
                     black_p = _chess_game.get("black_player")
@@ -1159,6 +1524,138 @@ async def ws_room(websocket: WebSocket) -> None:
                         "in_check": False,
                         "white_captured": _chess_game.get("white_captured", []),
                         "black_captured": _chess_game.get("black_captured", []),
+                    }, exclude_ws=None)
+
+                elif data.get("type") == "gomoku_start":
+                    if not _serena_invited:
+                        continue
+                    if _gomoku_pending_task and not _gomoku_pending_task.done():
+                        _gomoku_pending_task.cancel()
+                        _gomoku_pending_task = None
+                    _gomoku_game = {
+                        "board": _gomoku_empty_board(),
+                        "black_player": nickname,
+                        "white_player": "Serena",
+                        "mode": "serena",
+                        "status": "active",
+                        "turn": "black",
+                        "last_move": None,
+                    }
+                    await _room_broadcast({
+                        "type": "gomoku_state",
+                        "board": [row[:] for row in _gomoku_game["board"]],
+                        "black_player": _gomoku_game["black_player"],
+                        "white_player": _gomoku_game["white_player"],
+                        "mode": "serena",
+                        "status": "active",
+                        "turn": "black",
+                        "last_move": None,
+                    }, exclude_ws=None)
+
+                elif data.get("type") == "gomoku_start_pvp" and (data.get("opponent") or "").strip():
+                    opp = (data["opponent"] or "").strip()[:32]
+                    if opp == nickname:
+                        continue
+                    if not any(u.get("name") == opp for _, u in _room_connections):
+                        continue
+                    if _gomoku_pending_task and not _gomoku_pending_task.done():
+                        _gomoku_pending_task.cancel()
+                        _gomoku_pending_task = None
+                    _gomoku_game = {
+                        "board": _gomoku_empty_board(),
+                        "black_player": nickname,
+                        "white_player": opp,
+                        "mode": "pvp",
+                        "status": "active",
+                        "turn": "black",
+                        "last_move": None,
+                    }
+                    await _room_broadcast({
+                        "type": "gomoku_state",
+                        "board": [row[:] for row in _gomoku_game["board"]],
+                        "black_player": _gomoku_game["black_player"],
+                        "white_player": _gomoku_game["white_player"],
+                        "mode": "pvp",
+                        "status": "active",
+                        "turn": "black",
+                        "last_move": None,
+                    }, exclude_ws=None)
+
+                elif data.get("type") == "gomoku_move":
+                    row = data.get("row")
+                    col = data.get("col")
+                    if row is None or col is None or not _gomoku_game or _gomoku_game.get("status") != "active":
+                        continue
+                    r, c = int(row), int(col)
+                    if not (0 <= r < GOMOKU_SIZE and 0 <= c < GOMOKU_SIZE):
+                        continue
+                    board = _gomoku_game["board"]
+                    if board[r][c] != 0:
+                        continue
+                    turn = _gomoku_game.get("turn", "black")
+                    if turn == "black":
+                        if nickname != _gomoku_game.get("black_player"):
+                            continue
+                        board[r][c] = 1
+                        if _gomoku_check_win(board, r, c, 1):
+                            status = "win_black"
+                        elif _gomoku_renju_forbidden_black(board, r, c):
+                            board[r][c] = 0
+                            continue  # 렌주 금수: 흑 쌍삼/쌍사/장목
+                        else:
+                            status = "active"
+                            _gomoku_game["turn"] = "white"
+                    else:
+                        if nickname != _gomoku_game.get("white_player"):
+                            continue
+                        board[r][c] = 2
+                        if _gomoku_check_win(board, r, c, 2):
+                            status = "win_white"
+                        else:
+                            empty_count = sum(1 for row_ in board for cell in row_ if cell == 0)
+                            status = "draw" if empty_count == 0 else "active"
+                            if status == "active":
+                                _gomoku_game["turn"] = "black"
+                    if turn == "black" and status == "active":
+                        empty_count = sum(1 for row_ in board for cell in row_ if cell == 0)
+                        if empty_count == 0:
+                            status = "draw"
+                    _gomoku_game["status"] = status
+                    _gomoku_game["last_move"] = [r, c]
+                    await _room_broadcast({
+                        "type": "gomoku_state",
+                        "board": [row_[:] for row_ in board],
+                        "turn": _gomoku_game.get("turn", "black"),
+                        "status": status,
+                        "black_player": _gomoku_game.get("black_player"),
+                        "white_player": _gomoku_game.get("white_player"),
+                        "mode": _gomoku_game.get("mode", "serena"),
+                        "last_move": [r, c],
+                    }, exclude_ws=None)
+                    if status == "active" and _gomoku_game.get("turn") == "white" and _gomoku_game.get("mode") == "serena":
+                        _gomoku_pending_task = asyncio.create_task(_play_gomoku_serena_move())
+
+                elif data.get("type") == "gomoku_resign":
+                    if not _gomoku_game or _gomoku_game.get("status") != "active":
+                        continue
+                    if _gomoku_pending_task and not _gomoku_pending_task.done():
+                        _gomoku_pending_task.cancel()
+                        _gomoku_pending_task = None
+                    if nickname == _gomoku_game.get("black_player"):
+                        status = "resign_black"
+                    elif nickname == _gomoku_game.get("white_player"):
+                        status = "resign_white"
+                    else:
+                        continue
+                    _gomoku_game["status"] = status
+                    await _room_broadcast({
+                        "type": "gomoku_state",
+                        "board": [row[:] for row in _gomoku_game["board"]],
+                        "status": status,
+                        "turn": _gomoku_game.get("turn"),
+                        "black_player": _gomoku_game.get("black_player"),
+                        "white_player": _gomoku_game.get("white_player"),
+                        "mode": _gomoku_game.get("mode"),
                     }, exclude_ws=None)
             
             except json.JSONDecodeError:
@@ -1230,7 +1727,10 @@ async def ws_dm(websocket: WebSocket) -> None:
             await websocket.send_text(json.dumps({"type": "error", "message": "로그인 만료"}, ensure_ascii=False))
             await websocket.close()
             return
-        user_id = user_info.get("user_id")
+        try:
+            user_id = int(user_info.get("user_id") or 0)
+        except (TypeError, ValueError):
+            user_id = 0
         if not user_id:
             await websocket.send_text(json.dumps({"type": "error", "message": "Invalid token"}, ensure_ascii=False))
             await websocket.close()
@@ -1275,7 +1775,8 @@ async def ws_dm(websocket: WebSocket) -> None:
             _dm_connections[room_id].append((websocket, {"id": user_id, "name": nickname}))
         # 재입장 시: 내가 보낸 미읽음 메시지의 sender_ws를 이 연결로 갱신 (read_update 수신 가능하도록)
         for key, status in list(_dm_message_read_status.items()):
-            if key[0] == room_id and status.get("sender_id") == user_id and not status.get("read"):
+            sid = status.get("sender_id")
+            if key[0] == room_id and sid is not None and int(sid) == user_id and not status.get("read"):
                 status["sender_ws"] = websocket
 
         while True:
@@ -1369,12 +1870,14 @@ async def ws_dm(websocket: WebSocket) -> None:
                     del _dm_message_read_status[key]
             
             elif data.get("type") == "viewed_room":
-                # 상대가 해당 1:1 채팅 화면을 활성화했을 때만: 이 방에서 나에게 온 모든 미읽음 메시지를 읽음 처리
+                # 수신자(상대방)가 해당 1:1 채팅 화면을 활성화했을 때만 읽음 처리.
+                # 작성자(발신자)가 들어왔을 때 보낸 viewed_room은 무시 → 배지는 상대가 읽었을 때만 사라짐.
                 to_delete = []
                 for key, status in _dm_message_read_status.items():
                     if key[0] != room_id:
                         continue
-                    if status.get("sender_id") == user_id:
+                    sid = status.get("sender_id")
+                    if sid is not None and int(sid) == user_id:
                         continue
                     status["read"] = True
                     sender_ws = status.get("sender_ws")

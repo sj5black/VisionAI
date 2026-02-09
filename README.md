@@ -1,18 +1,18 @@
-# VisionAI - 동물 행동 예측 시스템
+# VisionAI - 사람 표정·자세 분석 및 행동 예측 시스템
 
-**개/고양이의 감정, 자세, 행동을 분석하고 다음 행동을 예측하는 경량화된 AI 파이프라인**
+**사람의 표정, 자세를 분석하고 이후 행동을 예측하는 경량화된 AI 파이프라인**
 
 ## 🆕 VisionAI Pipeline (NEW!)
 
-5단계 AI 파이프라인으로 동물의 행동을 종합적으로 분석:
+5단계 AI 파이프라인으로 사람의 표정·자세·행동을 분석하고 다음 행동을 예측:
 
-1. **객체 탐지** - YOLOv8n (6.3 MB)
-2. **키포인트 탐지** - 신체 부위 17개 포인트
-3. **감정/자세 분석** - MobileNetV3 (2.5 MB)
+1. **객체 탐지** - YOLOv8n, 사람(person) 탐지
+2. **키포인트 탐지** - 신체 부위 17개 포인트 (YOLOv8-pose)
+3. **표정/자세 분석** - OpenCLIP 또는 Swin (감정·자세)
 4. **행동 인식** - 시간 흐름 기반
-5. **행동 예측** - 다음 행동 예측
+5. **행동 예측** - 이후 행동 예측
 
-**총 모델 크기**: ~9-10 MB (매우 경량!)
+**총 모델 크기**: ~9-10 MB (경량)
 
 ### 🚀 빠른 시작
 
@@ -20,11 +20,11 @@
 # 설치
 pip install -r pipeline_requirements.txt
 
-# 이미지 분석
-python run_pipeline.py --image dog.jpg --output result.jpg
+# 이미지 분석 (사람 표정·자세·행동 예측)
+python run_pipeline.py --image person.jpg --output result.jpg
 
 # 비디오 분석
-python run_pipeline.py --video cat_video.mp4 --output result.mp4 --fps 5
+python run_pipeline.py --video video.mp4 --output result.mp4 --fps 5
 ```
 
 **자세한 내용**: [QUICKSTART.md](QUICKSTART.md) | [PIPELINE_README.md](PIPELINE_README.md)
@@ -109,18 +109,11 @@ python detect_objects.py /path/to/image.jpg --save-vis ./outputs --threshold 0.5
 - `analyze_resnet.py`: CLI 엔트리포인트
 - `detect_objects.py`: 객체 탐지 CLI 엔트리포인트
 
-## 웹사이트 기능: 이미지 업로드 → 포함 객체/동물 보여주기
+## 웹사이트 기능: 이미지 업로드 → 사람 탐지·표정·자세·행동 예측
 
-이미지 “분류(top-k)” 대신, 이미지 안의 여러 객체를 찾아주는 **객체 탐지(Object Detection)** 를 웹에서 바로 쓸 수 있게 구성했습니다.
+**VisionAI Pipeline**: 이미지에서 **사람(person)** 을 탐지하고, 표정·자세를 분석한 뒤 **이후 행동을 예측**합니다.
 
-## (추가) 동물일 경우: 행동/표정 → 다음 행동/상태(추정)
-
-탐지된 객체가 `dog/cat/...` 같은 동물로 판단되면, 바운딩박스 영역을 크롭해서
-**행동(예: sitting, running)** 과 **표정/정서(예: relaxed, fearful)** 를 추가로 “추정”하고,
-그 조합으로 **다음 행동 패턴/상태(추정)** 를 반환합니다.
-
-> 주의: 이 기능은 OpenCLIP 기반 **zero-shot 추정**이라 정확하지 않을 수 있으며,
-> **수의학적/의학적 진단이 아닙니다.**
+(기존 ResNet 웹 모드에서는 이미지 안의 여러 객체를 탐지해 보여주며, 동물일 경우 동물 전용 행동/표정 추정을 추가로 사용할 수 있습니다.)
 
 ### 실행 방법
 
@@ -129,7 +122,7 @@ cd /home/teddy/VisionAI
 conda activate vision
 # (필요 시) 웹 의존성만 설치:
 python -m pip install fastapi uvicorn python-multipart jinja2
-# (선택) 동물 행동/표정 분석 기능까지 사용:
+# (선택) 표정/자세 분석(Pipeline) 사용:
 python -m pip install open_clip_torch
 uvicorn webapp.main:app --host 0.0.0.0 --port 8001
 ```
@@ -140,7 +133,7 @@ uvicorn webapp.main:app --host 0.0.0.0 --port 8001
 ### 옵션
 
 - `VISIONAI_DEVICE`: 강제로 디바이스 지정 (예: `cpu`, `cuda`, `cuda:0`)
-- `VISIONAI_ENABLE_ANIMAL_INSIGHTS`: `0`으로 설정 시 동물 행동/표정 분석 비활성화
+- `VISIONAI_ENABLE_ANIMAL_INSIGHTS`: `0`으로 설정 시 표정/자세 분석 비활성화
 
 ```bash
 VISIONAI_DEVICE=cpu uvicorn webapp.main:app --host 0.0.0.0 --port 8001

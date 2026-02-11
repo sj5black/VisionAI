@@ -2313,3 +2313,1046 @@ INFO:     112.171.67.160:12938 - "POST /api/detect HTTP/1.1" 200 OK
 INFO:     112.171.67.160:12938 - "GET /files/aaf4ae8a909a41cb8ae8442bcfd82120/annotated?t=1770619669634 HTTP/1.1" 200 OK
 INFO:     112.171.67.160:5407 - "POST /api/detect HTTP/1.1" 200 OK
 INFO:     112.171.67.160:5407 - "GET /files/946113c071be4c5289dff592085bbca7/annotated?t=1770619682678 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [55202]
+INFO:     Started server process [57172]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [57172]
+nohup: ignoring input
+INFO:     Started server process [57600]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:7644 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7644 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:7644 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n-pose, 사람 전용)...
+✓ YOLOv8n·YOLOv8n-pose 모델 로드 완료 (device: cuda)
+
+[2/4] 표정/자세 분석 모델 로딩 (백엔드: openclip)...
+✓ 감정 분석: OpenCLIP (Vision-Language, 16 emotions + 18 poses)
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:4833 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+/root/miniconda3/envs/vision/lib/python3.11/site-packages/numba/np/ufunc/parallel.py:373: NumbaWarning: The TBB threading layer requires TBB version 2021 update 6 or later i.e., TBB_INTERFACE_VERSION >= 12060. Found TBB_INTERFACE_VERSION = 12050. The TBB threading layer is disabled.
+  warnings.warn(problem)
+Numba CalcParams accelerator loaded - targeting 2-5x speedup
+================================================================================
+INITIALIZING COMPONENTS
+Thread: AnyIO worker thread (main=False)
+================================================================================
+
+[1/8] Loading face detector (PyMTCNN)...
+  Backend: auto
+Initializing PyMTCNN detector...
+  Backend: auto
+Loading ONNX models from: /root/miniconda3/envs/vision/lib/python3.11/site-packages/pymtcnn/models
+Available providers: ['AzureExecutionProvider', 'CPUExecutionProvider']
+Using providers: ['CPUExecutionProvider']
+ONNX models loaded with provider: CPUExecutionProvider
+Auto-selected: ONNX with CPU
+[OK] PyMTCNN initialized with ONNX + CPU backend
+  Active backend: {'backend': 'ONNX + CPU', 'provider': 'CPUExecutionProvider'}
+
+  Active backend: {'backend': 'ONNX + CPU', 'provider': 'CPUExecutionProvider'}
+Face detector loaded
+
+[2/8] Loading CLNF landmark detector (pyclnf)...
+  Max iterations: 10
+  Convergence threshold: 0.005 pixels
+  GPU enabled: True
+Loading CEN patch experts (410 MB, ~5-10 seconds)...
+  [1/4] Loading scale 0.25...
+      ✓ 68 patch experts loaded
+  [2/4] Loading scale 0.35...
+      ✓ 68 patch experts loaded
+  [3/4] Loading scale 0.5...
+      ✓ 68 patch experts loaded
+  [4/4] Loading scale 1.0...
+      ✓ 68 patch experts loaded
+Loaded CEN sigma components for window sizes: [7, 9, 11, 15]
+    Scale 0.25: 29 empty landmarks, 29 using mirrored experts
+    Scale 0.35: 29 empty landmarks, 29 using mirrored experts
+    Scale 0.5: 29 empty landmarks, 29 using mirrored experts
+    Scale 1.0: 29 empty landmarks, 29 using mirrored experts
+Note: No sigma components for window sizes [5], using identity transform
+✓ GPU acceleration enabled (device: auto)
+✓ Eye refinement model loaded (GPU)
+CLNF detector loaded
+
+[3/8] Loading PDM shape model...
+Loaded PDM from In-the-wild_aligned_PDM_68.txt
+  Mean shape: (204, 1)
+  Principal components: (204, 34)
+  Eigenvalues: (34,)
+PDM loaded: 68 landmarks
+
+[4/8] Initializing face aligner...
+Loading PDM from: /root/.pyfaceau/weights/In-the-wild_aligned_PDM_68.txt
+Loaded PDM from In-the-wild_aligned_PDM_68.txt
+  Mean shape: (204, 1)
+  Principal components: (204, 34)
+  Eigenvalues: (34,)
+Face aligner initialized
+  Sim scale: 0.7
+  Output size: (112, 112)
+  Reference shape: (68, 2)
+  Rigid points: 24
+Face aligner initialized
+
+[5/8] Loading triangulation...
+Loaded 111 triangles from /root/.pyfaceau/weights/tris_68_full.txt
+Triangulation loaded: 111 triangles
+
+[6/8] Loading AU SVR models...
+Loaded AU01_r (dynamic): cutoff=0.55, means=(1, 4702), SV=(4702, 1), bias=-0.3216 [AU_1_dynamic_intensity_comb.dat]
+Loaded AU02_r (dynamic): cutoff=0.75, means=(1, 4702), SV=(4702, 1), bias=0.0598 [AU_2_dynamic_intensity_comb.dat]
+Loaded AU04_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1336 [AU_4_static_intensity_comb.dat]
+[FAILED] Failed to load AU05_r: Model not found for AU05_r. Tried: ['AU_5_dynamic_intensity_comb.dat', 'AU_5_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU06_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1618 [AU_6_static_intensity_comb.dat]
+Loaded AU07_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1808 [AU_7_static_intensity_comb.dat]
+[FAILED] Failed to load AU09_r: Model not found for AU09_r. Tried: ['AU_9_dynamic_intensity_comb.dat', 'AU_9_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU10_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1071 [AU_10_static_intensity_comb.dat]
+Loaded AU12_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.2212 [AU_12_static_intensity_comb.dat]
+[FAILED] Failed to load AU14_r: Model not found for AU14_r. Tried: ['AU_14_static_intensity_comb.dat', 'AU_14_static_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU15_r (dynamic): cutoff=0.55, means=(1, 4702), SV=(4702, 1), bias=-0.0074 [AU_15_dynamic_intensity_comb.dat]
+Loaded AU17_r (dynamic): cutoff=0.20, means=(1, 4702), SV=(4702, 1), bias=0.0981 [AU_17_dynamic_intensity_comb.dat]
+[FAILED] Failed to load AU20_r: Model not found for AU20_r. Tried: ['AU_20_dynamic_intensity_comb.dat', 'AU_20_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU23_r (dynamic): cutoff=0.65, means=(1, 4702), SV=(4702, 1), bias=-0.3733 [AU_23_dynamic_intensity_comb.dat]
+Loaded AU25_r (dynamic): cutoff=0.30, means=(1, 4702), SV=(4702, 1), bias=-0.1397 [AU_25_dynamic_intensity_comb.dat]
+Loaded AU26_r (dynamic): cutoff=0.30, means=(1, 4702), SV=(4702, 1), bias=-0.3793 [AU_26_dynamic_intensity_comb.dat]
+Loaded AU45_r (dynamic): cutoff=0.60, means=(1, 4702), SV=(4702, 1), bias=-0.1401 [AU_45_dynamic_intensity_comb.dat]
+
+Loaded 13/17 AU models
+Failed AUs: ['AU05_r', 'AU09_r', 'AU14_r', 'AU20_r']
+Loaded 13 AU models
+Batched AU predictor enabled (2-5x faster)
+
+[7/8] Initializing running median tracker...
+Running median tracker initialized (Python version)
+
+[8/9] Initializing online AU correction...
+Online AU correction initialized for 13 AUs
+
+[9/9] PyFHOG ready for HOG extraction
+
+All components initialized successfully
+================================================================================
+
+Processing video: tmp4lt1q8hk.mp4
+================================================================================
+
+Video info:
+  FPS: 2.00
+  Total frames: 7
+  Duration: 3.50 seconds
+
+[Frame 0] Step 1: Detecting face with ONNX + CPU...
+[Frame 0] Step 1: Found 3 faces
+[Frame 0] Step 2: Detecting landmarks with CLNF...
+[Frame 0] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 39)
+[Frame 0] Step 3: Extracting pose from pyclnf params...
+[Frame 0] Step 4: Aligning face...
+[Frame 0] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 0] Step 5: Extracting HOG features...
+[Frame 0] Step 5: HOG features shape: (4464,)
+[Frame 0] Step 6: Extracting geometric features...
+[Frame 0] Step 6: Geometric features shape: (238,)
+[Frame 0] Step 7: Updating running median...
+[Frame 0] Step 7: Running median shape: (4702,)
+[Frame 0] Step 8: Predicting AUs...
+[Frame 1] Step 1: Using cached bbox (tracking mode)
+[Frame 1] Step 2: Detecting landmarks with CLNF...
+[Frame 1] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 20)
+[Frame 1] Step 3: Extracting pose from pyclnf params...
+[Frame 1] Step 4: Aligning face...
+[Frame 1] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 1] Step 5: Extracting HOG features...
+[Frame 1] Step 5: HOG features shape: (4464,)
+[Frame 1] Step 6: Extracting geometric features...
+[Frame 1] Step 6: Geometric features shape: (238,)
+[Frame 1] Step 7: Updating running median...
+[Frame 1] Step 7: Running median shape: (4702,)
+[Frame 1] Step 8: Predicting AUs...
+[Frame 2] Step 1: Using cached bbox (tracking mode)
+[Frame 2] Step 2: Detecting landmarks with CLNF...
+[Frame 2] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 20)
+[Frame 2] Step 3: Extracting pose from pyclnf params...
+[Frame 2] Step 4: Aligning face...
+[Frame 2] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 2] Step 5: Extracting HOG features...
+[Frame 2] Step 5: HOG features shape: (4464,)
+[Frame 2] Step 6: Extracting geometric features...
+[Frame 2] Step 6: Geometric features shape: (238,)
+[Frame 2] Step 7: Updating running median...
+[Frame 2] Step 7: Running median shape: (4702,)
+[Frame 2] Step 8: Predicting AUs...
+
+Applying post-processing (cutoff adjustment, temporal smoothing)...
+
+Applying post-processing...
+  [1/3] Two-pass median correction...
+    Re-predicting 7 early frames with final median...
+    Two-pass correction complete
+  [2/3] Cutoff adjustment...
+  [3/3] Temporal smoothing...
+Post-processing complete
+
+================================================================================
+PROCESSING COMPLETE
+================================================================================
+Total frames processed: 7
+Failed frames: 0
+Success rate: 100.0%
+
+INFO:     112.171.67.160:4525 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4525 - "GET /files/03e213f056264d46861f85b0a273e4cf/video?t=1770620068637 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:12776 - "GET /files/03e213f056264d46861f85b0a273e4cf/video?t=1770620068637 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:12776 - "GET /files/03e213f056264d46861f85b0a273e4cf/video?t=1770620068637 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:12776 - "GET /files/03e213f056264d46861f85b0a273e4cf/video?t=1770620068637 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:5108 - "GET /files/03e213f056264d46861f85b0a273e4cf/video?t=1770620068637 HTTP/1.1" 206 Partial Content
+================================================================================
+INITIALIZING COMPONENTS
+Thread: AnyIO worker thread (main=False)
+================================================================================
+
+[1/8] Loading face detector (PyMTCNN)...
+  Backend: auto
+Initializing PyMTCNN detector...
+  Backend: auto
+Loading ONNX models from: /root/miniconda3/envs/vision/lib/python3.11/site-packages/pymtcnn/models
+Available providers: ['AzureExecutionProvider', 'CPUExecutionProvider']
+Using providers: ['CPUExecutionProvider']
+ONNX models loaded with provider: CPUExecutionProvider
+Auto-selected: ONNX with CPU
+[OK] PyMTCNN initialized with ONNX + CPU backend
+  Active backend: {'backend': 'ONNX + CPU', 'provider': 'CPUExecutionProvider'}
+
+  Active backend: {'backend': 'ONNX + CPU', 'provider': 'CPUExecutionProvider'}
+Face detector loaded
+
+[2/8] Loading CLNF landmark detector (pyclnf)...
+  Max iterations: 10
+  Convergence threshold: 0.005 pixels
+  GPU enabled: True
+Loading CEN patch experts (410 MB, ~5-10 seconds)...
+  [1/4] Loading scale 0.25...
+      ✓ 68 patch experts loaded
+  [2/4] Loading scale 0.35...
+      ✓ 68 patch experts loaded
+  [3/4] Loading scale 0.5...
+      ✓ 68 patch experts loaded
+  [4/4] Loading scale 1.0...
+      ✓ 68 patch experts loaded
+Loaded CEN sigma components for window sizes: [7, 9, 11, 15]
+    Scale 0.25: 29 empty landmarks, 29 using mirrored experts
+    Scale 0.35: 29 empty landmarks, 29 using mirrored experts
+    Scale 0.5: 29 empty landmarks, 29 using mirrored experts
+    Scale 1.0: 29 empty landmarks, 29 using mirrored experts
+Note: No sigma components for window sizes [5], using identity transform
+✓ GPU acceleration enabled (device: auto)
+✓ Eye refinement model loaded (GPU)
+CLNF detector loaded
+
+[3/8] Loading PDM shape model...
+Loaded PDM from In-the-wild_aligned_PDM_68.txt
+  Mean shape: (204, 1)
+  Principal components: (204, 34)
+  Eigenvalues: (34,)
+PDM loaded: 68 landmarks
+
+[4/8] Initializing face aligner...
+Loading PDM from: /root/.pyfaceau/weights/In-the-wild_aligned_PDM_68.txt
+Loaded PDM from In-the-wild_aligned_PDM_68.txt
+  Mean shape: (204, 1)
+  Principal components: (204, 34)
+  Eigenvalues: (34,)
+Face aligner initialized
+  Sim scale: 0.7
+  Output size: (112, 112)
+  Reference shape: (68, 2)
+  Rigid points: 24
+Face aligner initialized
+
+[5/8] Loading triangulation...
+Loaded 111 triangles from /root/.pyfaceau/weights/tris_68_full.txt
+Triangulation loaded: 111 triangles
+
+[6/8] Loading AU SVR models...
+Loaded AU01_r (dynamic): cutoff=0.55, means=(1, 4702), SV=(4702, 1), bias=-0.3216 [AU_1_dynamic_intensity_comb.dat]
+Loaded AU02_r (dynamic): cutoff=0.75, means=(1, 4702), SV=(4702, 1), bias=0.0598 [AU_2_dynamic_intensity_comb.dat]
+Loaded AU04_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1336 [AU_4_static_intensity_comb.dat]
+[FAILED] Failed to load AU05_r: Model not found for AU05_r. Tried: ['AU_5_dynamic_intensity_comb.dat', 'AU_5_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU06_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1618 [AU_6_static_intensity_comb.dat]
+Loaded AU07_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1808 [AU_7_static_intensity_comb.dat]
+[FAILED] Failed to load AU09_r: Model not found for AU09_r. Tried: ['AU_9_dynamic_intensity_comb.dat', 'AU_9_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU10_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1071 [AU_10_static_intensity_comb.dat]
+Loaded AU12_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.2212 [AU_12_static_intensity_comb.dat]
+[FAILED] Failed to load AU14_r: Model not found for AU14_r. Tried: ['AU_14_static_intensity_comb.dat', 'AU_14_static_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU15_r (dynamic): cutoff=0.55, means=(1, 4702), SV=(4702, 1), bias=-0.0074 [AU_15_dynamic_intensity_comb.dat]
+Loaded AU17_r (dynamic): cutoff=0.20, means=(1, 4702), SV=(4702, 1), bias=0.0981 [AU_17_dynamic_intensity_comb.dat]
+[FAILED] Failed to load AU20_r: Model not found for AU20_r. Tried: ['AU_20_dynamic_intensity_comb.dat', 'AU_20_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU23_r (dynamic): cutoff=0.65, means=(1, 4702), SV=(4702, 1), bias=-0.3733 [AU_23_dynamic_intensity_comb.dat]
+Loaded AU25_r (dynamic): cutoff=0.30, means=(1, 4702), SV=(4702, 1), bias=-0.1397 [AU_25_dynamic_intensity_comb.dat]
+Loaded AU26_r (dynamic): cutoff=0.30, means=(1, 4702), SV=(4702, 1), bias=-0.3793 [AU_26_dynamic_intensity_comb.dat]
+Loaded AU45_r (dynamic): cutoff=0.60, means=(1, 4702), SV=(4702, 1), bias=-0.1401 [AU_45_dynamic_intensity_comb.dat]
+
+Loaded 13/17 AU models
+Failed AUs: ['AU05_r', 'AU09_r', 'AU14_r', 'AU20_r']
+Loaded 13 AU models
+Batched AU predictor enabled (2-5x faster)
+
+[7/8] Initializing running median tracker...
+Running median tracker initialized (Python version)
+
+[8/9] Initializing online AU correction...
+Online AU correction initialized for 13 AUs
+
+[9/9] PyFHOG ready for HOG extraction
+
+All components initialized successfully
+================================================================================
+
+Processing video: tmpb9ehjn1w.mp4
+================================================================================
+
+Video info:
+  FPS: 2.00
+  Total frames: 7
+  Duration: 3.50 seconds
+
+[Frame 0] Step 1: Detecting face with ONNX + CPU...
+[Frame 0] Step 1: Found 3 faces
+[Frame 0] Step 2: Detecting landmarks with CLNF...
+[Frame 0] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 39)
+[Frame 0] Step 3: Extracting pose from pyclnf params...
+[Frame 0] Step 4: Aligning face...
+[Frame 0] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 0] Step 5: Extracting HOG features...
+[Frame 0] Step 5: HOG features shape: (4464,)
+[Frame 0] Step 6: Extracting geometric features...
+[Frame 0] Step 6: Geometric features shape: (238,)
+[Frame 0] Step 7: Updating running median...
+[Frame 0] Step 7: Running median shape: (4702,)
+[Frame 0] Step 8: Predicting AUs...
+[Frame 1] Step 1: Using cached bbox (tracking mode)
+[Frame 1] Step 2: Detecting landmarks with CLNF...
+[Frame 1] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 20)
+[Frame 1] Step 3: Extracting pose from pyclnf params...
+[Frame 1] Step 4: Aligning face...
+[Frame 1] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 1] Step 5: Extracting HOG features...
+[Frame 1] Step 5: HOG features shape: (4464,)
+[Frame 1] Step 6: Extracting geometric features...
+[Frame 1] Step 6: Geometric features shape: (238,)
+[Frame 1] Step 7: Updating running median...
+[Frame 1] Step 7: Running median shape: (4702,)
+[Frame 1] Step 8: Predicting AUs...
+[Frame 2] Step 1: Using cached bbox (tracking mode)
+[Frame 2] Step 2: Detecting landmarks with CLNF...
+[Frame 2] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 20)
+[Frame 2] Step 3: Extracting pose from pyclnf params...
+[Frame 2] Step 4: Aligning face...
+[Frame 2] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 2] Step 5: Extracting HOG features...
+[Frame 2] Step 5: HOG features shape: (4464,)
+[Frame 2] Step 6: Extracting geometric features...
+[Frame 2] Step 6: Geometric features shape: (238,)
+[Frame 2] Step 7: Updating running median...
+[Frame 2] Step 7: Running median shape: (4702,)
+[Frame 2] Step 8: Predicting AUs...
+
+Applying post-processing (cutoff adjustment, temporal smoothing)...
+
+Applying post-processing...
+  [1/3] Two-pass median correction...
+    Re-predicting 7 early frames with final median...
+    Two-pass correction complete
+  [2/3] Cutoff adjustment...
+  [3/3] Temporal smoothing...
+Post-processing complete
+
+================================================================================
+PROCESSING COMPLETE
+================================================================================
+Total frames processed: 7
+Failed frames: 0
+Success rate: 100.0%
+
+INFO:     112.171.67.160:4476 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4476 - "GET /files/9862c6551a284257b0d53efe7b445be1/video?t=1770620144282 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:13743 - "GET /files/9862c6551a284257b0d53efe7b445be1/video?t=1770620144282 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:13743 - "GET /files/9862c6551a284257b0d53efe7b445be1/video?t=1770620144282 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:13743 - "GET /files/9862c6551a284257b0d53efe7b445be1/video?t=1770620144282 HTTP/1.1" 206 Partial Content
+================================================================================
+INITIALIZING COMPONENTS
+Thread: AnyIO worker thread (main=False)
+================================================================================
+
+[1/8] Loading face detector (PyMTCNN)...
+  Backend: auto
+Initializing PyMTCNN detector...
+  Backend: auto
+Loading ONNX models from: /root/miniconda3/envs/vision/lib/python3.11/site-packages/pymtcnn/models
+Available providers: ['AzureExecutionProvider', 'CPUExecutionProvider']
+Using providers: ['CPUExecutionProvider']
+ONNX models loaded with provider: CPUExecutionProvider
+Auto-selected: ONNX with CPU
+[OK] PyMTCNN initialized with ONNX + CPU backend
+  Active backend: {'backend': 'ONNX + CPU', 'provider': 'CPUExecutionProvider'}
+
+  Active backend: {'backend': 'ONNX + CPU', 'provider': 'CPUExecutionProvider'}
+Face detector loaded
+
+[2/8] Loading CLNF landmark detector (pyclnf)...
+  Max iterations: 10
+  Convergence threshold: 0.005 pixels
+  GPU enabled: True
+Loading CEN patch experts (410 MB, ~5-10 seconds)...
+  [1/4] Loading scale 0.25...
+      ✓ 68 patch experts loaded
+  [2/4] Loading scale 0.35...
+      ✓ 68 patch experts loaded
+  [3/4] Loading scale 0.5...
+      ✓ 68 patch experts loaded
+  [4/4] Loading scale 1.0...
+      ✓ 68 patch experts loaded
+Loaded CEN sigma components for window sizes: [7, 9, 11, 15]
+    Scale 0.25: 29 empty landmarks, 29 using mirrored experts
+    Scale 0.35: 29 empty landmarks, 29 using mirrored experts
+    Scale 0.5: 29 empty landmarks, 29 using mirrored experts
+    Scale 1.0: 29 empty landmarks, 29 using mirrored experts
+Note: No sigma components for window sizes [5], using identity transform
+✓ GPU acceleration enabled (device: auto)
+✓ Eye refinement model loaded (GPU)
+CLNF detector loaded
+
+[3/8] Loading PDM shape model...
+Loaded PDM from In-the-wild_aligned_PDM_68.txt
+  Mean shape: (204, 1)
+  Principal components: (204, 34)
+  Eigenvalues: (34,)
+PDM loaded: 68 landmarks
+
+[4/8] Initializing face aligner...
+Loading PDM from: /root/.pyfaceau/weights/In-the-wild_aligned_PDM_68.txt
+Loaded PDM from In-the-wild_aligned_PDM_68.txt
+  Mean shape: (204, 1)
+  Principal components: (204, 34)
+  Eigenvalues: (34,)
+Face aligner initialized
+  Sim scale: 0.7
+  Output size: (112, 112)
+  Reference shape: (68, 2)
+  Rigid points: 24
+Face aligner initialized
+
+[5/8] Loading triangulation...
+Loaded 111 triangles from /root/.pyfaceau/weights/tris_68_full.txt
+Triangulation loaded: 111 triangles
+
+[6/8] Loading AU SVR models...
+Loaded AU01_r (dynamic): cutoff=0.55, means=(1, 4702), SV=(4702, 1), bias=-0.3216 [AU_1_dynamic_intensity_comb.dat]
+Loaded AU02_r (dynamic): cutoff=0.75, means=(1, 4702), SV=(4702, 1), bias=0.0598 [AU_2_dynamic_intensity_comb.dat]
+Loaded AU04_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1336 [AU_4_static_intensity_comb.dat]
+[FAILED] Failed to load AU05_r: Model not found for AU05_r. Tried: ['AU_5_dynamic_intensity_comb.dat', 'AU_5_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU06_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1618 [AU_6_static_intensity_comb.dat]
+Loaded AU07_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1808 [AU_7_static_intensity_comb.dat]
+[FAILED] Failed to load AU09_r: Model not found for AU09_r. Tried: ['AU_9_dynamic_intensity_comb.dat', 'AU_9_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU10_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1071 [AU_10_static_intensity_comb.dat]
+Loaded AU12_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.2212 [AU_12_static_intensity_comb.dat]
+[FAILED] Failed to load AU14_r: Model not found for AU14_r. Tried: ['AU_14_static_intensity_comb.dat', 'AU_14_static_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU15_r (dynamic): cutoff=0.55, means=(1, 4702), SV=(4702, 1), bias=-0.0074 [AU_15_dynamic_intensity_comb.dat]
+Loaded AU17_r (dynamic): cutoff=0.20, means=(1, 4702), SV=(4702, 1), bias=0.0981 [AU_17_dynamic_intensity_comb.dat]
+[FAILED] Failed to load AU20_r: Model not found for AU20_r. Tried: ['AU_20_dynamic_intensity_comb.dat', 'AU_20_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU23_r (dynamic): cutoff=0.65, means=(1, 4702), SV=(4702, 1), bias=-0.3733 [AU_23_dynamic_intensity_comb.dat]
+Loaded AU25_r (dynamic): cutoff=0.30, means=(1, 4702), SV=(4702, 1), bias=-0.1397 [AU_25_dynamic_intensity_comb.dat]
+Loaded AU26_r (dynamic): cutoff=0.30, means=(1, 4702), SV=(4702, 1), bias=-0.3793 [AU_26_dynamic_intensity_comb.dat]
+Loaded AU45_r (dynamic): cutoff=0.60, means=(1, 4702), SV=(4702, 1), bias=-0.1401 [AU_45_dynamic_intensity_comb.dat]
+
+Loaded 13/17 AU models
+Failed AUs: ['AU05_r', 'AU09_r', 'AU14_r', 'AU20_r']
+Loaded 13 AU models
+Batched AU predictor enabled (2-5x faster)
+
+[7/8] Initializing running median tracker...
+Running median tracker initialized (Python version)
+
+[8/9] Initializing online AU correction...
+Online AU correction initialized for 13 AUs
+
+[9/9] PyFHOG ready for HOG extraction
+
+All components initialized successfully
+================================================================================
+
+Processing video: tmphoj942_4.mp4
+================================================================================
+
+Video info:
+  FPS: 2.00
+  Total frames: 10
+  Duration: 5.00 seconds
+
+[Frame 0] Step 1: Detecting face with ONNX + CPU...
+[Frame 0] Step 1: Found 2 faces
+[Frame 0] Step 2: Detecting landmarks with CLNF...
+[Frame 0] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 40)
+[Frame 0] Step 3: Extracting pose from pyclnf params...
+[Frame 0] Step 4: Aligning face...
+[Frame 0] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 0] Step 5: Extracting HOG features...
+[Frame 0] Step 5: HOG features shape: (4464,)
+[Frame 0] Step 6: Extracting geometric features...
+[Frame 0] Step 6: Geometric features shape: (238,)
+[Frame 0] Step 7: Updating running median...
+[Frame 0] Step 7: Running median shape: (4702,)
+[Frame 0] Step 8: Predicting AUs...
+[Frame 1] Step 1: Using cached bbox (tracking mode)
+[Frame 1] Step 2: Detecting landmarks with CLNF...
+[Frame 1] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 20)
+[Frame 1] Step 3: Extracting pose from pyclnf params...
+[Frame 1] Step 4: Aligning face...
+[Frame 1] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 1] Step 5: Extracting HOG features...
+[Frame 1] Step 5: HOG features shape: (4464,)
+[Frame 1] Step 6: Extracting geometric features...
+[Frame 1] Step 6: Geometric features shape: (238,)
+[Frame 1] Step 7: Updating running median...
+[Frame 1] Step 7: Running median shape: (4702,)
+[Frame 1] Step 8: Predicting AUs...
+[Frame 2] Step 1: Using cached bbox (tracking mode)
+[Frame 2] Step 2: Detecting landmarks with CLNF...
+[Frame 2] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 20)
+[Frame 2] Step 3: Extracting pose from pyclnf params...
+[Frame 2] Step 4: Aligning face...
+[Frame 2] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 2] Step 5: Extracting HOG features...
+[Frame 2] Step 5: HOG features shape: (4464,)
+[Frame 2] Step 6: Extracting geometric features...
+[Frame 2] Step 6: Geometric features shape: (238,)
+[Frame 2] Step 7: Updating running median...
+[Frame 2] Step 7: Running median shape: (4702,)
+[Frame 2] Step 8: Predicting AUs...
+Progress: 10/10 frames (100.0%) - Success: 10, Failed: 0
+
+Applying post-processing (cutoff adjustment, temporal smoothing)...
+
+Applying post-processing...
+  [1/3] Two-pass median correction...
+    Re-predicting 10 early frames with final median...
+    Two-pass correction complete
+  [2/3] Cutoff adjustment...
+  [3/3] Temporal smoothing...
+Post-processing complete
+
+================================================================================
+PROCESSING COMPLETE
+================================================================================
+Total frames processed: 10
+Failed frames: 0
+Success rate: 100.0%
+
+INFO:     112.171.67.160:9853 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9853 - "GET /files/884986200e56467aaf78cc5ed6eb0b3e/video?t=1770620160327 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:11915 - "GET /files/884986200e56467aaf78cc5ed6eb0b3e/video?t=1770620160327 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:11915 - "GET /files/884986200e56467aaf78cc5ed6eb0b3e/video?t=1770620160327 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:5059 - "GET /files/884986200e56467aaf78cc5ed6eb0b3e/video?t=1770620160327 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:13018 - "GET /files/884986200e56467aaf78cc5ed6eb0b3e/video?t=1770620160327 HTTP/1.1" 206 Partial Content
+✓ OpenCLIP 백엔드 초기화 완료 (device: cuda)
+INFO:     112.171.67.160:7709 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7709 - "GET /files/7fa9d2cc76284deca2b72f1e4a1cef16/video?t=1770620179529 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:13395 - "GET /files/7fa9d2cc76284deca2b72f1e4a1cef16/video?t=1770620179529 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:13395 - "GET /files/7fa9d2cc76284deca2b72f1e4a1cef16/video?t=1770620179529 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:13395 - "GET /files/7fa9d2cc76284deca2b72f1e4a1cef16/video?t=1770620179529 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:6345 - "GET /files/7fa9d2cc76284deca2b72f1e4a1cef16/video?t=1770620179529 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:11851 - "GET /files/7fa9d2cc76284deca2b72f1e4a1cef16/video?t=1770620179529 HTTP/1.1" 206 Partial Content
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n-pose, 사람 전용)...
+✓ YOLOv8n·YOLOv8n-pose 모델 로드 완료 (device: cuda)
+
+[2/4] 표정/자세 분석 모델 로딩 (백엔드: deepface)...
+✓ 감정 분석: DeepFace (7가지 기본 감정)
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:3468 - "POST /api/analyze-video HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/retinaface/commons/package_utils.py", line 19, in validate_for_keras3
+    import tf_keras
+ModuleNotFoundError: No module named 'tf_keras'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/fastapi/applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/middleware/cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/fastapi/routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/fastapi/routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/fastapi/routing.py", line 355, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/fastapi/routing.py", line 245, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/teddy/VisionAI/webapp/main.py", line 775, in api_analyze_video
+    return _handle_video_analysis(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/teddy/VisionAI/webapp/main.py", line 331, in _handle_video_analysis
+    return _handle_video_analysis_pipeline(video, backend, sample_fps, max_duration_sec, conf_threshold)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/teddy/VisionAI/webapp/main.py", line 556, in _handle_video_analysis_pipeline
+    result = pipeline.process_frame(frame_rgb, timestamp, conf_threshold=conf_threshold)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/teddy/VisionAI/visionai_pipeline/pipeline.py", line 202, in process_frame
+    emotion_result = self.emotion_analyzer.analyze(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/teddy/VisionAI/visionai_pipeline/emotion.py", line 106, in analyze
+    result = analyze_image(image, bbox)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/teddy/VisionAI/visionai_pipeline/deepface_analyzer.py", line 70, in analyze_image
+    from deepface import DeepFace
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/deepface/DeepFace.py", line 22, in <module>
+    from deepface.modules import (
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/deepface/modules/modeling.py", line 19, in <module>
+    from deepface.models.face_detection import (
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/deepface/models/face_detection/RetinaFace.py", line 6, in <module>
+    from retinaface import RetinaFace as rf
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/retinaface/RetinaFace.py", line 20, in <module>
+    package_utils.validate_for_keras3()
+  File "/root/miniconda3/envs/vision/lib/python3.11/site-packages/retinaface/commons/package_utils.py", line 24, in validate_for_keras3
+    raise ValueError(
+ValueError: You have tensorflow 2.20.0 and this requires tf-keras package. Please run `pip install tf-keras` or downgrade your tensorflow.
+================================================================================
+INITIALIZING COMPONENTS
+Thread: AnyIO worker thread (main=False)
+================================================================================
+
+[1/8] Loading face detector (PyMTCNN)...
+  Backend: auto
+Initializing PyMTCNN detector...
+  Backend: auto
+Loading ONNX models from: /root/miniconda3/envs/vision/lib/python3.11/site-packages/pymtcnn/models
+Available providers: ['AzureExecutionProvider', 'CPUExecutionProvider']
+Using providers: ['CPUExecutionProvider']
+ONNX models loaded with provider: CPUExecutionProvider
+Auto-selected: ONNX with CPU
+[OK] PyMTCNN initialized with ONNX + CPU backend
+  Active backend: {'backend': 'ONNX + CPU', 'provider': 'CPUExecutionProvider'}
+
+  Active backend: {'backend': 'ONNX + CPU', 'provider': 'CPUExecutionProvider'}
+Face detector loaded
+
+[2/8] Loading CLNF landmark detector (pyclnf)...
+  Max iterations: 10
+  Convergence threshold: 0.005 pixels
+  GPU enabled: True
+Loading CEN patch experts (410 MB, ~5-10 seconds)...
+  [1/4] Loading scale 0.25...
+      ✓ 68 patch experts loaded
+  [2/4] Loading scale 0.35...
+      ✓ 68 patch experts loaded
+  [3/4] Loading scale 0.5...
+      ✓ 68 patch experts loaded
+  [4/4] Loading scale 1.0...
+      ✓ 68 patch experts loaded
+Loaded CEN sigma components for window sizes: [7, 9, 11, 15]
+    Scale 0.25: 29 empty landmarks, 29 using mirrored experts
+    Scale 0.35: 29 empty landmarks, 29 using mirrored experts
+    Scale 0.5: 29 empty landmarks, 29 using mirrored experts
+    Scale 1.0: 29 empty landmarks, 29 using mirrored experts
+Note: No sigma components for window sizes [5], using identity transform
+✓ GPU acceleration enabled (device: auto)
+✓ Eye refinement model loaded (GPU)
+CLNF detector loaded
+
+[3/8] Loading PDM shape model...
+Loaded PDM from In-the-wild_aligned_PDM_68.txt
+  Mean shape: (204, 1)
+  Principal components: (204, 34)
+  Eigenvalues: (34,)
+PDM loaded: 68 landmarks
+
+[4/8] Initializing face aligner...
+Loading PDM from: /root/.pyfaceau/weights/In-the-wild_aligned_PDM_68.txt
+Loaded PDM from In-the-wild_aligned_PDM_68.txt
+  Mean shape: (204, 1)
+  Principal components: (204, 34)
+  Eigenvalues: (34,)
+Face aligner initialized
+  Sim scale: 0.7
+  Output size: (112, 112)
+  Reference shape: (68, 2)
+  Rigid points: 24
+Face aligner initialized
+
+[5/8] Loading triangulation...
+Loaded 111 triangles from /root/.pyfaceau/weights/tris_68_full.txt
+Triangulation loaded: 111 triangles
+
+[6/8] Loading AU SVR models...
+Loaded AU01_r (dynamic): cutoff=0.55, means=(1, 4702), SV=(4702, 1), bias=-0.3216 [AU_1_dynamic_intensity_comb.dat]
+Loaded AU02_r (dynamic): cutoff=0.75, means=(1, 4702), SV=(4702, 1), bias=0.0598 [AU_2_dynamic_intensity_comb.dat]
+Loaded AU04_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1336 [AU_4_static_intensity_comb.dat]
+[FAILED] Failed to load AU05_r: Model not found for AU05_r. Tried: ['AU_5_dynamic_intensity_comb.dat', 'AU_5_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU06_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1618 [AU_6_static_intensity_comb.dat]
+Loaded AU07_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1808 [AU_7_static_intensity_comb.dat]
+[FAILED] Failed to load AU09_r: Model not found for AU09_r. Tried: ['AU_9_dynamic_intensity_comb.dat', 'AU_9_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU10_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1071 [AU_10_static_intensity_comb.dat]
+Loaded AU12_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.2212 [AU_12_static_intensity_comb.dat]
+[FAILED] Failed to load AU14_r: Model not found for AU14_r. Tried: ['AU_14_static_intensity_comb.dat', 'AU_14_static_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU15_r (dynamic): cutoff=0.55, means=(1, 4702), SV=(4702, 1), bias=-0.0074 [AU_15_dynamic_intensity_comb.dat]
+Loaded AU17_r (dynamic): cutoff=0.20, means=(1, 4702), SV=(4702, 1), bias=0.0981 [AU_17_dynamic_intensity_comb.dat]
+[FAILED] Failed to load AU20_r: Model not found for AU20_r. Tried: ['AU_20_dynamic_intensity_comb.dat', 'AU_20_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU23_r (dynamic): cutoff=0.65, means=(1, 4702), SV=(4702, 1), bias=-0.3733 [AU_23_dynamic_intensity_comb.dat]
+Loaded AU25_r (dynamic): cutoff=0.30, means=(1, 4702), SV=(4702, 1), bias=-0.1397 [AU_25_dynamic_intensity_comb.dat]
+Loaded AU26_r (dynamic): cutoff=0.30, means=(1, 4702), SV=(4702, 1), bias=-0.3793 [AU_26_dynamic_intensity_comb.dat]
+Loaded AU45_r (dynamic): cutoff=0.60, means=(1, 4702), SV=(4702, 1), bias=-0.1401 [AU_45_dynamic_intensity_comb.dat]
+
+Loaded 13/17 AU models
+Failed AUs: ['AU05_r', 'AU09_r', 'AU14_r', 'AU20_r']
+Loaded 13 AU models
+Batched AU predictor enabled (2-5x faster)
+
+[7/8] Initializing running median tracker...
+Running median tracker initialized (Python version)
+
+[8/9] Initializing online AU correction...
+Online AU correction initialized for 13 AUs
+
+[9/9] PyFHOG ready for HOG extraction
+
+All components initialized successfully
+================================================================================
+
+Processing video: tmpgsh1ftde.mp4
+================================================================================
+
+Video info:
+  FPS: 2.00
+  Total frames: 10
+  Duration: 5.00 seconds
+
+[Frame 0] Step 1: Detecting face with ONNX + CPU...
+[Frame 0] Step 1: Found 2 faces
+[Frame 0] Step 2: Detecting landmarks with CLNF...
+[Frame 0] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 40)
+[Frame 0] Step 3: Extracting pose from pyclnf params...
+[Frame 0] Step 4: Aligning face...
+[Frame 0] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 0] Step 5: Extracting HOG features...
+[Frame 0] Step 5: HOG features shape: (4464,)
+[Frame 0] Step 6: Extracting geometric features...
+[Frame 0] Step 6: Geometric features shape: (238,)
+[Frame 0] Step 7: Updating running median...
+[Frame 0] Step 7: Running median shape: (4702,)
+[Frame 0] Step 8: Predicting AUs...
+[Frame 1] Step 1: Using cached bbox (tracking mode)
+[Frame 1] Step 2: Detecting landmarks with CLNF...
+[Frame 1] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 20)
+[Frame 1] Step 3: Extracting pose from pyclnf params...
+[Frame 1] Step 4: Aligning face...
+[Frame 1] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 1] Step 5: Extracting HOG features...
+[Frame 1] Step 5: HOG features shape: (4464,)
+[Frame 1] Step 6: Extracting geometric features...
+[Frame 1] Step 6: Geometric features shape: (238,)
+[Frame 1] Step 7: Updating running median...
+[Frame 1] Step 7: Running median shape: (4702,)
+[Frame 1] Step 8: Predicting AUs...
+[Frame 2] Step 1: Using cached bbox (tracking mode)
+[Frame 2] Step 2: Detecting landmarks with CLNF...
+[Frame 2] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 20)
+[Frame 2] Step 3: Extracting pose from pyclnf params...
+[Frame 2] Step 4: Aligning face...
+[Frame 2] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 2] Step 5: Extracting HOG features...
+[Frame 2] Step 5: HOG features shape: (4464,)
+[Frame 2] Step 6: Extracting geometric features...
+[Frame 2] Step 6: Geometric features shape: (238,)
+[Frame 2] Step 7: Updating running median...
+[Frame 2] Step 7: Running median shape: (4702,)
+[Frame 2] Step 8: Predicting AUs...
+Progress: 10/10 frames (100.0%) - Success: 10, Failed: 0
+
+Applying post-processing (cutoff adjustment, temporal smoothing)...
+
+Applying post-processing...
+  [1/3] Two-pass median correction...
+    Re-predicting 10 early frames with final median...
+    Two-pass correction complete
+  [2/3] Cutoff adjustment...
+  [3/3] Temporal smoothing...
+Post-processing complete
+
+================================================================================
+PROCESSING COMPLETE
+================================================================================
+Total frames processed: 10
+Failed frames: 0
+Success rate: 100.0%
+
+INFO:     112.171.67.160:2755 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2755 - "GET /files/37df8891967145248f28baedb5360aef/video?t=1770620242871 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:11453 - "GET /files/37df8891967145248f28baedb5360aef/video?t=1770620242871 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:11453 - "GET /files/37df8891967145248f28baedb5360aef/video?t=1770620242871 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:11453 - "GET /files/37df8891967145248f28baedb5360aef/video?t=1770620242871 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:11125 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11125 - "GET /files/0b2051b825474938a926354504eae0b1/video?t=1770620254674 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:6870 - "GET /files/0b2051b825474938a926354504eae0b1/video?t=1770620254674 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:6870 - "GET /files/0b2051b825474938a926354504eae0b1/video?t=1770620254674 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:6870 - "GET /files/0b2051b825474938a926354504eae0b1/video?t=1770620254674 HTTP/1.1" 206 Partial Content
+INFO:     210.179.94.144:39596 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:39596 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     210.179.94.144:39608 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     210.179.94.144:39622 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:41748 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:41748 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:41760 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:41776 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:46282 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:46282 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:46298 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:46304 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:50048 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:50056 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58130 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58130 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:58142 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:58150 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [57600]
+nohup: ignoring input
+INFO:     Started server process [71174]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     3.141.43.143:44128 - "GET / HTTP/1.1" 200 OK
+INFO:     3.141.43.143:46888 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     206.189.90.101:48378 - "GET / HTTP/1.1" 200 OK
+INFO:     206.189.90.101:48384 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     206.189.90.101:48388 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     206.189.90.101:48392 - "GET /.well-known/security.txt HTTP/1.1" 404 Not Found
+INFO:     206.189.90.101:48406 - "GET /favicon HTTP/1.1" 404 Not Found
+INFO:     206.189.90.101:48414 - "GET /.well-known/robots.txt HTTP/1.1" 404 Not Found
+INFO:     206.189.90.101:48424 - "GET /security.txt HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48114 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     146.19.24.133:48124 - "POST /_next HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48142 - "POST /api HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48152 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     146.19.24.133:48166 - "POST /_next/server HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48178 - "POST /_next HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48192 - "POST /app HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48206 - "POST /api HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48226 - "POST /api/route HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48230 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     146.19.24.133:48246 - "POST /_next/server HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48260 - "POST /app HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48274 - "POST /_next HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48284 - "POST /api HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48298 - "POST /api/route HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48306 - "POST /_next/server HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48318 - "POST /app HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:48334 - "POST /api/route HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:6651 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6651 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:10476 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n-pose, 사람 전용)...
+✓ YOLOv8n·YOLOv8n-pose 모델 로드 완료 (device: cuda)
+
+[2/4] 표정/자세 분석 모델 로딩 (백엔드: openclip)...
+✓ 감정 분석: OpenCLIP (Vision-Language, 16 emotions + 18 poses)
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:1489 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:35194 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:35194 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:35194 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:35216 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:41818 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:41832 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:53536 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:53548 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:50066 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:50082 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.205.196:45698 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.205.196:45698 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     211.234.205.196:45714 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     211.234.205.196:45728 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.205.196:4510 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.205.196:33562 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:44240 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:44288 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:44358 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     211.234.205.196:47268 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.205.196:47284 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.205.196:63316 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.205.196:50422 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4114 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4114 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9933 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9933 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     211.234.205.196:47058 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.205.196:47058 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     211.234.205.196:35784 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     211.234.205.196:47076 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.205.196:41102 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.205.196:41116 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58628 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58642 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.231.103.105:46674 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.188.28:56712 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.188.28:56712 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     211.234.188.28:21888 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     211.234.188.28:21888 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     104.47.39.126:38090 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     112.171.67.160:6525 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6525 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:2603 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:2603 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+✓ OpenCLIP 백엔드 초기화 완료 (device: cuda)
+INFO:     112.171.67.160:2917 - "POST /api/detect HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2917 - "GET /files/4d281d53e85d403988608aca79a65274/annotated?t=1770709316351 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12042 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12042 - "GET /files/630d16d80ecf44d0a1fd84b48fa133c0/video?t=1770709340347 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:1711 - "GET /files/630d16d80ecf44d0a1fd84b48fa133c0/video?t=1770709340347 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:1711 - "GET /files/630d16d80ecf44d0a1fd84b48fa133c0/video?t=1770709340347 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:1711 - "GET /files/630d16d80ecf44d0a1fd84b48fa133c0/video?t=1770709340347 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:4863 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:4863 - "GET /files/630d16d80ecf44d0a1fd84b48fa133c0/video?t=1770709340347 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:7031 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7031 - "GET /files/fa1220b69c4d4323828f0e6bc0485655/video?t=1770709377322 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:7099 - "GET /files/fa1220b69c4d4323828f0e6bc0485655/video?t=1770709377322 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:7099 - "GET /files/fa1220b69c4d4323828f0e6bc0485655/video?t=1770709377322 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:12002 - "GET /files/fa1220b69c4d4323828f0e6bc0485655/video?t=1770709377322 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:12002 - "GET /files/fa1220b69c4d4323828f0e6bc0485655/video?t=1770709377322 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:5005 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5005 - "GET /files/1b116dc9f5e64fe7972ebc85176c4cb6/video?t=1770709396516 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:7577 - "GET /files/1b116dc9f5e64fe7972ebc85176c4cb6/video?t=1770709396516 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:7577 - "GET /files/1b116dc9f5e64fe7972ebc85176c4cb6/video?t=1770709396516 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:7577 - "GET /files/1b116dc9f5e64fe7972ebc85176c4cb6/video?t=1770709396516 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:1515 - "GET /files/1b116dc9f5e64fe7972ebc85176c4cb6/video?t=1770709396516 HTTP/1.1" 206 Partial Content
+INFO:     112.171.67.160:12317 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12317 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:14241 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:36288 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:36288 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:36288 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:36300 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:55944 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:54424 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:54436 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58065 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58065 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58068 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58076 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58086 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58088 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58283 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:58288 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     185.247.137.104:52923 - "GET / HTTP/1.1" 200 OK
+INFO:     45.79.115.59:55820 - "GET / HTTP/1.1" 200 OK
+INFO:     3.131.220.121:34376 - "GET / HTTP/1.1" 200 OK
+INFO:     3.131.220.121:60570 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     172.236.228.227:6524 - "GET / HTTP/1.1" 200 OK
+INFO:     172.236.228.111:8970 - "GET / HTTP/1.1" 200 OK
+INFO:     3.129.187.38:37560 - "GET / HTTP/1.1" 200 OK
+INFO:     3.129.187.38:55172 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     45.194.92.38:40170 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     45.194.92.38:40172 - "POST /_next HTTP/1.1" 404 Not Found
+INFO:     45.194.92.38:40174 - "POST /api HTTP/1.1" 404 Not Found
+INFO:     45.194.92.38:40188 - "POST /_next/server HTTP/1.1" 404 Not Found
+INFO:     45.194.92.38:40200 - "POST /app HTTP/1.1" 404 Not Found
+INFO:     45.194.92.38:40204 - "POST /api/route HTTP/1.1" 404 Not Found

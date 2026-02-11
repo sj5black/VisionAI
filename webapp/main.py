@@ -144,7 +144,7 @@ def api_emotion_backend(emotion_backend: Optional[str] = None) -> Dict[str, Any]
     라운지(room) 등 표시용. emotion_backend 미지정 시 openclip 기준.
     """
     backend = (emotion_backend or "openclip").strip().lower() if emotion_backend else "openclip"
-    if backend not in ("openclip", "swin"):
+    if backend not in ("openclip", "deepface", "pyfaceau", "swin"):
         backend = "openclip"
     pipeline = _get_pipeline(os.getenv("VISIONAI_DEVICE"), emotion_backend=backend)
     if pipeline is None or pipeline.emotion_analyzer is None:
@@ -171,14 +171,14 @@ def _handle_pipeline_detection(
     emotion_backend: str = "openclip",
 ) -> Dict[str, Any]:
     """
-    🆕 VisionAI Pipeline으로 이미지 처리. emotion_backend: openclip | swin
+    🆕 VisionAI Pipeline으로 이미지 처리. emotion_backend: openclip | deepface | pyfaceau
     """
     import numpy as np
     from PIL import Image as PILImage
     
     device = os.getenv("VISIONAI_DEVICE")
     backend = (emotion_backend or "openclip").strip().lower()
-    if backend not in ("openclip", "swin"):
+    if backend not in ("openclip", "deepface", "pyfaceau", "swin"):
         backend = "openclip"
     pipeline = _get_pipeline(device, emotion_backend=backend)
     
@@ -313,7 +313,7 @@ def _handle_video_analysis(
 ) -> Dict[str, Any]:
     """
     짧은 영상을 프레임 단위로 샘플링해 표정·자세를 분석하고, 요약 반환.
-    emotion_backend: "openclip" | "deepface" | "pyfaceau"
+    emotion_backend: "openclip" | "pyfaceau" (영상에서는 DeepFace 미지원)
     """
     if not CV2_AVAILABLE:
         raise HTTPException(
@@ -322,7 +322,8 @@ def _handle_video_analysis(
         )
     
     backend = (emotion_backend or "openclip").strip().lower()
-    
+    if backend == "deepface":
+        backend = "openclip"  # 영상 분석에서는 DeepFace 미지원, OpenCLIP으로 대체
     # pyfaceau는 영상 파일을 직접 처리
     if backend == "pyfaceau":
         return _handle_video_analysis_pyfaceau(video, sample_fps, max_duration_sec)
@@ -369,11 +370,47 @@ def _handle_video_analysis_pyfaceau(
     duration_sec = total_frames / video_fps if video_fps > 0 else 0
     cap.release()
 
-    # pyfaceau로 분석 (max_frames 제한)
-    max_frames_to_analyze = int(min(duration_sec, max_duration_sec) * video_fps)
+    # 초당 sample_fps(기본 2)프레임만 분석: 샘플링된 영상 생성 후 pyfaceau 실행
+    import tempfile
+    max_dur = min(duration_sec, max_duration_sec)
+    target_frame_count = int(max_dur * sample_fps)  # e.g. 30초 * 2 = 60프레임
+    frame_interval = max(1, int(round(video_fps / sample_fps)))  # e.g. 30/2 = 15
+    subsampled_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
+            subsampled_path = tmp.name
+        cap = cv2.VideoCapture(str(upload_path))
+        w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        out = cv2.VideoWriter(subsampled_path, fourcc, sample_fps, (w, h))
+        n_written = 0
+        frame_idx = 0
+        while n_written < target_frame_count:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            if frame_idx % frame_interval == 0:
+                out.write(frame)
+                n_written += 1
+            frame_idx += 1
+        cap.release()
+        out.release()
+    except Exception as e:
+        if subsampled_path and os.path.exists(subsampled_path):
+            try:
+                os.unlink(subsampled_path)
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"Video subsample failed: {e}") from e
+
     start_wall = time.time()
-    
-    df = analyze_video(str(upload_path), max_frames=max_frames_to_analyze)
+    df = analyze_video(subsampled_path, max_frames=target_frame_count + 10)
+    try:
+        if subsampled_path and os.path.exists(subsampled_path):
+            os.unlink(subsampled_path)
+    except Exception:
+        pass
     
     if df is None or df.empty:
         raise HTTPException(status_code=500, detail="Video analysis failed. Check server logs.")

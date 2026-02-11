@@ -91,7 +91,7 @@ class VisionAIPipeline:
             emotion_model_path: 감정 분석 모델 경로
             temporal_model_path: 시간 축 모델 경로
             prediction_model_path: 예측 모델 경로
-            emotion_backend: (호환용, 무시) 이제 OpenFace 2.0만 사용
+            emotion_backend: 표정 분석 백엔드 ("openclip" | "deepface" | "pyfaceau")
         """
         print("=" * 60)
         print("VisionAI Pipeline 초기화 중...")
@@ -106,12 +106,16 @@ class VisionAIPipeline:
         print("\n[1/4] 객체 탐지 모델 로딩 (YOLOv8n-pose, 사람 전용)...")
         self.detector = ObjectDetector(device=device)
         
-        # Step 3: Emotion & Pose Analysis (OpenFace 2.0 AU 기반)
+        # Step 3: Emotion & Pose Analysis (openclip / deepface / pyfaceau 선택)
         if enable_emotion:
-            print("\n[2/4] 표정/자세 분석 모델 로딩 (OpenFace 2.0, Action Units)...")
+            backend = (emotion_backend or "openclip").strip().lower()
+            if backend not in ("openclip", "deepface", "pyfaceau", "swin"):
+                backend = "openclip"
+            print(f"\n[2/4] 표정/자세 분석 모델 로딩 (백엔드: {backend})...")
             self.emotion_analyzer = EmotionAnalyzer(
                 model_path=emotion_model_path,
                 device=device,
+                emotion_backend=backend,
             )
         else:
             self.emotion_analyzer = None

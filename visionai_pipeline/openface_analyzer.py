@@ -24,8 +24,8 @@ try:
 except ImportError:
     CV2_AVAILABLE = False
 
-# AU 강도 임계값 (0~5 스케일, OpenFace 2.0)
-AU_THRESHOLD = 1.5
+# AU 강도 임계값 (0~5 스케일, OpenFace 2.0). 낮출수록 미세한 표정도 감지
+AU_THRESHOLD = 1.0
 
 
 @dataclass
@@ -89,22 +89,26 @@ def _au_to_expression(au: Dict[str, float]) -> Tuple[str, float]:
         return "displeased", min(1.0, au4 / 5.0)
     if _au_value(au, "5") >= t or _au_value(au, "26") >= t:
         return "attention", 0.7
-    return "neutral", 0.5
+    # neutral은 최대 AU가 낮을 때만, 신뢰도 낮게 부여 (과도한 neutral 비율 방지)
+    max_au = max((_au_value(au, k) for k in ("1", "2", "4", "6", "7", "12", "15", "17")), default=0.0)
+    if max_au < 0.5:
+        return "neutral", 0.25  # 거의 움직임 없을 때만 낮은 신뢰도로 neutral
+    return "neutral", 0.4
 
 
 def _head_pose_to_pose_label(pose: Optional[Tuple[float, float, float]]) -> Tuple[str, float]:
-    """pitch, yaw, roll (라디안) → 자세 라벨."""
+    """pitch, yaw, roll (라디안) → 자세 라벨. front 구간을 줄이고 신뢰도 조정."""
     if pose is None or len(pose) < 3:
-        return "front", 0.5
+        return "front", 0.4  # 정보 없을 때 front 신뢰도 낮게
     pitch, yaw, roll = pose[0], pose[1], pose[2]
-    # 간단 규칙: pitch < -0.2 → looking_down, > 0.2 → looking_up, |yaw| > 0.3 → looking_side
-    if pitch < -0.2:
+    # 임계값 완화: 작은 각도도 looking_down/up/side로 분류 (front 과다 방지)
+    if pitch < -0.12:
         return "looking_down", 0.7
-    if pitch > 0.2:
+    if pitch > 0.12:
         return "looking_up", 0.7
-    if abs(yaw) > 0.3:
+    if abs(yaw) > 0.2:
         return "looking_side", 0.7
-    return "front", 0.8
+    return "front", 0.55  # 정면일 때도 신뢰도 보통으로
 
 
 def analyze_video(video_path: str, max_frames: Optional[int] = None):

@@ -12,6 +12,7 @@ import json
 import os
 import re
 import secrets
+import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
@@ -109,7 +110,10 @@ _serena_invited: bool = False
 _serena_pending_task: Optional[asyncio.Task] = None
 
 # 체스 게임: 단일 방당 1게임 (Serena vs 유저 또는 유저 vs 유저)
-# {"board": chess.Board, "white_player": str, "black_player": str, "mode": "serena"|"pvp", "status": str, "white_captured": List[str], "black_captured": List[str]}
+# 선수당 25분 + 매 수 10초 증가
+CHESS_INITIAL_SECONDS = 25 * 60  # 25분
+CHESS_INCREMENT_SECONDS = 10
+# {"board", "white_player", "black_player", "mode", "status", "white_captured", "black_captured", "white_time_remaining", "black_time_remaining", "turn_started_at"}
 _chess_game: Optional[Dict[str, Any]] = None
 _chess_pending_task: Optional[asyncio.Task] = None
 
@@ -124,6 +128,27 @@ _dm_connections: Dict[int, List[tuple[WebSocket, Dict[str, Any]]]] = {}
 _dm_connections_lock = asyncio.Lock()
 # DM 메시지 읽음 상태: {(room_id, message_id): {"sender_id": int, "sender_ws": WebSocket, "read": bool}}
 _dm_message_read_status: Dict[tuple[int, str], Dict[str, Any]] = {}
+
+
+def _chess_state_payload(game: Dict[str, Any]) -> Dict[str, Any]:
+    """체스 상태 브로드캐스트용 페이로드 (시간 포함)."""
+    board: chess.Board = game["board"]
+    return {
+        "type": "chess_state",
+        "fen": board.fen(),
+        "white_player": game.get("white_player"),
+        "black_player": game.get("black_player"),
+        "mode": game.get("mode", "serena"),
+        "status": game.get("status", "active"),
+        "turn": "white" if board.turn == chess.WHITE else "black",
+        "last_move": board.peek().uci() if len(board.move_stack) > 0 else None,
+        "in_check": board.is_check(),
+        "white_captured": game.get("white_captured", []),
+        "black_captured": game.get("black_captured", []),
+        "white_time": max(0.0, game.get("white_time_remaining", CHESS_INITIAL_SECONDS)),
+        "black_time": max(0.0, game.get("black_time_remaining", CHESS_INITIAL_SECONDS)),
+        "turn_started_at": game.get("turn_started_at") or time.time(),
+    }
 
 
 def _get_captured_piece(board: chess.Board, move: chess.Move) -> Optional[str]:
@@ -758,55 +783,56 @@ async def _play_serena_chess_move() -> None:
             if not uci:
                 return
             move = chess.Move.from_uci(uci)
+        now = time.time()
+        turn_started = _chess_game.get("turn_started_at") or now
+        elapsed = now - turn_started
+        b = _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS) - elapsed
+        b = max(0.0, b)
+        if b <= 0:
+            _chess_game["status"] = "time_loss_black"
+            _chess_game["black_time_remaining"] = 0.0
+            _chess_game["turn_started_at"] = now
+            await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+            return
+        _chess_game["black_time_remaining"] = b + CHESS_INCREMENT_SECONDS
         cap = _get_captured_piece(board, move)
         if cap:
             _chess_game.setdefault("black_captured", []).append(cap)
         board.push(move)
-        uci = move.uci()
+        _chess_game["turn_started_at"] = now
         status = "active"
         if board.is_checkmate():
             status = "checkmate_white"
         elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
             status = "draw"
         _chess_game["status"] = status
-        await _room_broadcast({
-            "type": "chess_state",
-            "fen": board.fen(),
-            "last_move": uci,
-            "status": status,
-            "turn": "white" if board.turn == chess.WHITE else "black",
-            "in_check": board.is_check(),
-            "white_captured": _chess_game.get("white_captured", []),
-            "black_captured": _chess_game.get("black_captured", []),
-            "white_player": _chess_game.get("white_player"),
-            "black_player": _chess_game.get("black_player"),
-            "mode": _chess_game.get("mode", "serena"),
-        }, exclude_ws=None)
+        await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
     except (ValueError, chess.InvalidMoveError):
         uci_fb = _pick_random_legal_move(board)
         if uci_fb and _chess_game and _chess_game.get("status") == "active":
             try:
                 move = chess.Move.from_uci(uci_fb)
+                now = time.time()
+                turn_started = _chess_game.get("turn_started_at") or now
+                elapsed = now - turn_started
+                b = _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS) - elapsed
+                b = max(0.0, b)
+                if b <= 0:
+                    _chess_game["status"] = "time_loss_black"
+                    _chess_game["black_time_remaining"] = 0.0
+                    _chess_game["turn_started_at"] = now
+                    await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+                    return
+                _chess_game["black_time_remaining"] = b + CHESS_INCREMENT_SECONDS
                 board.push(move)
+                _chess_game["turn_started_at"] = now
                 status = "active"
                 if board.is_checkmate():
                     status = "checkmate_white"
                 elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
                     status = "draw"
                 _chess_game["status"] = status
-                await _room_broadcast({
-                    "type": "chess_state",
-                    "fen": board.fen(),
-                    "last_move": uci_fb,
-                    "status": status,
-                    "turn": "white" if board.turn == chess.WHITE else "black",
-                    "in_check": board.is_check(),
-                    "white_captured": _chess_game.get("white_captured", []),
-                    "black_captured": _chess_game.get("black_captured", []),
-                    "white_player": _chess_game.get("white_player"),
-                    "black_player": _chess_game.get("black_player"),
-                    "mode": _chess_game.get("mode", "serena"),
-                }, exclude_ws=None)
+                await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
             except Exception:
                 pass
 
@@ -1216,21 +1242,7 @@ async def ws_room(websocket: WebSocket) -> None:
         await websocket.send_text(json.dumps({"type": "participants", "list": participants}, ensure_ascii=False))
         await websocket.send_text(json.dumps({"type": "serena_status", "present": _serena_invited}, ensure_ascii=False))
         if _chess_game and _chess_game.get("status"):
-            b = _chess_game["board"]
-            lm = b.peek().uci() if len(b.move_stack) > 0 else None
-            await websocket.send_text(json.dumps({
-                "type": "chess_state",
-                "fen": b.fen(),
-                "white_player": _chess_game.get("white_player"),
-                "black_player": _chess_game.get("black_player"),
-                "mode": _chess_game.get("mode", "serena"),
-                "status": _chess_game.get("status"),
-                "turn": "white" if b.turn == chess.WHITE else "black",
-                "last_move": lm,
-                "in_check": b.is_check(),
-                "white_captured": _chess_game.get("white_captured", []),
-                "black_captured": _chess_game.get("black_captured", []),
-            }, ensure_ascii=False))
+            await websocket.send_text(json.dumps(_chess_state_payload(_chess_game), ensure_ascii=False))
         if _gomoku_game and _gomoku_game.get("status"):
             await websocket.send_text(json.dumps({
                 "type": "gomoku_state",
@@ -1396,6 +1408,7 @@ async def ws_room(websocket: WebSocket) -> None:
                         _chess_pending_task.cancel()
                         _chess_pending_task = None
                     board = chess.Board()
+                    now = time.time()
                     _chess_game = {
                         "board": board,
                         "white_player": nickname,
@@ -1404,20 +1417,11 @@ async def ws_room(websocket: WebSocket) -> None:
                         "status": "active",
                         "white_captured": [],
                         "black_captured": [],
+                        "white_time_remaining": float(CHESS_INITIAL_SECONDS),
+                        "black_time_remaining": float(CHESS_INITIAL_SECONDS),
+                        "turn_started_at": now,
                     }
-                    await _room_broadcast({
-                        "type": "chess_state",
-                        "fen": board.fen(),
-                        "white_player": nickname,
-                        "black_player": "Serena",
-                        "mode": "serena",
-                        "status": "active",
-                        "turn": "white",
-                        "last_move": None,
-                        "in_check": False,
-                        "white_captured": [],
-                        "black_captured": [],
-                    }, exclude_ws=None)
+                    await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
 
                 elif data.get("type") == "chess_start_pvp" and (data.get("opponent") or "").strip():
                     opp = (data["opponent"] or "").strip()[:32]
@@ -1429,6 +1433,7 @@ async def ws_room(websocket: WebSocket) -> None:
                         _chess_pending_task.cancel()
                         _chess_pending_task = None
                     board = chess.Board()
+                    now = time.time()
                     _chess_game = {
                         "board": board,
                         "white_player": nickname,
@@ -1437,20 +1442,11 @@ async def ws_room(websocket: WebSocket) -> None:
                         "status": "active",
                         "white_captured": [],
                         "black_captured": [],
+                        "white_time_remaining": float(CHESS_INITIAL_SECONDS),
+                        "black_time_remaining": float(CHESS_INITIAL_SECONDS),
+                        "turn_started_at": now,
                     }
-                    await _room_broadcast({
-                        "type": "chess_state",
-                        "fen": board.fen(),
-                        "white_player": nickname,
-                        "black_player": opp,
-                        "mode": "pvp",
-                        "status": "active",
-                        "turn": "white",
-                        "last_move": None,
-                        "in_check": False,
-                        "white_captured": [],
-                        "black_captured": [],
-                    }, exclude_ws=None)
+                    await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
 
                 elif data.get("type") == "chess_move" and (data.get("uci") or "").strip():
                     uci = (data["uci"] or "").strip().lower()[:10]
@@ -1473,6 +1469,31 @@ async def ws_room(websocket: WebSocket) -> None:
                         move = chess.Move.from_uci(uci)
                         if move not in board.legal_moves:
                             continue
+                        now = time.time()
+                        turn_started = _chess_game.get("turn_started_at") or now
+                        elapsed = now - turn_started
+                        if board.turn == chess.WHITE:
+                            w = _chess_game.get("white_time_remaining", CHESS_INITIAL_SECONDS) - elapsed
+                            w = max(0.0, w)
+                            if w <= 0:
+                                _chess_game["status"] = "time_loss_white"
+                                _chess_game["white_time_remaining"] = 0.0
+                                _chess_game["black_time_remaining"] = _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS)
+                                _chess_game["turn_started_at"] = now
+                                await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+                                continue
+                            _chess_game["white_time_remaining"] = w + CHESS_INCREMENT_SECONDS
+                        else:
+                            b = _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS) - elapsed
+                            b = max(0.0, b)
+                            if b <= 0:
+                                _chess_game["status"] = "time_loss_black"
+                                _chess_game["black_time_remaining"] = 0.0
+                                _chess_game["white_time_remaining"] = _chess_game.get("white_time_remaining", CHESS_INITIAL_SECONDS)
+                                _chess_game["turn_started_at"] = now
+                                await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+                                continue
+                            _chess_game["black_time_remaining"] = b + CHESS_INCREMENT_SECONDS
                         captured = _get_captured_piece(board, move)
                         if captured:
                             if board.turn == chess.WHITE:
@@ -1480,25 +1501,14 @@ async def ws_room(websocket: WebSocket) -> None:
                             else:
                                 _chess_game.setdefault("black_captured", []).append(captured)
                         board.push(move)
+                        _chess_game["turn_started_at"] = now
                         status = "active"
                         if board.is_checkmate():
                             status = "checkmate_black"
                         elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
                             status = "draw"
                         _chess_game["status"] = status
-                        await _room_broadcast({
-                            "type": "chess_state",
-                            "fen": board.fen(),
-                            "last_move": uci,
-                            "status": status,
-                            "turn": "white" if board.turn == chess.WHITE else "black",
-                            "in_check": board.is_check(),
-                            "white_captured": _chess_game.get("white_captured", []),
-                            "black_captured": _chess_game.get("black_captured", []),
-                            "white_player": white_p,
-                            "black_player": black_p,
-                            "mode": mode,
-                        }, exclude_ws=None)
+                        await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
                         if status == "active" and board.turn == chess.BLACK and mode == "serena":
                             _chess_pending_task = asyncio.create_task(_play_serena_chess_move())
                     except (ValueError, chess.InvalidMoveError):
@@ -1517,14 +1527,7 @@ async def ws_room(websocket: WebSocket) -> None:
                     else:
                         continue
                     _chess_game["status"] = status
-                    await _room_broadcast({
-                        "type": "chess_state",
-                        "fen": _chess_game["board"].fen(),
-                        "status": status,
-                        "in_check": False,
-                        "white_captured": _chess_game.get("white_captured", []),
-                        "black_captured": _chess_game.get("black_captured", []),
-                    }, exclude_ws=None)
+                    await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
 
                 elif data.get("type") == "gomoku_start":
                     if not _serena_invited:

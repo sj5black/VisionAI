@@ -1,291 +1,35 @@
 INFO:     Will watch for changes in these directories: ['/home/teddy/VisionAI']
 INFO:     Uvicorn running on http://0.0.0.0:8004 (Press CTRL+C to quit)
-INFO:     Started reloader process [71384] using WatchFiles
-INFO:     Started server process [71387]
+INFO:     Started reloader process [1200254] using WatchFiles
+INFO:     Started server process [1200257]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-WARNING:  Invalid HTTP request received.
-INFO:     147.185.133.231:59176 - "GET / HTTP/1.1" 200 OK
-INFO:     112.171.67.160:14410 - "WebSocket /ws/room" [accepted]
+INFO:     112.171.67.160:13992 - "GET /room HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13992 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13992 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13992 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5791 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:8559 - "WebSocket /ws/dm" [accepted]
 INFO:     connection open
 INFO:     connection closed
-INFO:     112.171.67.160:7613 - "GET /room HTTP/1.1" 200 OK
-INFO:     112.171.67.160:7613 - "GET /static/room.css HTTP/1.1" 304 Not Modified
-INFO:     112.171.67.160:4898 - "GET /static/room.js HTTP/1.1" 304 Not Modified
-INFO:     112.171.67.160:4898 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     112.171.67.160:4898 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     112.171.67.160:4898 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     112.171.67.160:14180 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     112.171.67.160:10176 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     112.171.67.160:4898 - "GET /static/uploads/0551dd31a0e14c4f8787c83d0eb92742.jpg HTTP/1.1" 304 Not Modified
-INFO:     112.171.67.160:7613 - "GET /static/uploads/7d2ca242be0f4fd681b31c6dafc7130f.png HTTP/1.1" 304 Not Modified
-INFO:     112.171.67.160:4898 - "GET /static/uploads/1e724fb5cec544a79e418e0a3ebd7363.jpg HTTP/1.1" 304 Not Modified
-INFO:     112.171.67.160:7613 - "GET /static/uploads/a3709e3757114a70a7fe42944f3c6581.jpg HTTP/1.1" 304 Not Modified
-INFO:     112.171.67.160:7613 - "GET /static/uploads/5fb56fb2b4124ec1b140cd7c6c2bc0b0.png HTTP/1.1" 304 Not Modified
-INFO:     112.171.67.160:4898 - "GET /static/uploads/f9282af54ecb4f9990a9d3a516054d04.png HTTP/1.1" 304 Not Modified
-INFO:     112.171.67.160:3455 - "WebSocket /ws/dm" [accepted]
+INFO:     112.171.67.160:12866 - "WebSocket /ws/dm" [accepted]
 INFO:     connection open
 INFO:     connection closed
-INFO:     112.171.67.160:1823 - "WebSocket /ws/dm" [accepted]
+INFO:     112.171.67.160:4728 - "WebSocket /ws/dm" [accepted]
 INFO:     connection open
 INFO:     connection closed
-INFO:     112.171.67.160:8316 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:52664 - "GET /room HTTP/1.1" 200 OK
-INFO:     210.179.94.144:52664 - "GET /static/room.css HTTP/1.1" 304 Not Modified
-INFO:     210.179.94.144:52672 - "GET /static/room.js HTTP/1.1" 304 Not Modified
-INFO:     210.179.94.144:52672 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     210.179.94.144:52672 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     210.179.94.144:52672 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     210.179.94.144:52672 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     210.179.94.144:52682 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:52686 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:52702 - "GET /static/uploads/0551dd31a0e14c4f8787c83d0eb92742.jpg HTTP/1.1" 304 Not Modified
-INFO:     210.179.94.144:52716 - "GET /static/uploads/7d2ca242be0f4fd681b31c6dafc7130f.png HTTP/1.1" 304 Not Modified
-INFO:     210.179.94.144:52716 - "GET /static/uploads/a3709e3757114a70a7fe42944f3c6581.jpg HTTP/1.1" 200 OK
-INFO:     210.179.94.144:52702 - "GET /static/uploads/1e724fb5cec544a79e418e0a3ebd7363.jpg HTTP/1.1" 304 Not Modified
-INFO:     210.179.94.144:52702 - "GET /static/uploads/f9282af54ecb4f9990a9d3a516054d04.png HTTP/1.1" 304 Not Modified
-INFO:     210.179.94.144:52748 - "GET /static/uploads/5fb56fb2b4124ec1b140cd7c6c2bc0b0.png HTTP/1.1" 304 Not Modified
-INFO:     210.179.94.144:34364 - "GET /room HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     210.179.94.144:34368 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     connection closed
-INFO:     210.179.94.144:34364 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     210.179.94.144:34364 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     210.179.94.144:34364 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     210.179.94.144:34372 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:59490 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     210.179.94.144:38542 - "GET /room HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     210.179.94.144:38542 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     210.179.94.144:38542 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     210.179.94.144:38542 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     210.179.94.144:38544 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:38550 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     210.179.94.144:50614 - "GET /room HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     210.179.94.144:50614 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     210.179.94.144:50614 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     210.179.94.144:50614 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     210.179.94.144:50622 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:50636 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     connection closed
-INFO:     211.234.205.196:18496 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     211.234.205.196:28766 - "GET /room HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     211.234.205.196:28766 - "GET /static/room.css HTTP/1.1" 304 Not Modified
-INFO:     211.234.205.196:53346 - "GET /static/room.js HTTP/1.1" 304 Not Modified
-INFO:     211.234.205.196:53346 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     211.234.205.196:53346 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     211.234.205.196:53346 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     211.234.205.196:53358 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     211.234.205.196:50808 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     211.234.205.196:50602 - "GET /room HTTP/1.1" 200 OK
-INFO:     211.234.205.196:50616 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     connection closed
-INFO:     211.234.205.196:50602 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     211.234.205.196:50602 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     211.234.205.196:50602 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     211.234.205.196:58002 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     211.234.205.196:60008 - "WebSocket /ws/dm" [accepted]
+INFO:     112.171.67.160:6110 - "WebSocket /ws/dm" [accepted]
 INFO:     connection open
 INFO:     connection closed
 INFO:     connection closed
 🔄 Using Responses API for model: gpt-5.1-chat-latest
-INFO:     112.171.67.160:4904 - "GET /serena.png HTTP/1.1" 200 OK
-INFO:     112.171.67.160:5346 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     connection closed
-🔄 Using Responses API for model: gpt-5.1-chat-latest
-🔄 Using Responses API for model: gpt-5.1-chat-latest
-🔄 Using Responses API for model: gpt-5.1-chat-latest
-INFO:     211.234.205.196:48198 - "GET /room HTTP/1.1" 200 OK
-INFO:     211.234.205.196:48198 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     211.234.205.196:48198 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     211.234.205.196:48198 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     211.234.205.196:14990 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     211.234.205.196:48198 - "GET /serena.png HTTP/1.1" 200 OK
-INFO:     211.234.205.196:48208 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     112.171.67.160:9715 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     112.171.67.160:4836 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-🔄 Using Responses API for model: gpt-5.1-chat-latest
-🔄 Using Responses API for model: gpt-5.1-chat-latest
-INFO:     211.234.205.196:21860 - "GET /room HTTP/1.1" 200 OK
-INFO:     211.234.205.196:49140 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     connection closed
-INFO:     211.234.205.196:21860 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     211.234.205.196:21860 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     211.234.205.196:21860 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     211.234.205.196:49154 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     211.234.205.196:49484 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     211.234.205.196:42544 - "GET /room HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     211.234.205.196:42544 - "GET /static/room.css HTTP/1.1" 304 Not Modified
-INFO:     211.234.205.196:42772 - "GET /static/room.js HTTP/1.1" 304 Not Modified
-INFO:     211.234.205.196:42772 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     211.234.205.196:42772 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     211.234.205.196:42772 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     211.234.205.196:42784 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     211.234.205.196:42786 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     211.234.205.196:59866 - "GET /room HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     211.234.205.196:59866 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     211.234.205.196:59866 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     211.234.205.196:59866 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     211.234.205.196:38836 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     211.234.205.196:49810 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     connection closed
-INFO:     35.203.210.177:62532 - "GET / HTTP/1.1" 200 OK
-INFO:     210.179.94.144:44982 - "GET /room HTTP/1.1" 200 OK
-INFO:     210.179.94.144:44982 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     210.179.94.144:44982 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     210.179.94.144:44982 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     210.179.94.144:44988 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:44982 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     210.179.94.144:44996 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:44982 - "GET /static/uploads/a3709e3757114a70a7fe42944f3c6581.jpg HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     112.171.67.160:6178 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     112.171.67.160:9959 - "GET /room HTTP/1.1" 200 OK
-INFO:     112.171.67.160:9959 - "GET /static/room.css HTTP/1.1" 304 Not Modified
-INFO:     112.171.67.160:14640 - "GET /static/room.js HTTP/1.1" 304 Not Modified
-INFO:     112.171.67.160:14640 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     112.171.67.160:14640 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     112.171.67.160:9959 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     112.171.67.160:14640 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     112.171.67.160:7657 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     112.171.67.160:4801 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:44474 - "GET /room HTTP/1.1" 200 OK
-INFO:     210.179.94.144:44474 - "GET /static/room.css HTTP/1.1" 304 Not Modified
-INFO:     210.179.94.144:44474 - "GET /static/room.js HTTP/1.1" 304 Not Modified
-INFO:     210.179.94.144:44474 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     210.179.94.144:44474 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     210.179.94.144:44474 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     210.179.94.144:44500 - "WebSocket /ws/room" [accepted]
-INFO:     210.179.94.144:44474 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     connection open
-INFO:     210.179.94.144:44474 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     210.179.94.144:44474 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     210.179.94.144:44516 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     112.171.67.160:11578 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     112.171.67.160:12838 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     connection closed
-INFO:     210.179.94.144:38670 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     210.179.94.144:38680 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:38686 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     connection closed
-INFO:     210.179.94.144:50358 - "GET /room HTTP/1.1" 200 OK
-INFO:     210.179.94.144:50358 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     210.179.94.144:50358 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     210.179.94.144:50358 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     210.179.94.144:50368 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:50380 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     connection closed
-INFO:     210.179.94.144:58063 - "GET /room HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58063 - "GET /static/room.css HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58064 - "GET /static/room.js HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58064 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58064 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58063 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     210.179.94.144:58063 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58071 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:58063 - "GET /serena.png HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     210.179.94.144:58084 - "GET /room HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58084 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58084 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58084 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58087 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:58089 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:58084 - "GET /static/uploads/5fb56fb2b4124ec1b140cd7c6c2bc0b0.png HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58085 - "GET /static/uploads/f9282af54ecb4f9990a9d3a516054d04.png HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     210.179.94.144:58280 - "GET /room HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58280 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58280 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58281 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     210.179.94.144:58281 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     210.179.94.144:58287 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     210.179.94.144:58289 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     45.194.92.38:49604 - "POST / HTTP/1.1" 405 Method Not Allowed
-INFO:     45.194.92.38:49616 - "POST /_next HTTP/1.1" 404 Not Found
-INFO:     45.194.92.38:49624 - "POST /api HTTP/1.1" 404 Not Found
-INFO:     45.194.92.38:49626 - "POST /_next/server HTTP/1.1" 404 Not Found
-INFO:     45.194.92.38:49632 - "POST /app HTTP/1.1" 404 Not Found
-INFO:     45.194.92.38:49648 - "POST /api/route HTTP/1.1" 404 Not Found
-INFO:     112.171.67.160:13687 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     112.171.67.160:4803 - "WebSocket /ws/dm" [accepted]
+INFO:     112.171.67.160:5308 - "GET /room HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10708 - "GET /static/room.js HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5308 - "GET /static/room.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10708 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10708 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:5308 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10708 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8331 - "WebSocket /ws/room" [accepted]
 INFO:     connection open

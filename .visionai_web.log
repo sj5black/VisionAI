@@ -3356,3 +3356,120 @@ INFO:     45.194.92.38:40174 - "POST /api HTTP/1.1" 404 Not Found
 INFO:     45.194.92.38:40188 - "POST /_next/server HTTP/1.1" 404 Not Found
 INFO:     45.194.92.38:40200 - "POST /app HTTP/1.1" 404 Not Found
 INFO:     45.194.92.38:40204 - "POST /api/route HTTP/1.1" 404 Not Found
+INFO:     210.179.94.144:48462 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:48462 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:48462 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:48468 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9970 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9970 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3694 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5647 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     104.244.79.113:33382 - "GET / HTTP/1.1" 200 OK
+INFO:     27.0.238.68:53678 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.200.66:63360 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.200.66:53054 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.200.66:45842 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.200.66:45844 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.200.66:49078 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.200.66:49094 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.200.66:45338 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.200.66:45338 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     211.234.200.66:52962 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     211.234.200.66:45362 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.200.66:48260 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.200.66:48268 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:52730 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:52744 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:55747 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:55747 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:55077 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:60769 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1501 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1501 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14743 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:3162 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:48946 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:48956 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:54980 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:54988 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10014 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9610 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:59348 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:53293 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:59348 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:53293 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:14957 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14957 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4777 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13813 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:52674 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:52686 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:46692 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:46696 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:52418 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:52418 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:52434 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:49286 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:46736 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:38994 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:39004 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:35104 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:35108 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:44916 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:45175 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:45564 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:43446 - "GET / HTTP/1.1" 200 OK
+INFO:     146.19.24.133:43470 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     146.19.24.133:51474 - "POST /_next HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:51478 - "POST /api HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:51488 - "POST /_next/server HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:51504 - "POST /app HTTP/1.1" 404 Not Found
+INFO:     146.19.24.133:51516 - "POST /api/route HTTP/1.1" 404 Not Found
+INFO:     210.179.94.144:55776 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:55776 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:55784 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:39248 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:36606 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:36616 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     104.47.39.126:43256 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     112.171.67.160:10744 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10744 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8125 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8125 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:8125 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6616 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [71174]
+nohup: ignoring input
+INFO:     Started server process [1200018]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:9371 - "GET / HTTP/1.1" 200 OK
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n-pose, 사람 전용)...
+✓ YOLOv8n·YOLOv8n-pose 모델 로드 완료 (device: cuda)
+
+[2/4] 표정/자세 분석 모델 로딩 (백엔드: openclip)...
+✓ 감정 분석: OpenCLIP (Vision-Language, 16 emotions + 18 poses)
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:6842 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14946 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14946 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3931 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2822 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     176.65.148.57:55050 - "GET / HTTP/1.1" 200 OK

@@ -1,35 +1,216 @@
 INFO:     Will watch for changes in these directories: ['/home/teddy/VisionAI']
 INFO:     Uvicorn running on http://0.0.0.0:8004 (Press CTRL+C to quit)
-INFO:     Started reloader process [1200254] using WatchFiles
-INFO:     Started server process [1200257]
+INFO:     Started reloader process [1255815] using WatchFiles
+INFO:     Started server process [1255818]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     112.171.67.160:13992 - "GET /room HTTP/1.1" 200 OK
-INFO:     112.171.67.160:13992 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     112.171.67.160:13992 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     112.171.67.160:13992 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     112.171.67.160:5791 - "WebSocket /ws/room" [accepted]
+INFO:     112.171.67.160:2731 - "GET /room HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2731 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2731 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2731 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1299 - "WebSocket /ws/room" [accepted]
 INFO:     connection open
-INFO:     112.171.67.160:8559 - "WebSocket /ws/dm" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     112.171.67.160:12866 - "WebSocket /ws/dm" [accepted]
+INFO:     112.171.67.160:14332 - "WebSocket /ws/dm" [accepted]
 INFO:     connection open
 INFO:     connection closed
-INFO:     112.171.67.160:4728 - "WebSocket /ws/dm" [accepted]
+INFO:     112.171.67.160:13245 - "GET /room HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     112.171.67.160:13245 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13245 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13245 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8212 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:5330 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:8058 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:3428 - "WebSocket /ws/room" [accepted]
 INFO:     connection open
 INFO:     connection closed
-INFO:     112.171.67.160:6110 - "WebSocket /ws/dm" [accepted]
+INFO:     112.171.67.160:3948 - "GET /room HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     112.171.67.160:3948 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3948 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3948 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4426 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:2902 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     211.235.90.34:1242 - "GET /room HTTP/1.1" 200 OK
+INFO:     211.235.90.34:1242 - "GET /static/room.css HTTP/1.1" 304 Not Modified
+INFO:     211.235.90.34:52820 - "GET /static/room.js HTTP/1.1" 200 OK
+INFO:     211.235.90.34:52820 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     211.235.90.34:52820 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     211.235.90.34:1242 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     211.235.90.34:1242 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     211.235.90.34:52842 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     211.235.90.34:52852 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     211.235.90.34:1242 - "GET /static/uploads/a4c16d3915c6442d96aa9891ad574eef.png HTTP/1.1" 200 OK
+INFO:     211.235.90.34:52820 - "GET /static/uploads/f38e61ff721c427791bb09a3378a7572.png HTTP/1.1" 304 Not Modified
+INFO:     211.235.90.34:52826 - "GET /static/uploads/0b1a794dc3a84092b2e82ebad54fbda6.jpg HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     211.235.90.34:40102 - "GET /room HTTP/1.1" 200 OK
+INFO:     211.235.90.34:25258 - "WebSocket /ws/room" [accepted]
 INFO:     connection open
 INFO:     connection closed
 INFO:     connection closed
-🔄 Using Responses API for model: gpt-5.1-chat-latest
-INFO:     112.171.67.160:5308 - "GET /room HTTP/1.1" 200 OK
-INFO:     112.171.67.160:10708 - "GET /static/room.js HTTP/1.1" 200 OK
-INFO:     112.171.67.160:5308 - "GET /static/room.css HTTP/1.1" 200 OK
-INFO:     112.171.67.160:10708 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     112.171.67.160:10708 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     112.171.67.160:5308 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     112.171.67.160:10708 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     112.171.67.160:8331 - "WebSocket /ws/room" [accepted]
+INFO:     211.235.90.34:40102 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     211.235.90.34:40102 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     211.235.90.34:40102 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     211.235.90.34:53070 - "WebSocket /ws/room" [accepted]
 INFO:     connection open
+INFO:     211.235.90.34:40118 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     35.203.211.63:65130 - "GET / HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     112.171.67.160:9569 - "GET /room HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9569 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9569 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14095 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:14095 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9441 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:6101 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     112.171.67.160:4496 - "GET /room HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     112.171.67.160:4496 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4496 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4496 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14608 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:11509 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     175.117.226.110:4090 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     175.117.226.110:6669 - "GET /room HTTP/1.1" 200 OK
+INFO:     175.117.226.110:6669 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     175.117.226.110:6669 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     175.117.226.110:6669 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     175.117.226.110:10182 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     175.117.226.110:1529 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     connection closed
+INFO:     175.117.226.110:1092 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     175.117.226.110:2672 - "GET / HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     connection closed
+INFO:     211.235.90.34:35012 - "GET /room HTTP/1.1" 200 OK
+INFO:     211.235.90.34:35012 - "GET /static/room.js HTTP/1.1" 304 Not Modified
+INFO:     211.235.90.34:35012 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     211.235.90.34:35020 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     211.235.90.34:35012 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     211.235.90.34:35012 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     211.235.90.34:4730 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     211.235.90.34:35030 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:49163 - "GET /room HTTP/1.1" 200 OK
+INFO:     112.171.67.160:49163 - "GET /static/room.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:49673 - "GET /static/room.js HTTP/1.1" 200 OK
+INFO:     112.171.67.160:49673 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:49673 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:49673 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:49163 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:58074 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:6309 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:10833 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10833 - "GET /room HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10833 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10833 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10833 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3828 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:7922 - "GET /room HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     112.171.67.160:7922 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7922 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7922 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6532 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:14706 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     112.171.67.160:2113 - "GET /room HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2113 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2113 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2113 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4040 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:5557 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     112.171.67.160:10416 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     112.171.67.160:11915 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:50310 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     112.171.67.160:1233 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     112.171.67.160:50324 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     112.171.67.160:55209 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     112.171.67.160:59961 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     112.171.67.160:6488 - "GET /room HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     112.171.67.160:6488 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6488 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6488 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12921 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:8394 - "WebSocket /ws/room" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:6611 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     112.171.67.160:5618 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     112.171.67.160:7876 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:11708 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     112.171.67.160:5368 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     connection closed
+INFO:     112.171.67.160:6838 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     112.171.67.160:3286 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     connection closed
+INFO:     112.171.67.160:10469 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     112.171.67.160:4401 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     112.171.67.160:11556 - "WebSocket /ws/dm" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     connection closed

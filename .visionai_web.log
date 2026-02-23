@@ -3473,3 +3473,469 @@ INFO:     112.171.67.160:3931 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
 INFO:     112.171.67.160:2822 - "GET /api/emotion-backend HTTP/1.1" 200 OK
 WARNING:  Invalid HTTP request received.
 INFO:     176.65.148.57:55050 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.205.122:51602 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.205.122:53022 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.205.122:43728 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.205.122:43730 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.205.122:33112 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.205.122:56346 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.205.122:34520 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.205.122:34524 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     211.234.205.122:33572 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.205.122:53190 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:38862 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:38862 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:38862 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:38878 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.204.24:50818 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.204.24:50830 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:42406 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:42422 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:33786 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:33831 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:33916 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     185.247.137.85:53289 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     210.179.94.144:40976 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:40976 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:40984 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:40988 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4086 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4086 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14773 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:2991 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5369 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6195 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:56066 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:56066 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:55727 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:61305 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:62246 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:59349 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.201.162:53500 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.201.162:53506 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.201.162:45766 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.201.162:25258 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     18.116.101.220:43528 - "GET / HTTP/1.1" 200 OK
+INFO:     18.116.101.220:36942 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     210.179.94.144:52478 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:50202 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:48000 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:48004 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.36.146.196:54140 - "GET / HTTP/1.1" 200 OK
+INFO:     211.36.146.196:54140 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     211.36.146.196:39078 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     211.36.146.196:54150 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     3.130.168.2:39048 - "GET / HTTP/1.1" 200 OK
+INFO:     3.130.168.2:37436 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:30992 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:31111 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:31241 - "GET /robots.txt HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:46015 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:46069 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:46133 - "GET /robots.txt HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     91.231.89.107:43063 - "GET / HTTP/1.1" 200 OK
+INFO:     91.231.89.86:52667 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     185.247.137.126:35113 - "GET / HTTP/1.1" 200 OK
+INFO:     18.218.118.203:51332 - "GET / HTTP/1.1" 200 OK
+INFO:     18.218.118.203:48416 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     3.129.187.38:51644 - "GET / HTTP/1.1" 200 OK
+INFO:     3.129.187.38:41970 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:35519 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:35563 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:35653 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     3.132.26.232:36674 - "GET / HTTP/1.1" 200 OK
+INFO:     3.132.26.232:44728 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:45790 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:45804 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:45855 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     3.143.162.210:60158 - "GET / HTTP/1.1" 200 OK
+INFO:     3.143.162.210:47234 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     210.179.94.144:38902 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:38902 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:38912 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     210.179.94.144:38924 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14292 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14292 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5540 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8742 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5069 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11253 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:41878 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:41880 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14866 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     52.102.12.165:9862 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     112.171.67.160:4250 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4250 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:4250 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:4250 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3776 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:59636 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:59650 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     87.121.84.24:40246 - "GET / HTTP/1.1" 200 OK
+INFO:     52.102.12.149:39857 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     175.117.226.110:3852 - "GET / HTTP/1.1" 200 OK
+INFO:     175.117.226.110:3852 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     175.117.226.110:1917 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     87.121.84.24:40262 - "POST / HTTP/1.1" 405 Method Not Allowed
+INFO:     87.121.84.24:40276 - "POST /_next HTTP/1.1" 404 Not Found
+INFO:     87.121.84.24:40282 - "POST /api HTTP/1.1" 404 Not Found
+INFO:     87.121.84.24:40288 - "POST /_next/server HTTP/1.1" 404 Not Found
+INFO:     87.121.84.24:40290 - "POST /app HTTP/1.1" 404 Not Found
+INFO:     87.121.84.24:40298 - "POST /api/route HTTP/1.1" 404 Not Found
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+✓ OpenCLIP 백엔드 초기화 완료 (device: cuda)
+INFO:     175.117.226.110:10595 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     175.117.226.110:10595 - "GET /files/331064c5e40b431190074aec59ca22fd/video?t=1771463242942 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:6930 - "GET /files/331064c5e40b431190074aec59ca22fd/video?t=1771463242942 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:6930 - "GET /files/331064c5e40b431190074aec59ca22fd/video?t=1771463242942 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:11538 - "GET /files/331064c5e40b431190074aec59ca22fd/video?t=1771463242942 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:11538 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     175.117.226.110:11538 - "GET /files/331064c5e40b431190074aec59ca22fd/video?t=1771463242942 HTTP/1.1" 206 Partial Content
+/root/miniconda3/envs/vision/lib/python3.11/site-packages/numba/np/ufunc/parallel.py:373: NumbaWarning: The TBB threading layer requires TBB version 2021 update 6 or later i.e., TBB_INTERFACE_VERSION >= 12060. Found TBB_INTERFACE_VERSION = 12050. The TBB threading layer is disabled.
+  warnings.warn(problem)
+Numba CalcParams accelerator loaded - targeting 2-5x speedup
+================================================================================
+INITIALIZING COMPONENTS
+Thread: AnyIO worker thread (main=False)
+================================================================================
+
+[1/8] Loading face detector (PyMTCNN)...
+  Backend: auto
+Initializing PyMTCNN detector...
+  Backend: auto
+Loading ONNX models from: /root/miniconda3/envs/vision/lib/python3.11/site-packages/pymtcnn/models
+Available providers: ['AzureExecutionProvider', 'CPUExecutionProvider']
+Using providers: ['CPUExecutionProvider']
+ONNX models loaded with provider: CPUExecutionProvider
+Auto-selected: ONNX with CPU
+[OK] PyMTCNN initialized with ONNX + CPU backend
+  Active backend: {'backend': 'ONNX + CPU', 'provider': 'CPUExecutionProvider'}
+
+  Active backend: {'backend': 'ONNX + CPU', 'provider': 'CPUExecutionProvider'}
+Face detector loaded
+
+[2/8] Loading CLNF landmark detector (pyclnf)...
+  Max iterations: 10
+  Convergence threshold: 0.005 pixels
+  GPU enabled: True
+Loading CEN patch experts (410 MB, ~5-10 seconds)...
+  [1/4] Loading scale 0.25...
+      ✓ 68 patch experts loaded
+  [2/4] Loading scale 0.35...
+      ✓ 68 patch experts loaded
+  [3/4] Loading scale 0.5...
+      ✓ 68 patch experts loaded
+  [4/4] Loading scale 1.0...
+      ✓ 68 patch experts loaded
+Loaded CEN sigma components for window sizes: [7, 9, 11, 15]
+    Scale 0.25: 29 empty landmarks, 29 using mirrored experts
+    Scale 0.35: 29 empty landmarks, 29 using mirrored experts
+    Scale 0.5: 29 empty landmarks, 29 using mirrored experts
+    Scale 1.0: 29 empty landmarks, 29 using mirrored experts
+Note: No sigma components for window sizes [5], using identity transform
+✓ GPU acceleration enabled (device: auto)
+✓ Eye refinement model loaded (GPU)
+CLNF detector loaded
+
+[3/8] Loading PDM shape model...
+Loaded PDM from In-the-wild_aligned_PDM_68.txt
+  Mean shape: (204, 1)
+  Principal components: (204, 34)
+  Eigenvalues: (34,)
+PDM loaded: 68 landmarks
+
+[4/8] Initializing face aligner...
+Loading PDM from: /root/.pyfaceau/weights/In-the-wild_aligned_PDM_68.txt
+Loaded PDM from In-the-wild_aligned_PDM_68.txt
+  Mean shape: (204, 1)
+  Principal components: (204, 34)
+  Eigenvalues: (34,)
+Face aligner initialized
+  Sim scale: 0.7
+  Output size: (112, 112)
+  Reference shape: (68, 2)
+  Rigid points: 24
+Face aligner initialized
+
+[5/8] Loading triangulation...
+Loaded 111 triangles from /root/.pyfaceau/weights/tris_68_full.txt
+Triangulation loaded: 111 triangles
+
+[6/8] Loading AU SVR models...
+Loaded AU01_r (dynamic): cutoff=0.55, means=(1, 4702), SV=(4702, 1), bias=-0.3216 [AU_1_dynamic_intensity_comb.dat]
+Loaded AU02_r (dynamic): cutoff=0.75, means=(1, 4702), SV=(4702, 1), bias=0.0598 [AU_2_dynamic_intensity_comb.dat]
+Loaded AU04_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1336 [AU_4_static_intensity_comb.dat]
+[FAILED] Failed to load AU05_r: Model not found for AU05_r. Tried: ['AU_5_dynamic_intensity_comb.dat', 'AU_5_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU06_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1618 [AU_6_static_intensity_comb.dat]
+Loaded AU07_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1808 [AU_7_static_intensity_comb.dat]
+[FAILED] Failed to load AU09_r: Model not found for AU09_r. Tried: ['AU_9_dynamic_intensity_comb.dat', 'AU_9_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU10_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.1071 [AU_10_static_intensity_comb.dat]
+Loaded AU12_r (static): cutoff=0.00, means=(1, 4702), SV=(4702, 1), bias=0.2212 [AU_12_static_intensity_comb.dat]
+[FAILED] Failed to load AU14_r: Model not found for AU14_r. Tried: ['AU_14_static_intensity_comb.dat', 'AU_14_static_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU15_r (dynamic): cutoff=0.55, means=(1, 4702), SV=(4702, 1), bias=-0.0074 [AU_15_dynamic_intensity_comb.dat]
+Loaded AU17_r (dynamic): cutoff=0.20, means=(1, 4702), SV=(4702, 1), bias=0.0981 [AU_17_dynamic_intensity_comb.dat]
+[FAILED] Failed to load AU20_r: Model not found for AU20_r. Tried: ['AU_20_dynamic_intensity_comb.dat', 'AU_20_dynamic_intensity.dat'] in /root/.pyfaceau/weights/AU_predictors/svr_combined
+Loaded AU23_r (dynamic): cutoff=0.65, means=(1, 4702), SV=(4702, 1), bias=-0.3733 [AU_23_dynamic_intensity_comb.dat]
+Loaded AU25_r (dynamic): cutoff=0.30, means=(1, 4702), SV=(4702, 1), bias=-0.1397 [AU_25_dynamic_intensity_comb.dat]
+Loaded AU26_r (dynamic): cutoff=0.30, means=(1, 4702), SV=(4702, 1), bias=-0.3793 [AU_26_dynamic_intensity_comb.dat]
+Loaded AU45_r (dynamic): cutoff=0.60, means=(1, 4702), SV=(4702, 1), bias=-0.1401 [AU_45_dynamic_intensity_comb.dat]
+
+Loaded 13/17 AU models
+Failed AUs: ['AU05_r', 'AU09_r', 'AU14_r', 'AU20_r']
+Loaded 13 AU models
+Batched AU predictor enabled (2-5x faster)
+
+[7/8] Initializing running median tracker...
+Running median tracker initialized (Python version)
+
+[8/9] Initializing online AU correction...
+Online AU correction initialized for 13 AUs
+
+[9/9] PyFHOG ready for HOG extraction
+
+All components initialized successfully
+================================================================================
+
+Processing video: tmpw_2v_9i6.mp4
+================================================================================
+
+Video info:
+  FPS: 2.00
+  Total frames: 10
+  Duration: 5.00 seconds
+
+[Frame 0] Step 1: Detecting face with ONNX + CPU...
+[Frame 0] Step 1: Found 2 faces
+[Frame 0] Step 2: Detecting landmarks with CLNF...
+[Frame 0] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 40)
+[Frame 0] Step 3: Extracting pose from pyclnf params...
+[Frame 0] Step 4: Aligning face...
+[Frame 0] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 0] Step 5: Extracting HOG features...
+[Frame 0] Step 5: HOG features shape: (4464,)
+[Frame 0] Step 6: Extracting geometric features...
+[Frame 0] Step 6: Geometric features shape: (238,)
+[Frame 0] Step 7: Updating running median...
+[Frame 0] Step 7: Running median shape: (4702,)
+[Frame 0] Step 8: Predicting AUs...
+[Frame 1] Step 1: Using cached bbox (tracking mode)
+[Frame 1] Step 2: Detecting landmarks with CLNF...
+[Frame 1] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 20)
+[Frame 1] Step 3: Extracting pose from pyclnf params...
+[Frame 1] Step 4: Aligning face...
+[Frame 1] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 1] Step 5: Extracting HOG features...
+[Frame 1] Step 5: HOG features shape: (4464,)
+[Frame 1] Step 6: Extracting geometric features...
+[Frame 1] Step 6: Geometric features shape: (238,)
+[Frame 1] Step 7: Updating running median...
+[Frame 1] Step 7: Running median shape: (4702,)
+[Frame 1] Step 8: Predicting AUs...
+[Frame 2] Step 1: Using cached bbox (tracking mode)
+[Frame 2] Step 2: Detecting landmarks with CLNF...
+[Frame 2] Step 2: Got 68 landmarks (CLNF converged: False, iterations: 20)
+[Frame 2] Step 3: Extracting pose from pyclnf params...
+[Frame 2] Step 4: Aligning face...
+[Frame 2] Step 4: Aligned face shape: (112, 112, 3)
+[Frame 2] Step 5: Extracting HOG features...
+[Frame 2] Step 5: HOG features shape: (4464,)
+[Frame 2] Step 6: Extracting geometric features...
+[Frame 2] Step 6: Geometric features shape: (238,)
+[Frame 2] Step 7: Updating running median...
+[Frame 2] Step 7: Running median shape: (4702,)
+[Frame 2] Step 8: Predicting AUs...
+Progress: 10/10 frames (100.0%) - Success: 10, Failed: 0
+
+Applying post-processing (cutoff adjustment, temporal smoothing)...
+
+Applying post-processing...
+  [1/3] Two-pass median correction...
+    Re-predicting 10 early frames with final median...
+    Two-pass correction complete
+  [2/3] Cutoff adjustment...
+  [3/3] Temporal smoothing...
+Post-processing complete
+
+================================================================================
+PROCESSING COMPLETE
+================================================================================
+Total frames processed: 10
+Failed frames: 0
+Success rate: 100.0%
+
+INFO:     175.117.226.110:7891 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     175.117.226.110:7891 - "GET /files/5a9583863ba34d909fd26b2cc33c15eb/video?t=1771463260635 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:10708 - "GET /files/5a9583863ba34d909fd26b2cc33c15eb/video?t=1771463260635 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:10708 - "GET /files/5a9583863ba34d909fd26b2cc33c15eb/video?t=1771463260635 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:1904 - "GET /files/5a9583863ba34d909fd26b2cc33c15eb/video?t=1771463260635 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:9324 - "GET /files/5a9583863ba34d909fd26b2cc33c15eb/video?t=1771463260635 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:2946 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     175.117.226.110:2946 - "GET /files/19fc097077d54e5cbf6f62b00b0d395e/video?t=1771463278529 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:3862 - "GET /files/19fc097077d54e5cbf6f62b00b0d395e/video?t=1771463278529 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:3862 - "GET /files/19fc097077d54e5cbf6f62b00b0d395e/video?t=1771463278529 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:3862 - "GET /files/19fc097077d54e5cbf6f62b00b0d395e/video?t=1771463278529 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:13857 - "GET / HTTP/1.1" 200 OK
+INFO:     175.117.226.110:5957 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     175.117.226.110:6165 - "POST /api/analyze-video HTTP/1.1" 200 OK
+INFO:     175.117.226.110:6165 - "GET /files/4239419485644f46a637714f9de6602e/video?t=1771466501225 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:1387 - "GET /files/4239419485644f46a637714f9de6602e/video?t=1771466501225 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:1387 - "GET /files/4239419485644f46a637714f9de6602e/video?t=1771466501225 HTTP/1.1" 206 Partial Content
+INFO:     175.117.226.110:7327 - "GET /files/4239419485644f46a637714f9de6602e/video?t=1771466501225 HTTP/1.1" 206 Partial Content
+INFO:     210.179.94.144:60660 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:60672 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:61457 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:61457 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     210.179.94.144:61459 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     210.179.94.144:61467 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     185.247.137.88:44747 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14526 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14526 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4868 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9540 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:54580 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:40348 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:44850 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:44864 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:47922 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:47936 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     18.218.118.203:45614 - "GET / HTTP/1.1" 200 OK
+INFO:     18.218.118.203:45268 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:41891 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:41909 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:41989 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     3.131.220.121:45388 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:43698 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:43746 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:43817 - "GET /robots.txt HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     193.34.212.9:39656 - "GET /../../../../../../etc/passwd HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     18.218.118.203:54500 - "GET / HTTP/1.1" 200 OK
+INFO:     18.218.118.203:39014 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     85.11.182.23:51944 - "GET / HTTP/1.1" 200 OK
+INFO:     171.12.10.245:63712 - "GET / HTTP/1.1" 200 OK
+INFO:     171.37.92.92:30800 - "GET / HTTP/1.1" 200 OK
+INFO:     220.167.232.11:30412 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:33962 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:34014 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:34127 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     185.247.137.196:50591 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.194:52988 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.194:13472 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.194:13518 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.194:26772 - "GET /sitemap.xml HTTP/1.1" 404 Not Found
+INFO:     104.47.39.126:11901 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     112.171.67.160:9625 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9625 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:6528 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:7305 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2385 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1354 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1354 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     112.171.67.160:3921 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13041 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2415 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5668 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4246 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12008 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5286 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2156 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6304 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8456 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10221 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.235.90.34:33784 - "GET / HTTP/1.1" 200 OK
+INFO:     211.235.90.34:33784 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     211.235.90.34:33786 - "GET /static/app.js?v=2 HTTP/1.1" 304 Not Modified
+INFO:     211.235.90.34:33788 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.235.90.34:41946 - "GET / HTTP/1.1" 200 OK
+INFO:     211.235.90.34:41958 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5745 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11704 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3089 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1422 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     175.117.226.110:11542 - "GET / HTTP/1.1" 200 OK
+INFO:     175.117.226.110:9207 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     175.117.226.110:3572 - "GET / HTTP/1.1" 200 OK
+INFO:     175.117.226.110:3572 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     211.235.90.34:18486 - "GET / HTTP/1.1" 200 OK
+INFO:     211.235.90.34:4620 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:59378 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:59378 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:57825 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:63542 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     104.47.39.126:8431 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     112.171.67.160:12649 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9212 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8399 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5773 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13144 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5391 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6767 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1145 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9059 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     91.231.89.55:56725 - "GET / HTTP/1.1" 200 OK
+INFO:     91.231.89.60:57965 - "GET /favicon.ico HTTP/1.1" 404 Not Found

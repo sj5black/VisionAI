@@ -1453,6 +1453,8 @@
           return;
         }
         if (data.type === 'chess_state') {
+          var prevStatus = chessState.status;
+          var prevInCheck = chessState.inCheck;
           chessState.fen = data.fen || null;
           chessState.turn = data.turn || null;
           chessState.status = data.status || null;
@@ -1474,17 +1476,17 @@
           updateChessButtons();
           updateChessPanelTitle();
           if (data.white_player === myNickname || data.black_player === myNickname) {
-            if (data.in_check && data.status === 'active') {
+            var wasActive = prevStatus === 'active';
+            var justBecameCheck = wasActive && data.in_check && data.status === 'active' && !prevInCheck;
+            var justCheckmate = wasActive && (data.status === 'checkmate_white' || data.status === 'checkmate_black');
+            if (justBecameCheck) {
               var inCheckTurn = data.turn || '';
               var inCheckName = inCheckTurn === 'white' ? (data.white_player || '흰색') : (data.black_player || '검은색');
               var inCheckSide = inCheckTurn === 'white' ? '흰색' : '검은색';
-              showChessAlert('⚠ 체크!', inCheckName + ' (' + inCheckSide + ')이 체크 상태입니다.');
-            } else if (data.status === 'checkmate_white') {
-              var w = data.black_player || '검은색';
-              showChessAlert('♔ 체크메이트!', w + ' 승리!');
-            } else if (data.status === 'checkmate_black') {
-              var b = data.white_player || '흰색';
-              showChessAlert('♔ 체크메이트!', b + ' 승리!');
+              showChessAlert('⚠ 체크!', inCheckName + ' (' + inCheckSide + ')이(가) 체크 상태입니다. 왕을 피하세요!');
+            } else if (justCheckmate) {
+              var winner = data.status === 'checkmate_white' ? (data.black_player || '검은색') : (data.white_player || '흰색');
+              showChessAlert('♔ 체크메이트!', winner + ' 승리!');
             }
           }
           if (chessState.status === 'active') {

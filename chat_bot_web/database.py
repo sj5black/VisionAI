@@ -58,6 +58,18 @@ def init_db() -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_dm_rooms_users ON dm_rooms(user1_id, user2_id);
     """)
+    # users 테이블에 MMR 컬럼 추가 (없을 경우에만)
+    try:
+        cur = conn.execute("PRAGMA table_info(users)")
+        cols = [r[1] for r in cur.fetchall()]
+        if "mmr_rating" not in cols:
+            conn.execute("ALTER TABLE users ADD COLUMN mmr_rating INTEGER NOT NULL DEFAULT 1200")
+        if "mmr_games" not in cols:
+            conn.execute("ALTER TABLE users ADD COLUMN mmr_games INTEGER NOT NULL DEFAULT 0")
+        conn.commit()
+    except sqlite3.OperationalError:
+        conn.commit()
+
     # 기존 dm_rooms에 messages, updated_at 컬럼이 없으면 추가 (마이그레이션)
     try:
         cur = conn.execute("PRAGMA table_info(dm_rooms)")
@@ -138,7 +150,7 @@ def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
     """아이디로 유저 조회."""
     conn = _get_conn()
     cur = conn.execute(
-        "SELECT id, username, name, password_hash FROM users WHERE username = ?",
+        "SELECT id, username, name, password_hash, mmr_rating, mmr_games FROM users WHERE username = ?",
         ((username or "").strip(),)
     )
     row = cur.fetchone()
@@ -169,7 +181,7 @@ def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
     """user_id로 유저 조회."""
     conn = _get_conn()
     cur = conn.execute(
-        "SELECT id, username, name FROM users WHERE id = ?",
+        "SELECT id, username, name, mmr_rating, mmr_games FROM users WHERE id = ?",
         (user_id,)
     )
     row = cur.fetchone()
@@ -274,6 +286,29 @@ def save_dm_message(room_id: int, sender_id: int, text: str, image_url: Optional
     )
     conn.commit()
     return msg_id
+
+
+def get_user_mmr(user_id: int) -> tuple[int, int]:
+    """유저의 체스 MMR 및 경기 수 조회. 없으면 (1200, 0)."""
+    conn = _get_conn()
+    cur = conn.execute(
+        "SELECT mmr_rating, mmr_games FROM users WHERE id = ?",
+        (user_id,),
+    )
+    row = cur.fetchone()
+    if not row:
+        return 1200, 0
+    return int(row["mmr_rating"] or 1200), int(row["mmr_games"] or 0)
+
+
+def update_user_mmr(user_id: int, rating: int, games: int) -> None:
+    """유저의 체스 MMR 및 경기 수 업데이트."""
+    conn = _get_conn()
+    conn.execute(
+        "UPDATE users SET mmr_rating = ?, mmr_games = ? WHERE id = ?",
+        (int(rating), int(games), user_id),
+    )
+    conn.commit()
 
 
 def get_dm_messages(room_id: int, current_user_id: int, limit: int = 200) -> List[Dict[str, Any]]:

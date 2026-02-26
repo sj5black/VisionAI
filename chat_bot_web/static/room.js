@@ -49,7 +49,7 @@
   var activeTabId = 'multi';
 
   var CHESS_INITIAL_SECONDS = 15 * 60;
-  var chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, mode: 'serena', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [], whiteTime: CHESS_INITIAL_SECONDS, blackTime: CHESS_INITIAL_SECONDS, turnStartedAt: null, paused: false };
+  var chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, whiteRating: null, blackRating: null, mode: 'serena', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [], whiteTime: CHESS_INITIAL_SECONDS, blackTime: CHESS_INITIAL_SECONDS, turnStartedAt: null, paused: false };
   var chessSelected = null;
   var chessLegalTargets = null;
   var chessClockInterval = null;
@@ -330,12 +330,18 @@
     renderChessBoard();
   }
 
+  function formatNameWithRating(name, rating) {
+    if (!name) return '';
+    if (rating != null && rating !== '') return name + ' (' + Number(rating) + ')';
+    return name;
+  }
+
   function updateChessPanelTitle() {
     var titleEl = document.getElementById('chessPanelTitle');
     if (!titleEl) return;
     if (chessState.whitePlayer) {
-      var wp = chessState.whitePlayer;
-      var bp = chessState.blackPlayer || 'Serena';
+      var wp = formatNameWithRating(chessState.whitePlayer, chessState.whiteRating);
+      var bp = chessState.mode === 'serena' ? 'Serena' : formatNameWithRating(chessState.blackPlayer, chessState.blackRating);
       var title = (chessState.mode === 'serena') ? ('Serena vs ' + wp) : (wp + ' vs ' + bp);
       titleEl.textContent = '♔ ' + title;
     } else {
@@ -396,6 +402,8 @@
     var wtTime = whiteEl.querySelector('.chessClockTime');
     var btLabel = blackEl.querySelector('.chessClockLabel');
     var btTime = blackEl.querySelector('.chessClockTime');
+    if (wtLabel) wtLabel.textContent = chessState.whitePlayer ? formatNameWithRating(chessState.whitePlayer, chessState.whiteRating) : '흰색';
+    if (btLabel) btLabel.textContent = chessState.blackPlayer ? formatNameWithRating(chessState.blackPlayer, chessState.blackRating) : '검은색';
     if (wtTime) wtTime.textContent = formatChessTime(wt);
     else whiteEl.textContent = formatChessTime(wt);
     if (btTime) btTime.textContent = formatChessTime(bt);
@@ -412,16 +420,16 @@
     if (!chessState.fen) { chessStatus.textContent = mode === 'serena' ? 'Serena를 초대한 뒤 새 게임을 시작하세요.' : '1:1 체스 도전을 하거나 대기하세요.'; return; }
     if (s === 'active') {
       if (chessState.paused) { chessStatus.textContent = '일시정지 중'; return; }
-      var wp = chessState.whitePlayer || '흰색';
-      var bp = chessState.blackPlayer || '검은색';
+      var wp = formatNameWithRating(chessState.whitePlayer, chessState.whiteRating) || '흰색';
+      var bp = formatNameWithRating(chessState.blackPlayer, chessState.blackRating) || '검은색';
       var base = chessState.turn === 'white' ? wp + ' (흰색) 차례' : bp + ' (검은색) 차례';
       chessStatus.textContent = chessState.inCheck ? base + ' – ⚠ 체크!' : base;
-    } else if (s === 'checkmate_white') chessStatus.textContent = (chessState.blackPlayer || '검은색') + ' 승리! (체크메이트)';
-    else if (s === 'checkmate_black') chessStatus.textContent = (chessState.whitePlayer || '흰색') + ' 승리! (체크메이트)';
-    else if (s === 'time_loss_white') chessStatus.textContent = (chessState.blackPlayer || '검은색') + ' 승리! (흰색 시간 초과)';
-    else if (s === 'time_loss_black') chessStatus.textContent = (chessState.whitePlayer || '흰색') + ' 승리! (검은색 시간 초과)';
-    else if (s === 'resign_white') chessStatus.textContent = (chessState.blackPlayer || '검은색') + ' 승리! (흰색 기권)';
-    else if (s === 'resign_black') chessStatus.textContent = (chessState.whitePlayer || '흰색') + ' 승리! (검은색 기권)';
+    } else if (s === 'checkmate_white') chessStatus.textContent = (formatNameWithRating(chessState.blackPlayer, chessState.blackRating) || '검은색') + ' 승리! (체크메이트)';
+    else if (s === 'checkmate_black') chessStatus.textContent = (formatNameWithRating(chessState.whitePlayer, chessState.whiteRating) || '흰색') + ' 승리! (체크메이트)';
+    else if (s === 'time_loss_white') chessStatus.textContent = (formatNameWithRating(chessState.blackPlayer, chessState.blackRating) || '검은색') + ' 승리! (흰색 시간 초과)';
+    else if (s === 'time_loss_black') chessStatus.textContent = (formatNameWithRating(chessState.whitePlayer, chessState.whiteRating) || '흰색') + ' 승리! (검은색 시간 초과)';
+    else if (s === 'resign_white') chessStatus.textContent = (formatNameWithRating(chessState.blackPlayer, chessState.blackRating) || '검은색') + ' 승리! (흰색 기권)';
+    else if (s === 'resign_black') chessStatus.textContent = (formatNameWithRating(chessState.whitePlayer, chessState.whiteRating) || '흰색') + ' 승리! (검은색 기권)';
     else if (s === 'draw') chessStatus.textContent = '무승부';
     else chessStatus.textContent = '-';
   }
@@ -603,10 +611,13 @@
       if (name === 'Serena') {
         return '<span class="participantItem participantSerena"><img class="participantAvatar" src="/serena.png" alt="">Serena</span>';
       }
+      var displayName = name;
+      var rating = p && p.mmr_rating != null && p.mmr_rating !== '';
+      if (rating) displayName = name + ' (' + Number(p.mmr_rating) + ')';
       var html = '<span class="participantItem' + (userId && !isMe ? ' participantWithDm" data-user-id="' + userId + '"' : '"') + '>';
       if (avatar) html += '<img class="participantAvatar" src="' + escapeHtml(avatar) + '" alt="">';
       if (userId && !isMe) {
-        html += '<span class="participantName">' + escapeHtml(name) + '</span>';
+        html += '<span class="participantName">' + escapeHtml(displayName) + '</span>';
         html += '<div class="participantDmPopover" style="display:none">';
         html += '<button type="button" class="dmFromParticipantBtn participantDmBtn" data-user-id="' + userId + '" title="1:1 대화">1:1 대화</button>';
         html += '</div>';
@@ -1524,7 +1535,7 @@
           serenaPresent = !!data.present;
           updateSerenaBtn();
           if (!data.present) {
-            chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, mode: 'serena', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [], whiteTime: CHESS_INITIAL_SECONDS, blackTime: CHESS_INITIAL_SECONDS, turnStartedAt: null, paused: false };
+            chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, whiteRating: null, blackRating: null, mode: 'serena', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [], whiteTime: CHESS_INITIAL_SECONDS, blackTime: CHESS_INITIAL_SECONDS, turnStartedAt: null, paused: false };
             chessSelected = null;
             if (chessClockInterval) { clearInterval(chessClockInterval); chessClockInterval = null; }
             renderChessBoard();
@@ -1542,6 +1553,8 @@
           chessState.status = data.status || null;
           chessState.whitePlayer = data.white_player || null;
           chessState.blackPlayer = data.black_player || null;
+          chessState.whiteRating = data.white_rating != null ? Number(data.white_rating) : null;
+          chessState.blackRating = data.black_rating != null ? Number(data.black_rating) : null;
           chessState.mode = data.mode || 'serena';
           chessState.lastMove = data.last_move || null;
           chessState.inCheck = !!data.in_check;

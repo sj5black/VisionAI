@@ -130,14 +130,80 @@ _dm_connections_lock = asyncio.Lock()
 _dm_message_read_status: Dict[tuple[int, str], Dict[str, Any]] = {}
 
 
+def _apply_chess_mmr_if_needed(game: Dict[str, Any]) -> None:
+    """체스 PvP 게임 종료 시 양 플레이어의 MMR을 업데이트."""
+    if not game or game.get("mode") != "pvp":
+        return
+    if game.get("mmr_applied"):
+        return
+    status = game.get("status")
+    terminal_statuses = {
+        "checkmate_white",
+        "checkmate_black",
+        "time_loss_white",
+        "time_loss_black",
+        "resign_white",
+        "resign_black",
+        "draw",
+    }
+    if status not in terminal_statuses:
+        return
+    white_user_id = game.get("white_user_id")
+    black_user_id = game.get("black_user_id")
+    if not white_user_id or not black_user_id:
+        return
+
+    # 승/패/무 결과를 white 기준으로 W 값으로 변환
+    if status in ("checkmate_white", "time_loss_black", "resign_black"):
+        w_white = 1.0
+    elif status in ("checkmate_black", "time_loss_white", "resign_white"):
+        w_white = 0.0
+    else:
+        w_white = 0.5
+    w_black = 1.0 - w_white
+
+    # 현재 레이팅/경기 수 조회
+    ra, ga = db.get_user_mmr(int(white_user_id))
+    rb, gb = db.get_user_mmr(int(black_user_id))
+
+    # 예상 승률 계산
+    def expected_score(r_self: float, r_opp: float) -> float:
+        return 1.0 / (1.0 + 10.0 ** ((r_opp - r_self) / 400.0))
+
+    ea = expected_score(ra, rb)
+    eb = expected_score(rb, ra)
+
+    # K-값 (30판 이하: 40, 이후 20)
+    def k_factor(games: int) -> int:
+        return 40 if games <= 30 else 20
+
+    ka = k_factor(ga)
+    kb = k_factor(gb)
+
+    # P' = P + K × (W − We), 반올림
+    new_ra = int(round(ra + ka * (w_white - ea)))
+    new_rb = int(round(rb + kb * (w_black - eb)))
+
+    db.update_user_mmr(int(white_user_id), new_ra, ga + 1)
+    db.update_user_mmr(int(black_user_id), new_rb, gb + 1)
+
+    game["mmr_applied"] = True
+
+
 def _chess_state_payload(game: Dict[str, Any]) -> Dict[str, Any]:
     """체스 상태 브로드캐스트용 페이로드 (시간 포함)."""
     board: chess.Board = game["board"]
+    white_user_id = game.get("white_user_id")
+    black_user_id = game.get("black_user_id")
+    white_rating = db.get_user_mmr(int(white_user_id))[0] if white_user_id else None
+    black_rating = db.get_user_mmr(int(black_user_id))[0] if black_user_id else None
     return {
         "type": "chess_state",
         "fen": board.fen(),
         "white_player": game.get("white_player"),
         "black_player": game.get("black_player"),
+        "white_rating": white_rating,
+        "black_rating": black_rating,
         "mode": game.get("mode", "serena"),
         "status": game.get("status", "active"),
         "paused": bool(game.get("paused")),
@@ -903,14 +969,17 @@ def _schedule_serena_response() -> None:
 
 
 def _build_participants_list() -> List[Dict[str, Any]]:
-    """참여자 목록 (user_id, username 포함, Serena는 user_id=null)."""
+    """참여자 목록 (user_id, username, mmr_rating 포함, Serena는 user_id=null)."""
     out = []
     for _, u in _room_connections:
+        uid = u.get("id")
+        rating, _ = db.get_user_mmr(int(uid)) if uid else (None, 0)
         out.append({
-            "user_id": u["id"],
+            "user_id": uid,
             "username": u.get("username"),
             "name": u["name"],
             "avatar_url": u.get("avatar_url") or None,
+            "mmr_rating": rating,
         })
     if _serena_invited:
         out.append({"user_id": None, "name": "Serena", "avatar_url": "/serena.png"})
@@ -1438,12 +1507,21 @@ async def ws_room(websocket: WebSocket) -> None:
                     challenger_wants_white = my_side in ("white", "w")
                     white_player = nickname if challenger_wants_white else opp
                     black_player = opp if challenger_wants_white else nickname
+                    white_user_id = None
+                    black_user_id = None
+                    for _ws, u in _room_connections:
+                        if u.get("name") == white_player and white_user_id is None:
+                            white_user_id = u.get("id")
+                        if u.get("name") == black_player and black_user_id is None:
+                            black_user_id = u.get("id")
                     board = chess.Board()
                     now = time.time()
                     _chess_game = {
                         "board": board,
                         "white_player": white_player,
                         "black_player": black_player,
+                        "white_user_id": white_user_id,
+                        "black_user_id": black_user_id,
                         "mode": "pvp",
                         "status": "active",
                         "paused": False,
@@ -1574,6 +1652,7 @@ async def ws_room(websocket: WebSocket) -> None:
                                 _chess_game["white_time_remaining"] = 0.0
                                 _chess_game["black_time_remaining"] = _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS)
                                 _chess_game["turn_started_at"] = now
+                                _apply_chess_mmr_if_needed(_chess_game)
                                 await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
                                 continue
                             _chess_game["white_time_remaining"] = w + CHESS_INCREMENT_SECONDS
@@ -1585,6 +1664,7 @@ async def ws_room(websocket: WebSocket) -> None:
                                 _chess_game["black_time_remaining"] = 0.0
                                 _chess_game["white_time_remaining"] = _chess_game.get("white_time_remaining", CHESS_INITIAL_SECONDS)
                                 _chess_game["turn_started_at"] = now
+                                _apply_chess_mmr_if_needed(_chess_game)
                                 await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
                                 continue
                             _chess_game["black_time_remaining"] = b + CHESS_INCREMENT_SECONDS
@@ -1603,6 +1683,7 @@ async def ws_room(websocket: WebSocket) -> None:
                         elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
                             status = "draw"
                         _chess_game["status"] = status
+                        _apply_chess_mmr_if_needed(_chess_game)
                         await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
                         if status == "active" and board.turn == chess.BLACK and mode == "serena":
                             _chess_pending_task = asyncio.create_task(_play_serena_chess_move())
@@ -1622,6 +1703,7 @@ async def ws_room(websocket: WebSocket) -> None:
                     else:
                         continue
                     _chess_game["status"] = status
+                    _apply_chess_mmr_if_needed(_chess_game)
                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
 
                 elif data.get("type") == "gomoku_start":

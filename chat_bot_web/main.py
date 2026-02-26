@@ -111,7 +111,7 @@ _serena_pending_task: Optional[asyncio.Task] = None
 
 # 체스 게임: 단일 방당 1게임 (Serena vs 유저 또는 유저 vs 유저)
 # 선수당 25분 + 매 수 10초 증가
-CHESS_INITIAL_SECONDS = 25 * 60  # 25분
+CHESS_INITIAL_SECONDS = 15 * 60  # 15분
 CHESS_INCREMENT_SECONDS = 10
 # {"board", "white_player", "black_player", "mode", "status", "white_captured", "black_captured", "white_time_remaining", "black_time_remaining", "turn_started_at"}
 _chess_game: Optional[Dict[str, Any]] = None
@@ -140,6 +140,7 @@ def _chess_state_payload(game: Dict[str, Any]) -> Dict[str, Any]:
         "black_player": game.get("black_player"),
         "mode": game.get("mode", "serena"),
         "status": game.get("status", "active"),
+        "paused": bool(game.get("paused")),
         "turn": "white" if board.turn == chess.WHITE else "black",
         "last_move": board.peek().uci() if len(board.move_stack) > 0 else None,
         "in_check": board.is_check(),
@@ -1415,6 +1416,7 @@ async def ws_room(websocket: WebSocket) -> None:
                         "black_player": "Serena",
                         "mode": "serena",
                         "status": "active",
+                        "paused": False,
                         "white_captured": [],
                         "black_captured": [],
                         "white_time_remaining": float(CHESS_INITIAL_SECONDS),
@@ -1432,14 +1434,19 @@ async def ws_room(websocket: WebSocket) -> None:
                     if _chess_pending_task and not _chess_pending_task.done():
                         _chess_pending_task.cancel()
                         _chess_pending_task = None
+                    my_side = (data.get("my_side") or "").strip().lower()
+                    challenger_wants_white = my_side in ("white", "w")
+                    white_player = nickname if challenger_wants_white else opp
+                    black_player = opp if challenger_wants_white else nickname
                     board = chess.Board()
                     now = time.time()
                     _chess_game = {
                         "board": board,
-                        "white_player": nickname,
-                        "black_player": opp,
+                        "white_player": white_player,
+                        "black_player": black_player,
                         "mode": "pvp",
                         "status": "active",
+                        "paused": False,
                         "white_captured": [],
                         "black_captured": [],
                         "white_time_remaining": float(CHESS_INITIAL_SECONDS),
@@ -1448,9 +1455,96 @@ async def ws_room(websocket: WebSocket) -> None:
                     }
                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
 
+                elif data.get("type") == "chess_undo" and _chess_game and _chess_game.get("status") == "active" and _chess_game.get("mode") == "pvp":
+                    board = _chess_game["board"]
+                    if len(board.move_stack) < 1:
+                        continue
+                    # 무르기 요청자는 현재 턴인 쪽(상대가 둔 수를 무르려는 쪽). 수락해야 하는 쪽은 직전에 둔 쪽.
+                    last_mover = _chess_game.get("white_player") if board.turn == chess.BLACK else _chess_game.get("black_player")
+                    if nickname == last_mover:
+                        continue
+                    _chess_game["pending_undo"] = {"requested_by": nickname}
+                    await _room_broadcast({"type": "chess_undo_request", "requested_by": nickname}, exclude_ws=None)
+
+                elif data.get("type") == "chess_undo_accept" and _chess_game and _chess_game.get("status") == "active" and _chess_game.get("mode") == "pvp":
+                    board = _chess_game["board"]
+                    if len(board.move_stack) < 1:
+                        _chess_game.pop("pending_undo", None)
+                        continue
+                    last_mover = _chess_game.get("white_player") if board.turn == chess.BLACK else _chess_game.get("black_player")
+                    pending = _chess_game.get("pending_undo") or {}
+                    if nickname != last_mover or pending.get("requested_by") is None:
+                        continue
+                    last_move = board.peek()
+                    cap = _get_captured_piece(board, last_move)
+                    board.pop()
+                    turn_before = "black" if board.turn == chess.WHITE else "white"
+                    if turn_before == "white":
+                        _chess_game["white_time_remaining"] = _chess_game.get("white_time_remaining", CHESS_INITIAL_SECONDS) + CHESS_INCREMENT_SECONDS
+                    else:
+                        _chess_game["black_time_remaining"] = _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS) + CHESS_INCREMENT_SECONDS
+                    if cap:
+                        if board.turn == chess.BLACK:
+                            lst = _chess_game.get("black_captured") or []
+                            if lst:
+                                _chess_game["black_captured"] = lst[:-1]
+                        else:
+                            lst = _chess_game.get("white_captured") or []
+                            if lst:
+                                _chess_game["white_captured"] = lst[:-1]
+                    _chess_game["turn_started_at"] = time.time()
+                    _chess_game.pop("pending_undo", None)
+                    await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+
+                elif data.get("type") == "chess_undo_reject" and _chess_game and _chess_game.get("status") == "active" and _chess_game.get("mode") == "pvp":
+                    pending = _chess_game.get("pending_undo") or {}
+                    last_mover = None
+                    if _chess_game["board"].turn == chess.BLACK:
+                        last_mover = _chess_game.get("white_player")
+                    else:
+                        last_mover = _chess_game.get("black_player")
+                    if nickname == last_mover and pending.get("requested_by"):
+                        req_by = pending["requested_by"]
+                        _chess_game.pop("pending_undo", None)
+                        await _room_broadcast({"type": "chess_undo_rejected", "requested_by": req_by}, exclude_ws=None)
+
+                elif data.get("type") == "chess_pause" and _chess_game and _chess_game.get("status") == "active" and _chess_game.get("mode") == "pvp":
+                    if nickname not in (_chess_game.get("white_player"), _chess_game.get("black_player")):
+                        continue
+                    now = time.time()
+                    turn_started = _chess_game.get("turn_started_at") or now
+                    elapsed = max(0.0, now - turn_started)
+                    if _chess_game["board"].turn == chess.WHITE:
+                        _chess_game["white_time_remaining"] = max(0.0, _chess_game.get("white_time_remaining", CHESS_INITIAL_SECONDS) - elapsed)
+                    else:
+                        _chess_game["black_time_remaining"] = max(0.0, _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS) - elapsed)
+                    _chess_game["turn_started_at"] = now
+                    _chess_game["paused"] = True
+                    await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+
+                elif data.get("type") == "chess_resume" and _chess_game and _chess_game.get("status") == "active" and _chess_game.get("mode") == "pvp":
+                    if nickname not in (_chess_game.get("white_player"), _chess_game.get("black_player")):
+                        continue
+                    _chess_game["paused"] = False
+                    _chess_game["turn_started_at"] = time.time()
+                    await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+
+                elif data.get("type") == "chess_legal_moves" and _chess_game:
+                    from_sq = (data.get("from") or "").strip().lower()
+                    if len(from_sq) == 2 and from_sq[0] in "abcdefgh" and from_sq[1] in "12345678":
+                        try:
+                            from_square = chess.parse_square(from_sq)
+                            board = _chess_game["board"]
+                            to_squares = [chess.SQUARE_NAMES[m.to_square] for m in board.legal_moves if m.from_square == from_square]
+                            await websocket.send_json({"type": "chess_legal_moves", "from": from_sq, "to_squares": to_squares})
+                        except (ValueError, KeyError):
+                            pass
+
                 elif data.get("type") == "chess_move" and (data.get("uci") or "").strip():
                     uci = (data["uci"] or "").strip().lower()[:10]
                     if not _chess_game or _chess_game.get("status") != "active":
+                        continue
+                    if _chess_game.get("paused"):
                         continue
                     board: chess.Board = _chess_game["board"]
                     uci = _normalize_uci_promotion(board, uci)
@@ -1500,6 +1594,7 @@ async def ws_room(websocket: WebSocket) -> None:
                                 _chess_game.setdefault("white_captured", []).append(captured)
                             else:
                                 _chess_game.setdefault("black_captured", []).append(captured)
+                        _chess_game.pop("pending_undo", None)
                         board.push(move)
                         _chess_game["turn_started_at"] = now
                         status = "active"

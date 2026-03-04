@@ -48,7 +48,7 @@
   var chatTabs = [{ id: 'multi', label: '라운지', type: 'multi', closable: false }];
   var activeTabId = 'multi';
 
-  var CHESS_INITIAL_SECONDS = 15 * 60;
+  var CHESS_INITIAL_SECONDS = 10 * 60;
   var chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, whiteRating: null, blackRating: null, mode: 'serena', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [], whiteTime: CHESS_INITIAL_SECONDS, blackTime: CHESS_INITIAL_SECONDS, turnStartedAt: null, paused: false };
   var chessSelected = null;
   var chessLegalTargets = null;
@@ -129,6 +129,7 @@
   const chessCapturedRight = document.getElementById('chessCapturedRight');
 
   var participantListArr = [];
+  var myChessMmr = null;
 
   const gomokuGameBtn = document.getElementById('gomokuGameBtn');
   const gomokuPvpBtn = document.getElementById('gomokuPvpBtn');
@@ -142,6 +143,17 @@
   const gomokuPvpSelect = document.getElementById('gomokuPvpSelect');
   const gomokuPvpOpponent = document.getElementById('gomokuPvpOpponent');
   const gomokuPvpConfirm = document.getElementById('gomokuPvpConfirm');
+
+  function updateHeaderUserDisplay() {
+    var un = document.getElementById('userName');
+    if (!un) return;
+    var name = myNickname || '';
+    if (myChessMmr != null && myChessMmr !== '') {
+      un.textContent = name + ' (' + Number(myChessMmr) + ')';
+    } else {
+      un.textContent = name;
+    }
+  }
 
   function updateSerenaBtn() {
     if (!serenaInviteBtn) return;
@@ -350,6 +362,12 @@
   }
 
   function updateChessButtons() {
+    var hasGame = chessState.fen && chessState.status;
+    var gameActive = chessState.status === 'active';
+    var isChessPlayer = chessState.whitePlayer === myNickname || chessState.blackPlayer === myNickname;
+    var showActions = !hasGame || isChessPlayer || !gameActive;
+    var chessActionsTop = document.getElementById('chessActionsTop');
+    if (chessActionsTop) chessActionsTop.style.display = showActions ? 'flex' : 'none';
     if (chessStartBtn) {
       chessStartBtn.style.display = serenaPresent ? 'inline-block' : 'none';
       var canStart = serenaPresent && (!chessState.fen || chessState.status !== 'active' || chessState.whitePlayer === myNickname);
@@ -360,14 +378,15 @@
       chessStartPvpBtn.disabled = !!(chessState.fen && chessState.status === 'active' && chessState.whitePlayer !== myNickname);
     }
     var isPvpActive = chessState.fen && chessState.status === 'active' && chessState.mode === 'pvp';
-    var isPlayer = isPvpActive && (chessState.whitePlayer === myNickname || chessState.blackPlayer === myNickname);
-    var canUndo = isPvpActive && chessState.lastMove && ((chessState.whitePlayer === myNickname && chessState.turn === 'black') || (chessState.blackPlayer === myNickname && chessState.turn === 'white'));
+    var isPlayer = isPvpActive && isChessPlayer;
+    var canUndo = isPvpActive && chessState.lastMove && ((chessState.whitePlayer === myNickname && chessState.turn === 'white') || (chessState.blackPlayer === myNickname && chessState.turn === 'black'));
     if (chessUndoBtn) {
       chessUndoBtn.style.display = canUndo ? 'inline-block' : 'none';
       chessUndoBtn.disabled = !canUndo;
     }
     if (chessPauseBtn) chessPauseBtn.style.display = isPlayer && !chessState.paused ? 'inline-block' : 'none';
     if (chessResumeBtn) chessResumeBtn.style.display = isPlayer && chessState.paused ? 'inline-block' : 'none';
+    if (chessResignBtn) chessResignBtn.style.display = isChessPlayer && gameActive ? 'inline-block' : 'none';
     if (chessPvpSelect) {
       chessPvpSelect.style.display = (chessPvpSelect.dataset.visible === '1') ? 'flex' : 'none';
     }
@@ -538,6 +557,47 @@
     }
     modal.querySelector('.chessAlertTitle').textContent = title || '';
     modal.querySelector('.chessAlertMessage').textContent = message || '';
+    modal.style.display = 'flex';
+  }
+
+  function formatMmrDelta(delta) {
+    if (delta == null || delta === '') return '0';
+    var d = Number(delta);
+    if (d > 0) return '+' + d;
+    return String(d);
+  }
+
+  function showChessResultModal(resultTitle, resultMessage, whiteName, blackName, whiteDelta, blackDelta) {
+    var modal = document.getElementById('chessResultModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'chessResultModal';
+      modal.className = 'chessAlertModal chessResultModal';
+      modal.innerHTML = '<div class="chessAlertContent"><div class="chessAlertTitle chessResultTitle"></div><div class="chessAlertMessage chessResultMessage"></div><div class="chessResultMmrs"></div><button type="button" class="chessAlertBtn chessResultCloseBtn">확인</button></div>';
+      document.body.appendChild(modal);
+      modal.querySelector('.chessResultCloseBtn').addEventListener('click', function () { modal.style.display = 'none'; });
+      modal.addEventListener('click', function (e) {
+        if (e.target === modal) modal.style.display = 'none';
+      });
+    }
+    modal.querySelector('.chessResultTitle').textContent = resultTitle || '';
+    modal.querySelector('.chessResultMessage').textContent = resultMessage || '';
+    var mmrEl = modal.querySelector('.chessResultMmrs');
+    mmrEl.innerHTML = '';
+    if (whiteDelta != null || blackDelta != null) {
+      var wStr = formatMmrDelta(whiteDelta);
+      var bStr = formatMmrDelta(blackDelta);
+      var wColor = whiteDelta > 0 ? 'chessMmrPlus' : (whiteDelta < 0 ? 'chessMmrMinus' : 'chessMmrZero');
+      var bColor = blackDelta > 0 ? 'chessMmrPlus' : (blackDelta < 0 ? 'chessMmrMinus' : 'chessMmrZero');
+      var line1 = document.createElement('div');
+      line1.className = 'chessResultMmrLine';
+      line1.innerHTML = (whiteName || '흰색') + ' <span class="' + wColor + '">' + escapeHtml(wStr) + '</span>';
+      var line2 = document.createElement('div');
+      line2.className = 'chessResultMmrLine';
+      line2.innerHTML = (blackName || '검은색') + ' <span class="' + bColor + '">' + escapeHtml(bStr) + '</span>';
+      mmrEl.appendChild(line1);
+      mmrEl.appendChild(line2);
+    }
     modal.style.display = 'flex';
   }
 
@@ -1403,6 +1463,12 @@
         }
         if (data.type === 'participants') {
           var list = data.list || [];
+          var me = list.find(function (p) {
+            var uid = p && p.user_id;
+            var n = typeof p === 'string' ? p : (p && p.name);
+            return (myUser && uid === myUser.id) || n === myNickname;
+          });
+          if (me && me.mmr_rating != null) myChessMmr = me.mmr_rating;
           participantListArr = list.filter(function (p) {
             var n = typeof p === 'string' ? p : (p && p.name);
             return n !== myNickname && n !== 'Serena' && (p && p.user_id);
@@ -1410,6 +1476,7 @@
           renderParticipants(list);
           serenaPresent = list.some(function (p) { return (p && p.name) === 'Serena'; });
           updateSerenaBtn();
+          updateHeaderUserDisplay();
           return;
         }
         if (data.type === 'system') {
@@ -1575,16 +1642,29 @@
           if (data.white_player === myNickname || data.black_player === myNickname) {
             var wasActive = prevStatus === 'active';
             var justBecameCheck = wasActive && data.in_check && data.status === 'active' && !prevInCheck;
-            var justCheckmate = wasActive && (data.status === 'checkmate_white' || data.status === 'checkmate_black');
             if (justBecameCheck) {
               var inCheckTurn = data.turn || '';
               var inCheckName = inCheckTurn === 'white' ? (data.white_player || '흰색') : (data.black_player || '검은색');
               var inCheckSide = inCheckTurn === 'white' ? '흰색' : '검은색';
               showChessAlert('⚠ 체크!', inCheckName + ' (' + inCheckSide + ')이(가) 체크 상태입니다. 왕을 피하세요!');
-            } else if (justCheckmate) {
-              var winner = data.status === 'checkmate_white' ? (data.black_player || '검은색') : (data.white_player || '흰색');
-              showChessAlert('♔ 체크메이트!', winner + ' 승리!');
             }
+          }
+          var terminalStatuses = ['checkmate_white', 'checkmate_black', 'time_loss_white', 'time_loss_black', 'resign_white', 'resign_black', 'draw'];
+          if (terminalStatuses.indexOf(data.status) !== -1 && (data.white_player === myNickname || data.black_player === myNickname)) {
+            var resultTitle = '게임 종료';
+            var resultMessage = '';
+            var wp = data.white_player || '흰색';
+            var bp = data.black_player || '검은색';
+            if (data.status === 'checkmate_white') { resultMessage = bp + ' 승리 (체크메이트)'; }
+            else if (data.status === 'checkmate_black') { resultMessage = wp + ' 승리 (체크메이트)'; }
+            else if (data.status === 'time_loss_white') { resultMessage = bp + ' 승리 (흰색 시간 초과)'; }
+            else if (data.status === 'time_loss_black') { resultMessage = wp + ' 승리 (검은색 시간 초과)'; }
+            else if (data.status === 'resign_white') { resultMessage = bp + ' 승리 (흰색 기권)'; }
+            else if (data.status === 'resign_black') { resultMessage = wp + ' 승리 (검은색 기권)'; }
+            else if (data.status === 'draw') { resultMessage = '무승부'; }
+            var wDelta = data.white_mmr_delta != null ? Number(data.white_mmr_delta) : null;
+            var bDelta = data.black_mmr_delta != null ? Number(data.black_mmr_delta) : null;
+            showChessResultModal(resultTitle, resultMessage, wp, bp, wDelta, bDelta);
           }
           if (chessState.status === 'active') {
             if (!chessClockInterval) chessClockInterval = setInterval(function () { updateChessClocks(); }, 1000);
@@ -1660,8 +1740,7 @@
     var headerUser = document.getElementById('headerUser');
     if (headerUser) {
       headerUser.style.display = 'flex';
-      var un = document.getElementById('userName');
-      if (un) un.textContent = user.name;
+      updateHeaderUserDisplay();
     }
     if (roomNickEditBtn) roomNickEditBtn.style.display = 'flex';
     if (roomLeaveBtn) roomLeaveBtn.style.display = 'flex';

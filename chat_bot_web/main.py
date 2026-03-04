@@ -110,9 +110,9 @@ _serena_invited: bool = False
 _serena_pending_task: Optional[asyncio.Task] = None
 
 # 체스 게임: 단일 방당 1게임 (Serena vs 유저 또는 유저 vs 유저)
-# 선수당 25분 + 매 수 10초 증가
-CHESS_INITIAL_SECONDS = 15 * 60  # 15분
-CHESS_INCREMENT_SECONDS = 10
+# 선수당 10분 + 매 수 5초 증가
+CHESS_INITIAL_SECONDS = 10 * 60  # 10분
+CHESS_INCREMENT_SECONDS = 5
 # {"board", "white_player", "black_player", "mode", "status", "white_captured", "black_captured", "white_time_remaining", "black_time_remaining", "turn_started_at"}
 _chess_game: Optional[Dict[str, Any]] = None
 _chess_pending_task: Optional[asyncio.Task] = None
@@ -173,9 +173,9 @@ def _apply_chess_mmr_if_needed(game: Dict[str, Any]) -> None:
     ea = expected_score(ra, rb)
     eb = expected_score(rb, ra)
 
-    # K-값 (30판 이하: 40, 이후 20)
+    # K-값 (40)
     def k_factor(games: int) -> int:
-        return 40 if games <= 30 else 20
+        return 40
 
     ka = k_factor(ga)
     kb = k_factor(gb)
@@ -188,6 +188,8 @@ def _apply_chess_mmr_if_needed(game: Dict[str, Any]) -> None:
     db.update_user_mmr(int(black_user_id), new_rb, gb + 1)
 
     game["mmr_applied"] = True
+    game["white_mmr_delta"] = new_ra - ra
+    game["black_mmr_delta"] = new_rb - rb
 
 
 def _chess_state_payload(game: Dict[str, Any]) -> Dict[str, Any]:
@@ -197,7 +199,7 @@ def _chess_state_payload(game: Dict[str, Any]) -> Dict[str, Any]:
     black_user_id = game.get("black_user_id")
     white_rating = db.get_user_mmr(int(white_user_id))[0] if white_user_id else None
     black_rating = db.get_user_mmr(int(black_user_id))[0] if black_user_id else None
-    return {
+    payload = {
         "type": "chess_state",
         "fen": board.fen(),
         "white_player": game.get("white_player"),
@@ -216,6 +218,11 @@ def _chess_state_payload(game: Dict[str, Any]) -> Dict[str, Any]:
         "black_time": max(0.0, game.get("black_time_remaining", CHESS_INITIAL_SECONDS)),
         "turn_started_at": game.get("turn_started_at") or time.time(),
     }
+    if game.get("white_mmr_delta") is not None:
+        payload["white_mmr_delta"] = game["white_mmr_delta"]
+    if game.get("black_mmr_delta") is not None:
+        payload["black_mmr_delta"] = game["black_mmr_delta"]
+    return payload
 
 
 def _get_captured_piece(board: chess.Board, move: chess.Move) -> Optional[str]:

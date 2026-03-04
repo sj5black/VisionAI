@@ -2124,7 +2124,7 @@ body {
   }
 
   .chessPanel.chessPanel--vision .chessSquare {
-    font-size: min(40px, 11vw);
+    font-size: min(40px, 5.5vw);
     touch-action: none;
   }
 
@@ -2477,4 +2477,29 @@ body {
 
 .chessUndoRejectBtn:hover {
   background: var(--border);
+}
+
+.chessResultMmrs {
+  margin: 12px 0 16px;
+  text-align: left;
+}
+
+.chessResultMmrLine {
+  font-size: 15px;
+  margin-top: 6px;
+}
+
+.chessMmrPlus {
+  color: #22c55e;
+  font-weight: 700;
+}
+
+.chessMmrMinus {
+  color: #f97316;
+  font-weight: 700;
+}
+
+.chessMmrZero {
+  color: #fff;
+  font-weight: 700;
 }

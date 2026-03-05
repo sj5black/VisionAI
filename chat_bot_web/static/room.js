@@ -48,7 +48,7 @@
   var chatTabs = [{ id: 'multi', label: '라운지', type: 'multi', closable: false }];
   var activeTabId = 'multi';
 
-  var CHESS_INITIAL_SECONDS = 10 * 60;
+  var CHESS_INITIAL_SECONDS = 15 * 60;
   var chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, whiteRating: null, blackRating: null, mode: 'serena', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [], whiteTime: CHESS_INITIAL_SECONDS, blackTime: CHESS_INITIAL_SECONDS, turnStartedAt: null, paused: false };
   var chessSelected = null;
   var chessLegalTargets = null;
@@ -272,6 +272,10 @@
         if (lastMove && (sqId === lastMove.slice(0, 2) || sqId === lastMove.slice(2, 4))) el.classList.add('last-move');
         if (chessSelected === sqId) el.classList.add('selected');
         var piece = board && board[r] && board[r][c];
+        if (chessState.inCheck && chessState.status === 'active' && piece) {
+          var kingInCheck = (chessState.turn === 'white' && piece === 'K') || (chessState.turn === 'black' && piece === 'k');
+          if (kingInCheck) el.classList.add('chessSquare--check');
+        }
         var isMoveTarget = false, isCaptureTarget = false;
         if (chessSelected && chessLegalTargets && chessLegalTargets.from === chessSelected && chessLegalTargets.toSquares && chessLegalTargets.toSquares.indexOf(sqId) !== -1) {
           isMoveTarget = true;
@@ -295,6 +299,15 @@
           el.addEventListener('click', function () { onChessSquareClick(this.dataset.sq); });
         }
         chessBoard.appendChild(el);
+      }
+    }
+    var checkLabel = document.getElementById('chessCheckLabel');
+    if (checkLabel) {
+      if (chessState.inCheck && chessState.status === 'active') {
+        checkLabel.textContent = 'Check';
+        checkLabel.style.display = 'block';
+      } else {
+        checkLabel.style.display = 'none';
       }
     }
   }
@@ -442,7 +455,7 @@
       var wp = formatNameWithRating(chessState.whitePlayer, chessState.whiteRating) || '흰색';
       var bp = formatNameWithRating(chessState.blackPlayer, chessState.blackRating) || '검은색';
       var base = chessState.turn === 'white' ? wp + ' (흰색) 차례' : bp + ' (검은색) 차례';
-      chessStatus.textContent = chessState.inCheck ? base + ' – ⚠ 체크!' : base;
+      chessStatus.textContent = base;
     } else if (s === 'checkmate_white') chessStatus.textContent = (formatNameWithRating(chessState.blackPlayer, chessState.blackRating) || '검은색') + ' 승리! (체크메이트)';
     else if (s === 'checkmate_black') chessStatus.textContent = (formatNameWithRating(chessState.whitePlayer, chessState.whiteRating) || '흰색') + ' 승리! (체크메이트)';
     else if (s === 'time_loss_white') chessStatus.textContent = (formatNameWithRating(chessState.blackPlayer, chessState.blackRating) || '검은색') + ' 승리! (흰색 시간 초과)';
@@ -1639,16 +1652,7 @@
           updateChessStatus();
           updateChessButtons();
           updateChessPanelTitle();
-          if (data.white_player === myNickname || data.black_player === myNickname) {
-            var wasActive = prevStatus === 'active';
-            var justBecameCheck = wasActive && data.in_check && data.status === 'active' && !prevInCheck;
-            if (justBecameCheck) {
-              var inCheckTurn = data.turn || '';
-              var inCheckName = inCheckTurn === 'white' ? (data.white_player || '흰색') : (data.black_player || '검은색');
-              var inCheckSide = inCheckTurn === 'white' ? '흰색' : '검은색';
-              showChessAlert('⚠ 체크!', inCheckName + ' (' + inCheckSide + ')이(가) 체크 상태입니다. 왕을 피하세요!');
-            }
-          }
+          /* 체크 시에는 팝업 없이 킹 칸 빨간 배경 + 체스판 위 "Check" 표시만 함 */
           var terminalStatuses = ['checkmate_white', 'checkmate_black', 'time_loss_white', 'time_loss_black', 'resign_white', 'resign_black', 'draw'];
           if (terminalStatuses.indexOf(data.status) !== -1 && (data.white_player === myNickname || data.black_player === myNickname)) {
             var resultTitle = '게임 종료';

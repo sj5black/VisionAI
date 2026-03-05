@@ -1295,6 +1295,19 @@ body {
   background: rgba(155, 199, 0, 0.4) !important;
 }
 
+.chessSquare--check {
+  background: rgba(220, 38, 38, 0.6) !important;
+}
+
+.chessCheckLabel {
+  display: none;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #dc2626;
+  margin-bottom: 6px;
+}
+
 .chessSquare--move::after {
   content: '';
   position: absolute;

@@ -111,8 +111,8 @@ _serena_pending_task: Optional[asyncio.Task] = None
 
 # 체스 게임: 단일 방당 1게임 (Serena vs 유저 또는 유저 vs 유저)
 # 선수당 10분 + 매 수 5초 증가
-CHESS_INITIAL_SECONDS = 10 * 60  # 10분
-CHESS_INCREMENT_SECONDS = 5
+CHESS_INITIAL_SECONDS = 15 * 60  # 15분
+CHESS_INCREMENT_SECONDS = 10
 # {"board", "white_player", "black_player", "mode", "status", "white_captured", "black_captured", "white_time_remaining", "black_time_remaining", "turn_started_at"}
 _chess_game: Optional[Dict[str, Any]] = None
 _chess_pending_task: Optional[asyncio.Task] = None
@@ -153,14 +153,18 @@ def _apply_chess_mmr_if_needed(game: Dict[str, Any]) -> None:
     if not white_user_id or not black_user_id:
         return
 
-    # 승/패/무 결과를 white 기준으로 W 값으로 변환
-    if status in ("checkmate_white", "time_loss_black", "resign_black"):
-        w_white = 1.0
-    elif status in ("checkmate_black", "time_loss_white", "resign_white"):
-        w_white = 0.0
+    # 승/패/무 결과: status는 "패배한 쪽"을 가리킴. 승리 진영이 점수 상승하도록 W 부여.
+    # checkmate_black = 흑이 체크메이트당함 → 백 승리 → w_white=1, w_black=0
+    # checkmate_white = 백이 체크메이트당함 → 흑 승리 → w_white=0, w_black=1
+    if status in ("checkmate_black", "time_loss_black", "resign_black"):
+        w_white = 1.0   # 백 승리
+        w_black = 0.0
+    elif status in ("checkmate_white", "time_loss_white", "resign_white"):
+        w_white = 0.0   # 흑 승리
+        w_black = 1.0
     else:
         w_white = 0.5
-    w_black = 1.0 - w_white
+        w_black = 0.5
 
     # 현재 레이팅/경기 수 조회
     ra, ga = db.get_user_mmr(int(white_user_id))
@@ -1501,6 +1505,36 @@ async def ws_room(websocket: WebSocket) -> None:
                     }
                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
 
+                elif data.get("type") == "chess_start_practice":
+                    # 연습 모드: 한 유저가 흑/백 모두 두는 모드 (시간 패배 없음)
+                    if _chess_pending_task and not _chess_pending_task.done():
+                        _chess_pending_task.cancel()
+                        _chess_pending_task = None
+                    board = chess.Board()
+                    now = time.time()
+                    white_user_id = None
+                    black_user_id = None
+                    for _ws, u in _room_connections:
+                        if u.get("name") == nickname and white_user_id is None:
+                            white_user_id = u.get("id")
+                            black_user_id = u.get("id")
+                    _chess_game = {
+                        "board": board,
+                        "white_player": nickname,
+                        "black_player": nickname,
+                        "white_user_id": white_user_id,
+                        "black_user_id": black_user_id,
+                        "mode": "practice",
+                        "status": "active",
+                        "paused": False,
+                        "white_captured": [],
+                        "black_captured": [],
+                        "white_time_remaining": float(CHESS_INITIAL_SECONDS),
+                        "black_time_remaining": float(CHESS_INITIAL_SECONDS),
+                        "turn_started_at": now,
+                    }
+                    await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+
                 elif data.get("type") == "chess_start_pvp" and (data.get("opponent") or "").strip():
                     opp = (data["opponent"] or "").strip()[:32]
                     if opp == nickname:
@@ -1651,30 +1685,31 @@ async def ws_room(websocket: WebSocket) -> None:
                         now = time.time()
                         turn_started = _chess_game.get("turn_started_at") or now
                         elapsed = now - turn_started
-                        if board.turn == chess.WHITE:
-                            w = _chess_game.get("white_time_remaining", CHESS_INITIAL_SECONDS) - elapsed
-                            w = max(0.0, w)
-                            if w <= 0:
-                                _chess_game["status"] = "time_loss_white"
-                                _chess_game["white_time_remaining"] = 0.0
-                                _chess_game["black_time_remaining"] = _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS)
-                                _chess_game["turn_started_at"] = now
-                                _apply_chess_mmr_if_needed(_chess_game)
-                                await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
-                                continue
-                            _chess_game["white_time_remaining"] = w + CHESS_INCREMENT_SECONDS
-                        else:
-                            b = _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS) - elapsed
-                            b = max(0.0, b)
-                            if b <= 0:
-                                _chess_game["status"] = "time_loss_black"
-                                _chess_game["black_time_remaining"] = 0.0
-                                _chess_game["white_time_remaining"] = _chess_game.get("white_time_remaining", CHESS_INITIAL_SECONDS)
-                                _chess_game["turn_started_at"] = now
-                                _apply_chess_mmr_if_needed(_chess_game)
-                                await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
-                                continue
-                            _chess_game["black_time_remaining"] = b + CHESS_INCREMENT_SECONDS
+                        if mode != "practice":
+                            if board.turn == chess.WHITE:
+                                w = _chess_game.get("white_time_remaining", CHESS_INITIAL_SECONDS) - elapsed
+                                w = max(0.0, w)
+                                if w <= 0:
+                                    _chess_game["status"] = "time_loss_white"
+                                    _chess_game["white_time_remaining"] = 0.0
+                                    _chess_game["black_time_remaining"] = _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS)
+                                    _chess_game["turn_started_at"] = now
+                                    _apply_chess_mmr_if_needed(_chess_game)
+                                    await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+                                    continue
+                                _chess_game["white_time_remaining"] = w + CHESS_INCREMENT_SECONDS
+                            else:
+                                b = _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS) - elapsed
+                                b = max(0.0, b)
+                                if b <= 0:
+                                    _chess_game["status"] = "time_loss_black"
+                                    _chess_game["black_time_remaining"] = 0.0
+                                    _chess_game["white_time_remaining"] = _chess_game.get("white_time_remaining", CHESS_INITIAL_SECONDS)
+                                    _chess_game["turn_started_at"] = now
+                                    _apply_chess_mmr_if_needed(_chess_game)
+                                    await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+                                    continue
+                                _chess_game["black_time_remaining"] = b + CHESS_INCREMENT_SECONDS
                         captured = _get_captured_piece(board, move)
                         if captured:
                             if board.turn == chess.WHITE:

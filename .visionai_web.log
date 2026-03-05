@@ -4500,3 +4500,76 @@ INFO:     112.171.67.160:12386 - "GET / HTTP/1.1" 200 OK
 INFO:     112.171.67.160:9810 - "GET /api/emotion-backend HTTP/1.1" 200 OK
 INFO:     210.179.94.144:41032 - "GET / HTTP/1.1" 200 OK
 INFO:     210.179.94.144:57222 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1648 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13563 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3219 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3003 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9169 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8003 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5748 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10222 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1273 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1228 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11304 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:11430 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9220 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:9606 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14179 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:12787 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4089 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14308 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14184 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10392 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:58542 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:54514 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.114:43640 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.114:16060 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.114:16172 - "GET /robots.txt HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     199.45.155.75:54438 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     199.45.155.75:33122 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     199.45.155.75:33144 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     199.45.155.75:33158 - "GET /security.txt HTTP/1.1" 404 Not Found
+INFO:     16.58.56.214:41534 - "GET / HTTP/1.1" 200 OK
+INFO:     16.58.56.214:51258 - "GET / HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     5.181.190.188:52010 - "GET /..%5C..%5C..%5C..%5C..%5C..%5Cetc%5Cpasswd HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     5.181.190.188:52014 - "GET /../../../../../../etc/passwd HTTP/1.1" 404 Not Found
+INFO:     5.181.190.188:52020 - "GET /../../../../../../../../../../etc/passwd HTTP/1.1" 404 Not Found
+INFO:     5.181.190.188:52018 - "GET /etc/passwd HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     5.181.190.188:52022 - "GET //etc/passwd HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     115.231.78.11:38415 - "GET / HTTP/1.1" 200 OK
+INFO:     115.231.78.11:38607 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     115.231.78.11:38669 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     112.171.67.160:13109 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10071 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1230 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5807 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.207.220:32270 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.207.220:58258 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:58096 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:51170 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2667 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14233 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     211.234.207.220:60032 - "GET / HTTP/1.1" 200 OK
+INFO:     211.234.207.220:34226 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1903 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:8138 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10078 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:10078 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:1454 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:6167 - "GET /api/emotion-backend HTTP/1.1" 200 OK

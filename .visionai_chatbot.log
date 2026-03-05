@@ -1,10 +1,6 @@
 INFO:     Will watch for changes in these directories: ['/home/teddy/VisionAI']
 INFO:     Uvicorn running on http://0.0.0.0:8004 (Press CTRL+C to quit)
-INFO:     Started reloader process [1536035] using StatReload
-/home/teddy/VisionAI/chat_bot_web/main.py:355: SyntaxWarning: invalid escape sequence '\)'
-  - Check ALL directions: horizontal (—), vertical (|), diagonal (/ and \)
-/home/teddy/VisionAI/chat_bot_web/main.py:476: SyntaxWarning: invalid escape sequence '\,'
-  if not text and getattr(resp, "output", None):
-INFO:     Started server process [1536038]
+INFO:     Started reloader process [1562236] using WatchFiles
+INFO:     Started server process [1562239]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.

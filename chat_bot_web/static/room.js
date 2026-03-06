@@ -31,6 +31,8 @@
   const chatFullscreenBtn = document.getElementById('chatFullscreenBtn');
   const roomLayout = document.getElementById('roomLayout');
   const withdrawBtn = document.getElementById('withdrawBtn');
+  const headerMenuBtn = document.getElementById('headerMenuBtn');
+  const headerMenuDropdown = document.getElementById('headerMenuDropdown');
 
   var EMOJI_LIST = ['😀','😃','😄','😁','😅','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','👍','👎','👌','✌️','🤞','🤟','🤘','🤙','👋','🤚','🖐️','✋','🖖','👏','🙌','👐','🤲','🙏','❤️','🧡','💛','💚','💙','💜','🖤','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','✨','⭐','🌟','💫','🔥','💯'];
 
@@ -1796,6 +1798,8 @@
     if (chatFullscreenBtn) chatFullscreenBtn.style.display = 'flex';
     if (gomokuNavBtn) gomokuNavBtn.style.display = 'inline-block';
     if (notificationToggleBtn) notificationToggleBtn.style.display = 'flex';
+    if (headerMenuBtn) headerMenuBtn.style.display = 'flex';
+    if (headerMenuDropdown) { headerMenuDropdown.classList.remove('is-open'); headerMenuDropdown.setAttribute('aria-hidden', 'true'); }
     updateNotificationIcon();
     var chatTabsBar = document.getElementById('chatTabsBar');
     if (chatTabsBar) chatTabsBar.style.display = 'block';
@@ -1861,6 +1865,8 @@
     if (chatPanelHideBtn) chatPanelHideBtn.style.display = 'none';
     if (chatFullscreenBtn) chatFullscreenBtn.style.display = 'none';
     if (gomokuNavBtn) gomokuNavBtn.style.display = 'none';
+    if (headerMenuBtn) headerMenuBtn.style.display = 'none';
+    if (headerMenuDropdown) { headerMenuDropdown.classList.remove('is-open'); headerMenuDropdown.setAttribute('aria-hidden', 'true'); }
     if (roomLayout) {
       roomLayout.classList.remove('chat-panel-hidden');
       roomLayout.classList.remove('chat-fullscreen');
@@ -2233,6 +2239,31 @@
         chatFullscreenBtn.setAttribute('aria-label', isFull ? '전체화면 해제' : '채팅 전체화면');
       });
     }
+  }
+
+  function closeHeaderMenu() {
+    if (headerMenuDropdown) {
+      headerMenuDropdown.classList.remove('is-open');
+      headerMenuDropdown.setAttribute('aria-hidden', 'true');
+    }
+    if (headerMenuBtn) headerMenuBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  if (headerMenuBtn && headerMenuDropdown) {
+    headerMenuBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var isOpen = headerMenuDropdown.classList.toggle('is-open');
+      headerMenuBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      headerMenuDropdown.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    });
+    headerMenuDropdown.addEventListener('click', function (e) {
+      if (e.target.closest('.header-menu-item')) closeHeaderMenu();
+    });
+    document.addEventListener('click', function (e) {
+      if (!headerMenuDropdown.classList.contains('is-open')) return;
+      if (e.target === headerMenuBtn || headerMenuBtn.contains(e.target) || headerMenuDropdown.contains(e.target)) return;
+      closeHeaderMenu();
+    });
   }
 
   if (serenaInviteBtn) {

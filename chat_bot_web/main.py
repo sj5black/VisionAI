@@ -21,7 +21,7 @@ from uuid import uuid4
 
 import requests
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -1615,6 +1615,26 @@ async def ws_room(websocket: WebSocket) -> None:
                     _chess_game.pop("pending_undo", None)
                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
 
+                elif data.get("type") == "chess_undo_practice" and _chess_game and _chess_game.get("status") == "active" and _chess_game.get("mode") == "practice":
+                    board = _chess_game["board"]
+                    if len(board.move_stack) < 1:
+                        continue
+                    last_move = board.peek()
+                    cap = _get_captured_piece(board, last_move)
+                    board.pop()
+                    if cap:
+                        if board.turn == chess.BLACK:
+                            lst = _chess_game.get("black_captured") or []
+                            if lst:
+                                _chess_game["black_captured"] = lst[:-1]
+                        else:
+                            lst = _chess_game.get("white_captured") or []
+                            if lst:
+                                _chess_game["white_captured"] = lst[:-1]
+                    _chess_game["status"] = "active"
+                    _chess_game["turn_started_at"] = time.time()
+                    await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+
                 elif data.get("type") == "chess_undo_reject" and _chess_game and _chess_game.get("status") == "active" and _chess_game.get("mode") == "pvp":
                     pending = _chess_game.get("pending_undo") or {}
                     last_mover = None
@@ -1721,7 +1741,12 @@ async def ws_room(websocket: WebSocket) -> None:
                         _chess_game["turn_started_at"] = now
                         status = "active"
                         if board.is_checkmate():
-                            status = "checkmate_black"
+                            # board.push(move) 이후 board.turn은 체크메이트를 당한 쪽
+                            # 즉, 이제 둬야 할 차례인 쪽이 패배한 쪽
+                            if board.turn == chess.WHITE:
+                                status = "checkmate_white"   # 백이 체크메이트당함 → 흑 승리
+                            else:
+                                status = "checkmate_black"   # 흑이 체크메이트당함 → 백 승리
                         elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
                             status = "draw"
                         _chess_game["status"] = status
@@ -1747,6 +1772,16 @@ async def ws_room(websocket: WebSocket) -> None:
                     _chess_game["status"] = status
                     _apply_chess_mmr_if_needed(_chess_game)
                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+
+                elif data.get("type") == "chess_end_practice" and _chess_game and _chess_game.get("mode") == "practice":
+                    # 싱글플레이 종료: MMR 변동 없이 상태만 종료로 표시
+                    if _chess_pending_task and not _chess_pending_task.done():
+                        _chess_pending_task.cancel()
+                        _chess_pending_task = None
+                    _chess_game["status"] = "ended_practice"
+                    _chess_game["turn_started_at"] = time.time()
+                    await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+                    _chess_game = None
 
                 elif data.get("type") == "gomoku_start":
                     if not _serena_invited:
@@ -2175,6 +2210,15 @@ async def ws_dm(websocket: WebSocket) -> None:
 
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    """브라우저 기본 favicon 요청 처리. 파일이 있으면 반환, 없으면 204로 404 방지."""
+    path = STATIC_DIR / "favicon.ico"
+    if path.exists():
+        return FileResponse(path)
+    return Response(status_code=204)
 
 
 @app.get("/api/situations")

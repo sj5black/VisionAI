@@ -924,6 +924,12 @@ body {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.gomoku-nav-btn {
+  font-size: 14px;
+  padding: 0 10px;
+  min-width: auto;
+}
+
 .card {
   padding: 20px;
   border: 1px solid var(--border);

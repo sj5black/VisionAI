@@ -1304,6 +1304,16 @@ body {
 .chessCapturedRight .chessCapturedCount { color: #fff; }
 .chessCapturedRight { color: #fff; }
 
+.chessMaterialScore {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  white-space: pre-line;
+}
+.chessMaterialScore--ahead { color: var(--success, #4ade80); }
+.chessMaterialScore--behind { color: var(--danger, #f87171); }
+
 .chessBoard {
   display: grid;
   grid-template-columns: repeat(8, 1fr);

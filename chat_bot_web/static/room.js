@@ -166,6 +166,15 @@
 
   /* 흑 기물과 동일한 글리프 사용, 백은 CSS로 흰색 적용 */
   var CHESS_PIECES = { K: '\u265A', Q: '\u265B', R: '\u265C', B: '\u265D', N: '\u265E', P: '\u265F', k: '\u265A', q: '\u265B', r: '\u265C', b: '\u265D', n: '\u265E', p: '\u265F' };
+  var CHESS_PIECE_VALUE = { p: 1, n: 3, b: 3, r: 5, q: 9 };
+
+  function capturedPiecesScore(arr) {
+    if (!arr || !arr.length) return 0;
+    return arr.reduce(function (sum, sym) {
+      var s = (sym || '').toLowerCase();
+      return sum + (CHESS_PIECE_VALUE[s] || 0);
+    }, 0);
+  }
 
   function fenToBoard(fen) {
     if (!fen) return null;
@@ -231,6 +240,39 @@
       wrap.appendChild(count);
       chessCapturedRight.appendChild(wrap);
     });
+
+    var materialEl = document.getElementById('chessMaterialScore');
+    if (materialEl && chessState.whitePlayer && chessState.blackPlayer) {
+      var whiteScore = capturedPiecesScore(wc);
+      var blackScore = capturedPiecesScore(bc);
+      var mode = chessState.mode || 'serena';
+      var isPractice = mode === 'practice';
+      var diff = whiteScore - blackScore;
+      var diffStr = diff > 0 ? '+' + diff : (diff < 0 ? String(diff) : '0');
+      if (isPractice) {
+        var totalStr = diff > 0 ? '+' + diff : (diff < 0 ? String(diff) : '0');
+        materialEl.textContent = '<기물 점수>\nWhite : ' + whiteScore + '점\nBlack : ' + blackScore + '점\nTotal : ' + totalStr;
+        materialEl.className = 'chessMaterialScore' + (diff > 0 ? ' chessMaterialScore--ahead' : diff < 0 ? ' chessMaterialScore--behind' : '');
+      } else {
+        var isWhite = chessState.whitePlayer === myNickname;
+        var myScore = isWhite ? whiteScore : blackScore;
+        var oppScore = isWhite ? blackScore : whiteScore;
+        var myDiff = myScore - oppScore;
+        var myDiffStr = myDiff > 0 ? '+' + myDiff : String(myDiff);
+        if (isWhite) {
+          var totalDiff = whiteScore - blackScore;
+          var totalStr = totalDiff > 0 ? '+' + totalDiff : String(totalDiff);
+          materialEl.textContent = '<기물 점수>\nWhite : ' + whiteScore + '점\nBlack : ' + blackScore + '점\nTotal : ' + totalStr;
+          materialEl.className = 'chessMaterialScore' + (totalDiff > 0 ? ' chessMaterialScore--ahead' : totalDiff < 0 ? ' chessMaterialScore--behind' : '');
+        } else {
+          materialEl.textContent = '내가 잡은 기물 ' + myScore + '점 / 상대 ' + oppScore + '점 (' + myDiffStr + ')';
+          materialEl.className = 'chessMaterialScore' + (myDiff > 0 ? ' chessMaterialScore--ahead' : myDiff < 0 ? ' chessMaterialScore--behind' : '');
+        }
+      }
+    } else if (materialEl) {
+      materialEl.textContent = '';
+      materialEl.className = 'chessMaterialScore';
+    }
   }
 
   function renderChessBoard() {
@@ -409,7 +451,7 @@
         chessResignBtn.style.display = gameActive ? 'inline-block' : 'none';
       }
     } else {
-      var canUndo = isPvpActive && chessState.lastMove && ((chessState.whitePlayer === myNickname && chessState.turn === 'white') || (chessState.blackPlayer === myNickname && chessState.turn === 'black'));
+      var canUndo = isPvpActive && chessState.lastMove && ((chessState.whitePlayer === myNickname && chessState.turn === 'black') || (chessState.blackPlayer === myNickname && chessState.turn === 'white'));
       if (chessUndoBtn) {
         chessUndoBtn.style.display = canUndo ? 'inline-block' : 'none';
         chessUndoBtn.disabled = !canUndo;
@@ -1733,8 +1775,8 @@
           return;
         }
         if (data.type === 'chess_undo_request') {
-          var amLastMover = (chessState.whitePlayer === myNickname && chessState.turn === 'black') || (chessState.blackPlayer === myNickname && chessState.turn === 'white');
-          if (amLastMover) showChessUndoRequestModal(data.requested_by || '상대');
+          var amCurrentTurn = (chessState.whitePlayer === myNickname && chessState.turn === 'white') || (chessState.blackPlayer === myNickname && chessState.turn === 'black');
+          if (amCurrentTurn) showChessUndoRequestModal(data.requested_by || '상대');
           return;
         }
         if (data.type === 'chess_undo_rejected') {

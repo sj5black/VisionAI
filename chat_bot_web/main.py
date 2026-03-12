@@ -882,6 +882,7 @@ async def _play_serena_chess_move() -> None:
         if board.is_checkmate():
             status = "checkmate_white"
         elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
+            # can_claim_draw: 50수 규칙(캡처/폰 이동 없이 50수), 3회 반복 포함
             status = "draw"
         _chess_game["status"] = status
         await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
@@ -908,6 +909,7 @@ async def _play_serena_chess_move() -> None:
                 if board.is_checkmate():
                     status = "checkmate_white"
                 elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
+                    # can_claim_draw: 50수 규칙, 3회 반복 포함
                     status = "draw"
                 _chess_game["status"] = status
                 await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
@@ -1578,9 +1580,9 @@ async def ws_room(websocket: WebSocket) -> None:
                     board = _chess_game["board"]
                     if len(board.move_stack) < 1:
                         continue
-                    # 무르기 요청자는 현재 턴인 쪽(상대가 둔 수를 무르려는 쪽). 수락해야 하는 쪽은 직전에 둔 쪽.
+                    # 무르기 요청자는 현재 턴이 아닌 쪽(직전에 둔 쪽). 수락/거절하는 쪽은 현재 턴인 쪽.
                     last_mover = _chess_game.get("white_player") if board.turn == chess.BLACK else _chess_game.get("black_player")
-                    if nickname == last_mover:
+                    if nickname != last_mover:
                         continue
                     _chess_game["pending_undo"] = {"requested_by": nickname}
                     await _room_broadcast({"type": "chess_undo_request", "requested_by": nickname}, exclude_ws=None)
@@ -1590,9 +1592,10 @@ async def ws_room(websocket: WebSocket) -> None:
                     if len(board.move_stack) < 1:
                         _chess_game.pop("pending_undo", None)
                         continue
-                    last_mover = _chess_game.get("white_player") if board.turn == chess.BLACK else _chess_game.get("black_player")
+                    # 수락하는 쪽은 현재 턴인 쪽(직전에 둔 사람이 아님)
+                    current_turn_player = _chess_game.get("white_player") if board.turn == chess.WHITE else _chess_game.get("black_player")
                     pending = _chess_game.get("pending_undo") or {}
-                    if nickname != last_mover or pending.get("requested_by") is None:
+                    if nickname != current_turn_player or pending.get("requested_by") is None:
                         continue
                     last_move = board.peek()
                     cap = _get_captured_piece(board, last_move)
@@ -1637,12 +1640,9 @@ async def ws_room(websocket: WebSocket) -> None:
 
                 elif data.get("type") == "chess_undo_reject" and _chess_game and _chess_game.get("status") == "active" and _chess_game.get("mode") == "pvp":
                     pending = _chess_game.get("pending_undo") or {}
-                    last_mover = None
-                    if _chess_game["board"].turn == chess.BLACK:
-                        last_mover = _chess_game.get("white_player")
-                    else:
-                        last_mover = _chess_game.get("black_player")
-                    if nickname == last_mover and pending.get("requested_by"):
+                    # 거절하는 쪽은 현재 턴인 쪽
+                    current_turn_player = _chess_game.get("white_player") if _chess_game["board"].turn == chess.WHITE else _chess_game.get("black_player")
+                    if nickname == current_turn_player and pending.get("requested_by"):
                         req_by = pending["requested_by"]
                         _chess_game.pop("pending_undo", None)
                         await _room_broadcast({"type": "chess_undo_rejected", "requested_by": req_by}, exclude_ws=None)
@@ -1748,6 +1748,7 @@ async def ws_room(websocket: WebSocket) -> None:
                             else:
                                 status = "checkmate_black"   # 흑이 체크메이트당함 → 백 승리
                         elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
+                            # can_claim_draw: 50수 규칙(캡처/폰 이동 없이 50수), 3회 반복 포함
                             status = "draw"
                         _chess_game["status"] = status
                         _apply_chess_mmr_if_needed(_chess_game)

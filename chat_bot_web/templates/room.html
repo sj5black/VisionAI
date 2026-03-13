@@ -181,7 +181,7 @@
           <span id="participantList" class="participantList"></span>
         </div>
         <button type="button" id="serenaInviteBtn" class="serenaInviteBtn" title="Serena 초대">Serena 초대</button>
-        <button type="button" id="chessGameBtn" class="chessGameBtn" title="Serena와 체스" style="display: none;">♔ Serena</button>
+        <button type="button" id="chessGameBtn" class="chessGameBtn" title="체스" style="display: none;">♔ 체스</button>
         <button type="button" id="chessPvpBtn" class="chessGameBtn" title="1:1 체스" style="display: none;">♔ 1:1</button>
       </div>
       <div id="roomMessages" class="roomMessages"></div>
@@ -225,25 +225,37 @@
       <div id="chessPanel" class="chessPanel chessPanel--vision" style="display: none;">
         <div class="chessPanelHeader">
           <div class="chessPanelHeaderLeft">
-            <span id="chessPanelTitle" class="chessPanelTitle">♔ Serena vs (대기 중)</span>
+            <span id="chessPanelTitle" class="chessPanelTitle">♔ 체스 (대기 중)</span>
             <span id="chessStatus" class="chessStatusInline">-</span>
           </div>
           <div class="chessPanelHeaderRight">
             <div id="chessActionsTop" class="chessActions chessActionsTop">
-              <button type="button" id="chessStartBtn" class="chessStartBtn">새 게임 (Serena)</button>
               <button type="button" id="chessStartPvpBtn" class="chessStartBtn chessStartPvpBtn" style="display: none;">1:1 도전</button>
               <button type="button" id="chessStartSingleBtn" class="chessStartBtn chessStartSingleBtn" style="display: none;">싱글플레이</button>
               <span id="chessStockfishWrap" class="chessStockfishWrap" style="display: none;">
-                <label for="chessStockfishLevel" class="chessPvpLabel">Stockfish</label>
-                <select id="chessStockfishLevel" class="chessPvpOpponent">
-                  <option value="600">Iron (600)</option>
-                  <option value="900">Bronze (900)</option>
-                  <option value="1200" selected>Silver (1200)</option>
-                  <option value="1500">Gold (1500)</option>
-                  <option value="1800">Platinum (1800)</option>
-                  <option value="2100">Diamond (2100)</option>
-                  <option value="2400">Master (2400)</option>
-                  <option value="2700">GrandMaster (2700)</option>
+                <span class="chessPvpLabel">Stockfish</span>
+                <label for="chessStockfishRank" class="chessPvpLabel">등급</label>
+                <select id="chessStockfishRank" class="chessStockfishLevel">
+                  <option value="bronze">Bronze</option>
+                  <option value="silver" selected>Silver</option>
+                  <option value="gold">Gold</option>
+                  <option value="platinum">Platinum</option>
+                  <option value="diamond">Diamond</option>
+                  <option value="master">Master</option>
+                  <option value="grandmaster">GrandMaster</option>
+                  <option value="challenger">Challenger</option>
+                </select>
+                <label for="chessStockfishTier" class="chessPvpLabel">티어</label>
+                <select id="chessStockfishTier" class="chessStockfishLevel">
+                  <option value="4">IV</option>
+                  <option value="3">III</option>
+                  <option value="2">II</option>
+                  <option value="1">I</option>
+                </select>
+                <label for="chessStockfishMySide" class="chessPvpLabel">내 진영</label>
+                <select id="chessStockfishMySide" class="chessStockfishLevel">
+                  <option value="white">백 (선공)</option>
+                  <option value="black">흑 (후공)</option>
                 </select>
                 <button type="button" id="chessStockfishConfirm" class="chessPvpConfirm">대국</button>
               </span>

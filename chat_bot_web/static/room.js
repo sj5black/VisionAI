@@ -20,7 +20,6 @@
   const visionaiFrame = document.getElementById('visionaiFrame');
   const chessBoard = document.getElementById('chessBoard');
   const chessStatus = document.getElementById('chessStatus');
-  const chessStartBtn = document.getElementById('chessStartBtn');
   const chessUndoBtn = document.getElementById('chessUndoBtn');
   const chessPauseBtn = document.getElementById('chessPauseBtn');
   const chessResumeBtn = document.getElementById('chessResumeBtn');
@@ -51,7 +50,7 @@
   var activeTabId = 'multi';
 
   var CHESS_INITIAL_SECONDS = 15 * 60;
-  var chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, whiteRating: null, blackRating: null, mode: 'serena', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [], whiteTime: CHESS_INITIAL_SECONDS, blackTime: CHESS_INITIAL_SECONDS, turnStartedAt: null, paused: false };
+  var chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, whiteRating: null, blackRating: null, mode: 'pvp', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [], whiteTime: CHESS_INITIAL_SECONDS, blackTime: CHESS_INITIAL_SECONDS, turnStartedAt: null, paused: false };
   var chessSelected = null;
   var chessLegalTargets = null;
   var chessClockInterval = null;
@@ -129,13 +128,45 @@
   const chessPvpOpponent = document.getElementById('chessPvpOpponent');
   const chessPvpConfirm = document.getElementById('chessPvpConfirm');
   const chessStockfishWrap = document.getElementById('chessStockfishWrap');
-  const chessStockfishLevel = document.getElementById('chessStockfishLevel');
+  const chessStockfishRank = document.getElementById('chessStockfishRank');
+  const chessStockfishTier = document.getElementById('chessStockfishTier');
+  const chessStockfishMySide = document.getElementById('chessStockfishMySide');
   const chessStockfishConfirm = document.getElementById('chessStockfishConfirm');
+  var STOCKFISH_RANK_TIER_ELO = {
+    bronze:   { '4': 200,  '3': 275,  '2': 350,  '1': 425 },
+    silver:   { '4': 500,  '3': 575,  '2': 650,  '1': 725 },
+    gold:     { '4': 800,  '3': 875,  '2': 950,  '1': 1025 },
+    platinum: { '4': 1100, '3': 1175, '2': 1250, '1': 1325 },
+    diamond:  { '4': 1400, '3': 1500, '2': 1600, '1': 1700 }
+  };
+  function getStockfishElo() {
+    var rank = (chessStockfishRank && chessStockfishRank.value) || 'silver';
+    if (rank === 'master') return 2000;
+    if (rank === 'grandmaster') return 2500;
+    if (rank === 'challenger') return 3000;
+    var tier = (chessStockfishTier && chessStockfishTier.value) || '4';
+    return STOCKFISH_RANK_TIER_ELO[rank] && STOCKFISH_RANK_TIER_ELO[rank][tier] != null
+      ? STOCKFISH_RANK_TIER_ELO[rank][tier]
+      : 650;
+  }
+  function updateStockfishTierOptions() {
+    if (!chessStockfishTier) return;
+    var rank = (chessStockfishRank && chessStockfishRank.value) || 'silver';
+    if (rank === 'master' || rank === 'grandmaster' || rank === 'challenger') {
+      chessStockfishTier.innerHTML = '<option value="1">-</option>';
+      chessStockfishTier.value = '1';
+    } else {
+      var curTier = chessStockfishTier.value;
+      chessStockfishTier.innerHTML = '<option value="4">IV</option><option value="3">III</option><option value="2">II</option><option value="1">I</option>';
+      if (['1','2','3','4'].indexOf(curTier) !== -1) chessStockfishTier.value = curTier;
+    }
+  }
   const chessCapturedLeft = document.getElementById('chessCapturedLeft');
   const chessCapturedRight = document.getElementById('chessCapturedRight');
 
   var participantListArr = [];
   var myChessMmr = null;
+  var myChessTier = null;
 
   const gomokuNavBtn = document.getElementById('gomokuNavBtn');
   const gomokuPanel = document.getElementById('gomokuPanel');
@@ -153,17 +184,21 @@
     var un = document.getElementById('userName');
     if (!un) return;
     var name = myNickname || '';
+    var base = name;
     if (myChessMmr != null && myChessMmr !== '') {
-      un.textContent = name + ' (' + Number(myChessMmr) + ')';
+      base = name + '(' + Number(myChessMmr) + ')';
+    }
+    if (myChessTier) {
+      un.textContent = base + ' - ' + myChessTier;
     } else {
-      un.textContent = name;
+      un.textContent = base;
     }
   }
 
   function updateSerenaBtn() {
     if (!serenaInviteBtn) return;
     serenaInviteBtn.textContent = serenaPresent ? 'Serena 강퇴' : 'Serena 초대';
-    if (chessGameBtn) chessGameBtn.style.display = serenaPresent ? 'inline-block' : 'none';
+    if (chessGameBtn) chessGameBtn.style.display = 'inline-block';
     if (chessPvpBtn) chessPvpBtn.style.display = 'inline-block';
   }
 
@@ -401,25 +436,30 @@
     renderChessBoard();
   }
 
-  function formatNameWithRating(name, rating) {
+  function formatNameWithRating(name, rating, tier) {
     if (!name) return '';
-    if (rating != null && rating !== '') return name + ' (' + Number(rating) + ')';
-    return name;
+    var base = name;
+    if (rating != null && rating !== '') {
+      base = name + '(' + Number(rating) + ')';
+    }
+    if (tier) {
+      return base + ' - ' + tier;
+    }
+    return base;
   }
 
   function updateChessPanelTitle() {
     var titleEl = document.getElementById('chessPanelTitle');
     if (!titleEl) return;
     if (chessState.whitePlayer) {
-      var wp = formatNameWithRating(chessState.whitePlayer, chessState.whiteRating);
-      var bp;
-      if (chessState.mode === 'serena') bp = 'Serena';
-      else if (chessState.mode === 'stockfish') bp = 'Stockfish';
-      else bp = formatNameWithRating(chessState.blackPlayer, chessState.blackRating);
-      var title = (chessState.mode === 'serena' || chessState.mode === 'stockfish') ? (bp + ' vs ' + wp) : (wp + ' vs ' + bp);
+      var wp = formatNameWithRating(chessState.whitePlayer, chessState.whiteRating, chessState.whiteTier);
+      var bp = (chessState.mode === 'stockfish')
+        ? 'Stockfish'
+        : formatNameWithRating(chessState.blackPlayer, chessState.blackRating, chessState.blackTier);
+      var title = (chessState.mode === 'stockfish') ? (bp + ' vs ' + wp) : (wp + ' vs ' + bp);
       titleEl.textContent = '♔ ' + title;
     } else {
-      titleEl.textContent = '♔ Serena vs (대기 중)';
+      titleEl.textContent = '♔ 체스 (대기 중)';
     }
   }
 
@@ -427,15 +467,10 @@
     var hasGame = chessState.fen && chessState.status;
     var gameActive = chessState.status === 'active';
     var isChessPlayer = chessState.whitePlayer === myNickname || chessState.blackPlayer === myNickname;
-    var mode = chessState.mode || 'serena';
+    var mode = chessState.mode || 'pvp';
     var showActions = !hasGame || isChessPlayer || !gameActive;
     var chessActionsTop = document.getElementById('chessActionsTop');
     if (chessActionsTop) chessActionsTop.style.display = showActions ? 'flex' : 'none';
-    if (chessStartBtn) {
-      chessStartBtn.style.display = serenaPresent ? 'inline-block' : 'none';
-      var canStart = serenaPresent && (!chessState.fen || chessState.status !== 'active' || chessState.whitePlayer === myNickname);
-      chessStartBtn.disabled = !canStart;
-    }
     if (chessStartPvpBtn) {
       chessStartPvpBtn.style.display = (!chessState.fen || chessState.status !== 'active') ? 'inline-block' : 'none';
       chessStartPvpBtn.disabled = !!(chessState.fen && chessState.status === 'active' && chessState.whitePlayer !== myNickname);
@@ -447,7 +482,8 @@
       chessStockfishWrap.style.display = (!chessState.fen || chessState.status !== 'active') ? 'inline-flex' : 'none';
     }
     var isPvpActive = chessState.fen && chessState.status === 'active' && mode === 'pvp';
-    var isPlayer = isPvpActive && isChessPlayer;
+    var isStockfishActive = chessState.fen && chessState.status === 'active' && mode === 'stockfish';
+    var isPlayer = (isPvpActive || isStockfishActive) && isChessPlayer;
     if (mode === 'practice') {
       if (chessUndoBtn) {
         chessUndoBtn.style.display = gameActive ? 'inline-block' : 'none';
@@ -488,14 +524,14 @@
     var whiteEl = document.getElementById('chessClockWhite');
     var blackEl = document.getElementById('chessClockBlack');
     if (!whiteEl || !blackEl) return;
-    var mode = chessState.mode || 'serena';
+    var mode = chessState.mode || 'pvp';
     var wtLabel = whiteEl.querySelector('.chessClockLabel');
     var wtTime = whiteEl.querySelector('.chessClockTime');
     var btLabel = blackEl.querySelector('.chessClockLabel');
     var btTime = blackEl.querySelector('.chessClockTime');
     if (mode === 'practice') {
-      if (wtLabel) wtLabel.textContent = chessState.whitePlayer ? formatNameWithRating(chessState.whitePlayer, chessState.whiteRating) : '흰색';
-      if (btLabel) btLabel.textContent = chessState.blackPlayer ? formatNameWithRating(chessState.blackPlayer, chessState.blackRating) : '검은색';
+      if (wtLabel) wtLabel.textContent = chessState.whitePlayer ? formatNameWithRating(chessState.whitePlayer, chessState.whiteRating, chessState.whiteTier) : '흰색';
+      if (btLabel) btLabel.textContent = chessState.blackPlayer ? formatNameWithRating(chessState.blackPlayer, chessState.blackRating, chessState.blackTier) : '검은색';
       if (wtTime) wtTime.textContent = '∞';
       else whiteEl.textContent = '∞';
       if (btTime) btTime.textContent = '∞';
@@ -518,8 +554,8 @@
         bt = Math.max(0, (chessState.blackTime || 0) - elapsed);
       }
     }
-    if (wtLabel) wtLabel.textContent = chessState.whitePlayer ? formatNameWithRating(chessState.whitePlayer, chessState.whiteRating) : '흰색';
-    if (btLabel) btLabel.textContent = chessState.blackPlayer ? formatNameWithRating(chessState.blackPlayer, chessState.blackRating) : '검은색';
+    if (wtLabel) wtLabel.textContent = chessState.whitePlayer ? formatNameWithRating(chessState.whitePlayer, chessState.whiteRating, chessState.whiteTier) : '흰색';
+    if (btLabel) btLabel.textContent = chessState.blackPlayer ? formatNameWithRating(chessState.blackPlayer, chessState.blackRating, chessState.blackTier) : '검은색';
     if (wtTime) wtTime.textContent = formatChessTime(wt);
     else whiteEl.textContent = formatChessTime(wt);
     if (btTime) btTime.textContent = formatChessTime(bt);
@@ -536,16 +572,16 @@
     if (!chessState.fen) { chessStatus.textContent = (mode === 'serena') ? 'Serena를 초대한 뒤 새 게임을 시작하세요.' : (mode === 'stockfish') ? '난이도를 선택하고 대국을 누르세요.' : '1:1 체스 도전을 하거나 대기하세요.'; return; }
     if (s === 'active') {
       if (chessState.paused) { chessStatus.textContent = '일시정지 중'; return; }
-      var wp = formatNameWithRating(chessState.whitePlayer, chessState.whiteRating) || '흰색';
-      var bp = formatNameWithRating(chessState.blackPlayer, chessState.blackRating) || '검은색';
+      var wp = formatNameWithRating(chessState.whitePlayer, chessState.whiteRating, chessState.whiteTier) || '흰색';
+      var bp = formatNameWithRating(chessState.blackPlayer, chessState.blackRating, chessState.blackTier) || '검은색';
       var base = chessState.turn === 'white' ? wp + ' (흰색) 차례' : bp + ' (검은색) 차례';
       chessStatus.textContent = base;
-    } else if (s === 'checkmate_white') chessStatus.textContent = (formatNameWithRating(chessState.blackPlayer, chessState.blackRating) || '검은색') + ' 승리! (체크메이트)';
-    else if (s === 'checkmate_black') chessStatus.textContent = (formatNameWithRating(chessState.whitePlayer, chessState.whiteRating) || '흰색') + ' 승리! (체크메이트)';
-    else if (s === 'time_loss_white') chessStatus.textContent = (formatNameWithRating(chessState.blackPlayer, chessState.blackRating) || '검은색') + ' 승리! (흰색 시간 초과)';
-    else if (s === 'time_loss_black') chessStatus.textContent = (formatNameWithRating(chessState.whitePlayer, chessState.whiteRating) || '흰색') + ' 승리! (검은색 시간 초과)';
-    else if (s === 'resign_white') chessStatus.textContent = (formatNameWithRating(chessState.blackPlayer, chessState.blackRating) || '검은색') + ' 승리! (흰색 기권)';
-    else if (s === 'resign_black') chessStatus.textContent = (formatNameWithRating(chessState.whitePlayer, chessState.whiteRating) || '흰색') + ' 승리! (검은색 기권)';
+    } else if (s === 'checkmate_white') chessStatus.textContent = (formatNameWithRating(chessState.blackPlayer, chessState.blackRating, chessState.blackTier) || '검은색') + ' 승리! (체크메이트)';
+    else if (s === 'checkmate_black') chessStatus.textContent = (formatNameWithRating(chessState.whitePlayer, chessState.whiteRating, chessState.whiteTier) || '흰색') + ' 승리! (체크메이트)';
+    else if (s === 'time_loss_white') chessStatus.textContent = (formatNameWithRating(chessState.blackPlayer, chessState.blackRating, chessState.blackTier) || '검은색') + ' 승리! (흰색 시간 초과)';
+    else if (s === 'time_loss_black') chessStatus.textContent = (formatNameWithRating(chessState.whitePlayer, chessState.whiteRating, chessState.whiteTier) || '흰색') + ' 승리! (검은색 시간 초과)';
+    else if (s === 'resign_white') chessStatus.textContent = (formatNameWithRating(chessState.blackPlayer, chessState.blackRating, chessState.blackTier) || '검은색') + ' 승리! (흰색 기권)';
+    else if (s === 'resign_black') chessStatus.textContent = (formatNameWithRating(chessState.whitePlayer, chessState.whiteRating, chessState.whiteTier) || '흰색') + ' 승리! (검은색 기권)';
     else if (s === 'draw') chessStatus.textContent = '무승부';
     else chessStatus.textContent = '-';
   }
@@ -765,7 +801,13 @@
       }
       var displayName = name;
       var rating = p && p.mmr_rating != null && p.mmr_rating !== '';
-      if (rating) displayName = name + ' (' + Number(p.mmr_rating) + ')';
+      var tier = p && p.mmr_tier ? String(p.mmr_tier) : '';
+      if (rating) {
+        displayName = name + '(' + Number(p.mmr_rating) + ')';
+      }
+      if (tier) {
+        displayName = displayName + ' - ' + tier;
+      }
       var html = '<span class="participantItem' + (userId && !isMe ? ' participantWithDm" data-user-id="' + userId + '"' : '"') + '>';
       if (avatar) html += '<img class="participantAvatar" src="' + escapeHtml(avatar) + '" alt="">';
       if (userId && !isMe) {
@@ -774,7 +816,7 @@
         html += '<button type="button" class="dmFromParticipantBtn participantDmBtn" data-user-id="' + userId + '" title="1:1 대화">1:1 대화</button>';
         html += '</div>';
       } else {
-        html += escapeHtml(name);
+        html += '<span class="participantName">' + escapeHtml(displayName) + '</span>';
       }
       html += '</span>';
       return html;
@@ -1560,7 +1602,10 @@
             var n = typeof p === 'string' ? p : (p && p.name);
             return (myUser && uid === myUser.id) || n === myNickname;
           });
-          if (me && me.mmr_rating != null) myChessMmr = me.mmr_rating;
+          if (me) {
+            myChessMmr = (me.mmr_rating != null && me.mmr_rating !== '') ? me.mmr_rating : null;
+            myChessTier = (me.mmr_tier && String(me.mmr_tier).trim()) ? String(me.mmr_tier).trim() : null;
+          }
           participantListArr = list.filter(function (p) {
             var n = typeof p === 'string' ? p : (p && p.name);
             return n !== myNickname && n !== 'Serena' && (p && p.user_id);
@@ -1693,15 +1738,6 @@
         if (data.type === 'serena_status') {
           serenaPresent = !!data.present;
           updateSerenaBtn();
-          if (!data.present) {
-            chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, whiteRating: null, blackRating: null, mode: 'serena', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [], whiteTime: CHESS_INITIAL_SECONDS, blackTime: CHESS_INITIAL_SECONDS, turnStartedAt: null, paused: false };
-            chessSelected = null;
-            if (chessClockInterval) { clearInterval(chessClockInterval); chessClockInterval = null; }
-            renderChessBoard();
-            updateChessClocks();
-            updateChessStatus();
-            updateChessButtons();
-          }
           return;
         }
         if (data.type === 'chess_state') {
@@ -1714,6 +1750,8 @@
           chessState.blackPlayer = data.black_player || null;
           chessState.whiteRating = data.white_rating != null ? Number(data.white_rating) : null;
           chessState.blackRating = data.black_rating != null ? Number(data.black_rating) : null;
+          chessState.whiteTier = data.white_tier || null;
+          chessState.blackTier = data.black_tier || null;
           chessState.mode = data.mode || 'serena';
           chessState.lastMove = data.last_move || null;
           chessState.inCheck = !!data.in_check;
@@ -2386,11 +2424,6 @@
   if (chessPanelClose) {
     chessPanelClose.addEventListener('click', function () { setChessPanelInVisionArea(false); });
   }
-  if (chessStartBtn) {
-    chessStartBtn.addEventListener('click', function () {
-      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'chess_start' }));
-    });
-  }
   if (chessStartPvpBtn) {
     chessStartPvpBtn.addEventListener('click', function () {
       var showSelect = true;
@@ -2439,11 +2472,23 @@
       }
     });
   }
-  if (chessStockfishConfirm && chessStockfishLevel) {
+  if (chessStockfishRank && chessStockfishTier) {
+    var chessStockfishTierLabel = chessStockfishWrap ? chessStockfishWrap.querySelector('label[for="chessStockfishTier"]') : null;
+    chessStockfishRank.addEventListener('change', function () {
+      var rank = (chessStockfishRank && chessStockfishRank.value) || '';
+      var showTier = rank !== 'master' && rank !== 'grandmaster';
+      chessStockfishTier.style.display = showTier ? '' : 'none';
+      if (chessStockfishTierLabel) chessStockfishTierLabel.style.display = showTier ? '' : 'none';
+      updateStockfishTierOptions();
+    });
+    chessStockfishRank.dispatchEvent(new Event('change'));
+  }
+  if (chessStockfishConfirm) {
     chessStockfishConfirm.addEventListener('click', function () {
       if (!ws || ws.readyState !== WebSocket.OPEN) return;
-      var elo = parseInt(chessStockfishLevel.value, 10) || 1200;
-      ws.send(JSON.stringify({ type: 'chess_start_stockfish', elo: elo }));
+      var elo = getStockfishElo();
+      var mySide = (chessStockfishMySide && chessStockfishMySide.value) || 'white';
+      ws.send(JSON.stringify({ type: 'chess_start_stockfish', elo: elo, my_side: mySide.toLowerCase() }));
     });
   }
   if (chessResignBtn) {

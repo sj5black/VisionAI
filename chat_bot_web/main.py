@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import random
 import re
 import secrets
 import time
@@ -94,6 +95,10 @@ app.add_middleware(
 
 # DB 초기화
 db.init_db()
+# 모든 유저 MMR을 650으로 초기화 (RESET_MMR=1 일 때만 1회 실행, 완료 후 환경변수 제거)
+if os.getenv("RESET_MMR") == "1":
+    n = db.reset_all_mmr(650, 0)
+    print(f"MMR 초기화 완료: {n}명 → 650")
 
 # 세션별 대화 저장 (in-memory)
 _conversations: Dict[str, Dict[str, Any]] = {}
@@ -129,19 +134,96 @@ STOCKFISH_PATH = os.getenv("STOCKFISH_PATH", "").strip()
 STOCKFISH_CANDIDATE_PATHS = (
     [STOCKFISH_PATH] if STOCKFISH_PATH else []
 ) + ["stockfish", "/usr/bin/stockfish", "/usr/games/stockfish"]
-# 난이도: (표시명, ELO, Skill Level 0~20, Depth, use_clock)
-# use_clock=False: Limit(depth) 고정 (Iron~Gold - 약함 보장)
-# use_clock=True:  Limit(depth + white_clock/black_clock) 병행 (Platinum~GrandMaster - 유동 시간 + 최소 depth 보장)
+# 난이도: (표시명, Elo, SkillLevel, Depth, blunder_rate, random_move_prob, use_clock)
+# 인간 Elo에 가까운 체감을 위해 블런더율·후보수 랜덤 선택 사용
 STOCKFISH_LEVELS = [
-    ("Iron",        600,  1,   1, False),   # depth 1 고정, 즉시 수
-    ("Bronze",      900,  3,   2, False),   # depth 2 고정
-    ("Silver",      1200, 5,   4, False),   # depth 4 고정
-    ("Gold",        1500, 7,   6, False),   # depth 6 고정
-    ("Platinum",    1800, 10, 12, True),    # depth 최대 12, clock 유동
-    ("Diamond",     2100, 13, 15, True),    # depth 최대 15, clock 유동
-    ("Master",      2400, 16, 18, True),    # depth 최대 18, clock 유동
-    ("GrandMaster", 2700, 20, 20, True),    # depth 최대 20, clock 유동 (최고 강도)
+    # (표시명, Elo, SkillLevel, Depth, blunder_rate, random_move_prob, use_clock)
+    ("Bronze IV", 200, 0, 1, 0.10, 0.30, False),
+    ("Bronze III", 275, 0, 1, 0.095, 0.284, False),
+    ("Bronze II", 350, 1, 2, 0.09, 0.267, False),
+    ("Bronze I", 425, 2, 2, 0.085, 0.25, False),
+
+    ("Silver IV", 500, 2, 2, 0.08, 0.235, False),
+    ("Silver III", 575, 3, 3, 0.075, 0.22, False),
+    ("Silver II", 650, 3, 3, 0.07, 0.20, False),
+    ("Silver I", 725, 4, 4, 0.065, 0.19, False),
+
+    ("Gold IV", 800, 4, 4, 0.06, 0.18, False),
+    ("Gold III", 875, 5, 4, 0.055, 0.17, False),
+    ("Gold II", 950, 5, 5, 0.05, 0.16, False),
+    ("Gold I", 1025, 6, 5, 0.045, 0.15, False),
+
+    ("Platinum IV", 1100, 7, 6, 0.04, 0.14, False),
+    ("Platinum III", 1175, 8, 6, 0.038, 0.13, False),
+    ("Platinum II", 1250, 9, 7, 0.035, 0.12, False),
+    ("Platinum I", 1325, 10, 7, 0.032, 0.11, False),
+
+    ("Diamond IV", 1400, 11, 8, 0.03, 0.10, True),
+    ("Diamond III", 1500, 12, 9, 0.025, 0.09, True),
+    ("Diamond II", 1600, 13, 10, 0.02, 0.08, True),
+    ("Diamond I", 1700, 14, 11, 0.018, 0.07, True),
+
+    ("Master", 2000, 17, 13, 0.012, 0.05, True),
+    ("GrandMaster", 2500, 20, 16, 0.006, 0.03, True),
+    ("Challenger", 3000, 20, 20, 0.0, 0.0, True),
 ]
+
+
+def _elo_to_think_range(elo: int) -> tuple[float, float]:
+    """Elo 구간별 인간 평균 생각 시간(초) 범위."""
+    e = int(elo)
+    # if e <= 300:
+    #     return 0.5, 4.0
+    # if e <= 500:
+    #     return 0.5, 5.0
+    # if e <= 700:
+    #     return 0.5, 7.0
+    # if e <= 900:
+    #     return 0.5, 8.0
+    # if e <= 1100:
+    #     return 0.5, 10.0
+    # if e <= 1300:
+    #     return 0.5, 12.0
+    # if e <= 1500:
+    #     return 0.5, 14.0
+    # if e <= 1700:
+    #     return 1.0, 16.0
+    # if e <= 1900:
+    #     return 1.0, 18.0
+    if e <= 300:
+        return 0.5, 2.0
+    if e <= 500:
+        return 0.5, 2.0
+    if e <= 700:
+        return 0.5, 2.0
+    if e <= 900:
+        return 0.5, 2.0
+    if e <= 1100:
+        return 0.5, 2.0
+    if e <= 1300:
+        return 0.5, 2.0
+    if e <= 1500:
+        return 0.5, 2.0
+    if e <= 1700:
+        return 0.0, 2.0
+    if e <= 1900:
+        return 0.0, 2.0
+    if e >= 2800:
+        return 0.0, 2.0
+    return 0.0, 2.0
+
+
+def _mmr_to_tier(mmr: Optional[int]) -> str:
+    """MMR 구간별 등급명 반환 (STOCKFISH_LEVELS Elo 구간과 동일)."""
+    if mmr is None:
+        return ""
+    m = int(mmr)
+    name = STOCKFISH_LEVELS[0][0]
+    for t in STOCKFISH_LEVELS:
+        if m >= t[1]:
+            name = t[0]
+    return name
+
 
 # 오목 게임: 15x15, 0=빈칸 1=흑 2=백. 흑 선공.
 # {"board": List[List[int]], "black_player": str, "white_player": str, "mode": "serena"|"pvp", "status": str, "turn": "black"|"white"}
@@ -236,7 +318,9 @@ def _chess_state_payload(game: Dict[str, Any]) -> Dict[str, Any]:
         "black_player": game.get("black_player"),
         "white_rating": white_rating,
         "black_rating": black_rating,
-        "mode": game.get("mode", "serena"),
+        "white_tier": _mmr_to_tier(white_rating),
+        "black_tier": _mmr_to_tier(black_rating),
+        "mode": game.get("mode", "pvp"),
         "status": game.get("status", "active"),
         "paused": bool(game.get("paused")),
         "turn": "white" if board.turn == chess.WHITE else "black",
@@ -784,56 +868,8 @@ def _call_serena(recent_messages: List[Dict[str, str]]) -> Optional[str]:
     return None
 
 
-SERENA_RESPONSE_TIMEOUT = 30  # Serena 채팅/체스 응답 타임아웃 (초)
+SERENA_RESPONSE_TIMEOUT = 30  # Serena 채팅 응답 타임아웃 (초)
 SERENA_GOMOKU_TIMEOUT = 60  # Serena 오목 AI 타임아웃 (초) - 전략적 사고 시간
-
-CHESS_SYSTEM = """You are Serena playing chess (black pieces). You ONLY reply with ONE valid UCI move from the legal moves list. Format: 4 chars like e7e5 or g8f6. No other text."""
-
-
-def _call_serena_chess(fen: str, legal_moves: Optional[List[str]] = None) -> Optional[str]:
-    """OpenAI로 Serena 체스 수 반환 (동기). UCI 형식 4자 (e.g., e7e5). 실패 시 None."""
-    try:
-        client = get_client()
-        model = os.getenv("OPENAI_CHESS_MODEL") or os.getenv("OPENAI_MODEL")
-        if not model:
-            return None
-        model = model.strip()
-        use_responses_api = any(x in model.lower() for x in ['gpt-5-mini', 'gpt-5-nano', 'gpt-5.1', 'gpt-5.2'])
-        legal_str = ", ".join(legal_moves[:30]) if legal_moves else "(compute from FEN)"
-        user_content = f"Board FEN: {fen}\nLegal black moves (pick ONE): {legal_str}\nReply with exactly 4 chars (e.g. e7e5)."
-        if use_responses_api:
-            resp = client.responses.create(model=model, input=f"{CHESS_SYSTEM}\n\n{user_content}", max_output_tokens=20)
-            text = (resp.output_text if hasattr(resp, 'output_text') else None) or ""
-            if hasattr(resp, 'output') and resp.output is not None and not text:
-                for item in (resp.output or []):
-                    if item is None:
-                        continue
-                    content = getattr(item, 'content', None)
-                    if content is None:
-                        continue
-                    items = content if isinstance(content, (list, tuple)) else [content]
-                    for c in items:
-                        if c is not None:
-                            t = getattr(c, 'text', None)
-                            if t:
-                                text = str(t)
-                                break
-        else:
-            resp = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": CHESS_SYSTEM},
-                    {"role": "user", "content": user_content},
-                ],
-                max_completion_tokens=20,
-            )
-            text = (resp.choices[0].message.content or "").strip()
-        s = (text or "").strip().lower()
-        m = re.search(r'([a-h][1-8][a-h][1-8])', s)
-        return m.group(1) if m else None
-    except Exception as e:
-        print(f"Serena chess error: {e}")
-    return None
 
 
 def _pick_random_legal_move(board: chess.Board) -> Optional[str]:
@@ -845,26 +881,42 @@ def _pick_random_legal_move(board: chess.Board) -> Optional[str]:
     return m.uci()
 
 
-async def _open_stockfish_async(skill_level: int) -> Optional[str]:
-    """Stockfish 엔진을 asyncio 네이티브 API로 열고 Skill Level 설정.
+async def _open_stockfish_async(skill_level: int, elo: int) -> Optional[str]:
+    """Stockfish 엔진을 asyncio 네이티브 API로 열고 Skill Level + UCI_Elo 설정.
     성공 시 None 반환, 실패 시 오류 메시지 반환."""
     global _stockfish_protocol
     if not chess.engine:
         return "chess.engine 모듈을 사용할 수 없습니다."
     await _close_stockfish_async()
     skill_level = max(0, min(20, skill_level))
+    # 이 서버에 설치된 Stockfish는 UCI_Elo 범위를 [1350, 2850]로 요구.
+    # GrandMaster(elo>=3000)는 UCI_Elo 제한 없이 Skill Level/Depth만 사용한다.
+    elo_raw = int(elo)
+    use_elo_limit = elo_raw < 3000
+    if use_elo_limit:
+        elo = max(1350, min(2850, elo_raw))
+    else:
+        elo = elo_raw
     last_err: Optional[str] = None
     for path in STOCKFISH_CANDIDATE_PATHS:
         if not path:
             continue
         try:
             _, protocol = await chess.engine.popen_uci(path)
-            await protocol.configure({
-                "UCI_LimitStrength": False,
-                "Skill Level": skill_level,
-            })
+            if use_elo_limit:
+                await protocol.configure({
+                    "UCI_LimitStrength": True,
+                    "UCI_Elo": elo,
+                    "Skill Level": skill_level,
+                })
+            else:
+                await protocol.configure({
+                    "UCI_LimitStrength": False,
+                    "Skill Level": skill_level,
+                })
             _stockfish_protocol = protocol
-            print(f"Stockfish started: {path}, Skill Level={skill_level}")
+            print(f"Stockfish started: {path}, Skill Level={skill_level}, "
+                  f"{'UCI_Elo='+str(elo) if use_elo_limit else 'UCI_Elo disabled'}")
             return None
         except FileNotFoundError:
             last_err = f"실행 파일을 찾을 수 없습니다: {path}"
@@ -894,16 +946,19 @@ async def _close_stockfish_async() -> None:
 
 
 async def _play_stockfish_chess_move() -> None:
-    """Stockfish(흑) 차례일 때 asyncio 네이티브 API로 엔진이 수 두고 브로드캐스트."""
+    """Stockfish 차례일 때 asyncio 네이티브 API로 엔진이 수 두고 브로드캐스트."""
     global _chess_game, _chess_pending_task, _stockfish_protocol
     if not _chess_game or _chess_game.get("status") != "active":
         return
     if _chess_game.get("mode") != "stockfish":
         return
+    if _chess_game.get("paused"):
+        return
     if _stockfish_protocol is None:
         return
     board: chess.Board = _chess_game["board"]
-    if board.turn != chess.BLACK:
+    engine_color = chess.WHITE if _chess_game.get("stockfish_color") == "white" else chess.BLACK
+    if board.turn != engine_color:
         return
     legal_uci = [m.uci() for m in board.legal_moves]
     if not legal_uci:
@@ -911,41 +966,152 @@ async def _play_stockfish_chess_move() -> None:
 
     depth = _chess_game.get("stockfish_depth", 5)
     use_clock = _chess_game.get("stockfish_use_clock", False)
+    blunder_rate = _chess_game.get("stockfish_blunder_rate", 0.0)
+    random_move_prob = _chess_game.get("stockfish_random_move_prob", 0.0)
+    think_min = float(_chess_game.get("stockfish_think_min", 0.0))
+    think_max = float(_chess_game.get("stockfish_think_max", 0.0))
 
     now = time.time()
     turn_started = _chess_game.get("turn_started_at") or now
     elapsed = max(0.0, now - turn_started)
-    white_remaining = max(0.01, _chess_game.get("white_time_remaining", CHESS_INITIAL_SECONDS))
-    black_remaining = max(0.01, _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS) - elapsed)
+    # 엔진/상대 남은 시간 계산
+    white_time = _chess_game.get("white_time_remaining", CHESS_INITIAL_SECONDS)
+    black_time = _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS)
+    if engine_color == chess.WHITE:
+        engine_time_key = "white_time_remaining"
+        opp_time_key = "black_time_remaining"
+        engine_captured_key = "white_captured"
+        time_loss_status = "time_loss_white"
+        engine_remaining = max(0.01, white_time - elapsed)
+        opp_remaining = max(0.01, black_time)
+        white_clock = engine_remaining
+        black_clock = opp_remaining
+    else:
+        engine_time_key = "black_time_remaining"
+        opp_time_key = "white_time_remaining"
+        engine_captured_key = "black_captured"
+        time_loss_status = "time_loss_black"
+        engine_remaining = max(0.01, black_time - elapsed)
+        opp_remaining = max(0.01, white_time)
+        white_clock = opp_remaining
+        black_clock = engine_remaining
     inc = float(CHESS_INCREMENT_SECONDS)
 
     if use_clock:
         limit = chess.engine.Limit(
             depth=depth,
-            white_clock=white_remaining,
-            black_clock=black_remaining,
+            white_clock=white_clock,
+            black_clock=black_clock,
             white_inc=inc,
             black_inc=inc,
         )
     else:
         limit = chess.engine.Limit(depth=depth)
 
-    timeout_sec = min(180, max(60, black_remaining + 20)) if use_clock else 30.0
+    timeout_sec = min(180, max(60, engine_remaining + 20)) if use_clock else 30.0
     uci: Optional[str] = None
+    # 기본 생각 시간 범위 (Elo 기반)
+    eff_think_min = think_min
+    eff_think_max = think_max
     try:
-        result = await asyncio.wait_for(
-            _stockfish_protocol.play(board.copy(), limit),
+        # multipv 분석으로 상위 3수 후보 확보 → 블런더율/후보수 랜덤으로 인간 Elo에 가깝게 선택
+        analysis_list = await asyncio.wait_for(
+            _stockfish_protocol.analyse(board.copy(), limit, multipv=3),
             timeout=timeout_sec,
         )
-        if result and result.move:
-            uci = result.move.uci()
+        top_moves: List[chess.Move] = []
+        evals_cp: List[float] = []
+        if isinstance(analysis_list, list):
+            for i, info in enumerate(analysis_list):
+                if i >= 3:
+                    break
+                pv = info.get("pv") if isinstance(info, dict) else getattr(info, "pv", None)
+                if pv and len(pv) > 0:
+                    m = pv[0] if isinstance(pv[0], chess.Move) else chess.Move.from_uci(str(pv[0]))
+                    if m in board.legal_moves:
+                        top_moves.append(m)
+                # 점수 추출 (cp 기반, 엔진 입장에서의 평가값)
+                sc = info.get("score") if isinstance(info, dict) else getattr(info, "score", None)
+                if sc is not None:
+                    try:
+                        pov_sc = sc.pov(engine_color) if hasattr(sc, "pov") else sc
+                        cp = getattr(pov_sc, "cp", None)
+                        if cp is not None:
+                            evals_cp.append(float(cp))
+                    except Exception:
+                        pass
         else:
-            print("Stockfish returned no move")
+            pv = analysis_list.get("pv") if isinstance(analysis_list, dict) else getattr(analysis_list, "pv", None)
+            if pv and len(pv) > 0:
+                m = pv[0] if isinstance(pv[0], chess.Move) else chess.Move.from_uci(str(pv[0]))
+                if m in board.legal_moves:
+                    top_moves.append(m)
+            sc = analysis_list.get("score") if isinstance(analysis_list, dict) else getattr(analysis_list, "score", None)
+            if sc is not None:
+                try:
+                    pov_sc = sc.pov(engine_color) if hasattr(sc, "pov") else sc
+                    cp = getattr(pov_sc, "cp", None)
+                    if cp is not None:
+                        evals_cp.append(float(cp))
+                except Exception:
+                    pass
+
+        # 포지션 난이도에 따라 생각 시간 조정
+        if eff_think_max > 0 and eff_think_max >= eff_think_min and evals_cp:
+            # 가장 좋은 수 기준 평가값(폰 단위)
+            best_cp = evals_cp[0]
+            best_eval_pawns = abs(best_cp) / 100.0
+            factor = 1.0
+            # 접전(평형)에 가까울수록 더 오래 생각
+            if best_eval_pawns < 0.5:
+                factor = 1.0
+            elif best_eval_pawns < 1.5:
+                factor = 0.7
+            elif best_eval_pawns < 3.0:
+                factor = 0.4
+            else:
+                factor = 0.2
+
+            # 상위 후보수들의 평가가 비슷하면(선택지 많음) 추가로 약간 더 오래 생각
+            if len(evals_cp) >= 2:
+                spread_pawns = (max(evals_cp) - min(evals_cp)) / 100.0
+                if spread_pawns < 0.4:
+                    factor *= 1.1
+
+            eff_think_min = max(0.0, eff_think_min * factor)
+            eff_think_max = max(eff_think_min, eff_think_max * factor)
+
+        if top_moves:
+            if random.random() < blunder_rate:
+                uci = _pick_random_legal_move(board)
+            else:
+                # 가중치: 1수 (1 - random_move_prob), 2수·3수에 나머지 분배 (예: 0.7 : 0.3)
+                r = random_move_prob
+                if len(top_moves) == 1:
+                    uci = top_moves[0].uci()
+                elif len(top_moves) == 2:
+                    weights = [1.0 - r, r]
+                    move = random.choices(top_moves, weights=weights, k=1)[0]
+                    uci = move.uci()
+                else:
+                    weights = [1.0 - r, r * 0.7, r * 0.3]
+                    move = random.choices(top_moves, weights=weights, k=1)[0]
+                    uci = move.uci()
+        if not uci:
+            print("Stockfish analysis returned no usable move")
     except asyncio.TimeoutError:
         print(f"Stockfish timed out after {timeout_sec}s, using random move")
     except Exception as e:
-        print(f"Stockfish play error: {e}")
+        print(f"Stockfish analyse error: {e}")
     _chess_pending_task = None
+
+    # 엔진이 수를 찾은 뒤, 인간처럼 약간의 랜덤 딜레이를 준다.
+    if eff_think_max > 0 and eff_think_max >= eff_think_min:
+        delay = random.uniform(eff_think_min, eff_think_max)
+        try:
+            await asyncio.sleep(delay)
+        except asyncio.CancelledError:
+            return
 
     if not uci:
         uci = _pick_random_legal_move(board)
@@ -962,23 +1128,27 @@ async def _play_stockfish_chess_move() -> None:
         now = time.time()
         turn_started = _chess_game.get("turn_started_at") or now
         elapsed = now - turn_started
-        b = _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS) - elapsed
-        b = max(0.0, b)
-        if b <= 0:
-            _chess_game["status"] = "time_loss_black"
-            _chess_game["black_time_remaining"] = 0.0
+        remaining = _chess_game.get(engine_time_key, CHESS_INITIAL_SECONDS) - elapsed
+        remaining = max(0.0, remaining)
+        if remaining <= 0:
+            _chess_game["status"] = time_loss_status
+            _chess_game[engine_time_key] = 0.0
             _chess_game["turn_started_at"] = now
             await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
             return
-        _chess_game["black_time_remaining"] = b + CHESS_INCREMENT_SECONDS
+        _chess_game[engine_time_key] = remaining + CHESS_INCREMENT_SECONDS
         cap = _get_captured_piece(board, move)
         if cap:
-            _chess_game.setdefault("black_captured", []).append(cap)
+            _chess_game.setdefault(engine_captured_key, []).append(cap)
         board.push(move)
         _chess_game["turn_started_at"] = now
         status = "active"
         if board.is_checkmate():
-            status = "checkmate_white"
+            # board.push(move) 이후 board.turn은 체크메이트를 당한 쪽
+            if board.turn == chess.WHITE:
+                status = "checkmate_white"
+            else:
+                status = "checkmate_black"
         elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
             status = "draw"
         _chess_game["status"] = status
@@ -991,20 +1161,23 @@ async def _play_stockfish_chess_move() -> None:
                 now = time.time()
                 turn_started = _chess_game.get("turn_started_at") or now
                 elapsed = now - turn_started
-                b = _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS) - elapsed
-                b = max(0.0, b)
-                if b <= 0:
-                    _chess_game["status"] = "time_loss_black"
-                    _chess_game["black_time_remaining"] = 0.0
+                remaining = _chess_game.get(engine_time_key, CHESS_INITIAL_SECONDS) - elapsed
+                remaining = max(0.0, remaining)
+                if remaining <= 0:
+                    _chess_game["status"] = time_loss_status
+                    _chess_game[engine_time_key] = 0.0
                     _chess_game["turn_started_at"] = now
                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
                     return
-                _chess_game["black_time_remaining"] = b + CHESS_INCREMENT_SECONDS
+                _chess_game[engine_time_key] = remaining + CHESS_INCREMENT_SECONDS
                 board.push(move)
                 _chess_game["turn_started_at"] = now
                 status = "active"
                 if board.is_checkmate():
-                    status = "checkmate_white"
+                    if board.turn == chess.WHITE:
+                        status = "checkmate_white"
+                    else:
+                        status = "checkmate_black"
                 elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
                     status = "draw"
                 _chess_game["status"] = status
@@ -1176,7 +1349,7 @@ def _schedule_serena_response() -> None:
 
 
 def _build_participants_list() -> List[Dict[str, Any]]:
-    """참여자 목록 (user_id, username, mmr_rating 포함, Serena는 user_id=null)."""
+    """참여자 목록 (user_id, username, mmr_rating, mmr_tier 포함, Serena는 user_id=null)."""
     out = []
     for _, u in _room_connections:
         uid = u.get("id")
@@ -1187,6 +1360,7 @@ def _build_participants_list() -> List[Dict[str, Any]]:
             "name": u["name"],
             "avatar_url": u.get("avatar_url") or None,
             "mmr_rating": rating,
+            "mmr_tier": _mmr_to_tier(rating),
         })
     if _serena_invited:
         out.append({"user_id": None, "name": "Serena", "avatar_url": "/serena.png"})
@@ -1680,29 +1854,6 @@ async def ws_room(websocket: WebSocket) -> None:
                         await _room_broadcast({"type": "participants", "list": participants}, exclude_ws=None)
                         await _room_broadcast({"type": "serena_status", "present": False}, exclude_ws=None)
 
-                elif data.get("type") == "chess_start":
-                    if not _serena_invited:
-                        continue
-                    if _chess_pending_task and not _chess_pending_task.done():
-                        _chess_pending_task.cancel()
-                        _chess_pending_task = None
-                    board = chess.Board()
-                    now = time.time()
-                    _chess_game = {
-                        "board": board,
-                        "white_player": nickname,
-                        "black_player": "Serena",
-                        "mode": "serena",
-                        "status": "active",
-                        "paused": False,
-                        "white_captured": [],
-                        "black_captured": [],
-                        "white_time_remaining": float(CHESS_INITIAL_SECONDS),
-                        "black_time_remaining": float(CHESS_INITIAL_SECONDS),
-                        "turn_started_at": now,
-                    }
-                    await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
-
                 elif data.get("type") == "chess_start_practice":
                     # 연습 모드: 한 유저가 흑/백 모두 두는 모드 (시간 패배 없음)
                     if _chess_pending_task and not _chess_pending_task.done():
@@ -1777,14 +1928,15 @@ async def ws_room(websocket: WebSocket) -> None:
                         await _room_broadcast({"type": "system", "message": "Stockfish를 사용할 수 없습니다. (python-chess 설치 확인)"}, exclude_ws=None)
                         continue
                     elo = int(data.get("elo") or 1200)
-                    level_name, level_elo, skill_level, depth, use_clock = "Silver", 1200, 5, 4, False
+                    level_name, level_elo, skill_level, depth, blunder_rate, random_move_prob, use_clock = "Silver IV", 1200, 6, 5, 0.16, 0.25, False
                     for t in STOCKFISH_LEVELS:
                         if t[1] == elo:
-                            level_name, level_elo, skill_level, depth, use_clock = t[0], t[1], t[2], t[3], t[4]
+                            level_name, level_elo, skill_level, depth, blunder_rate, random_move_prob, use_clock = t[0], t[1], t[2], t[3], t[4], t[5], t[6]
                             break
+                    think_min, think_max = _elo_to_think_range(level_elo)
                     try:
                         err_msg = await asyncio.wait_for(
-                            _open_stockfish_async(skill_level),
+                            _open_stockfish_async(skill_level, level_elo),
                             timeout=15.0,
                         )
                     except asyncio.TimeoutError:
@@ -1800,10 +1952,19 @@ async def ws_room(websocket: WebSocket) -> None:
                         continue
                     board = chess.Board()
                     now = time.time()
+                    my_side = (data.get("my_side") or "white").strip().lower()
+                    if my_side == "black":
+                        white_player = "Stockfish"
+                        black_player = nickname
+                        stockfish_color = "white"
+                    else:
+                        white_player = nickname
+                        black_player = "Stockfish"
+                        stockfish_color = "black"
                     _chess_game = {
                         "board": board,
-                        "white_player": nickname,
-                        "black_player": "Stockfish",
+                        "white_player": white_player,
+                        "black_player": black_player,
                         "mode": "stockfish",
                         "status": "active",
                         "paused": False,
@@ -1812,12 +1973,20 @@ async def ws_room(websocket: WebSocket) -> None:
                         "white_time_remaining": float(CHESS_INITIAL_SECONDS),
                         "black_time_remaining": float(CHESS_INITIAL_SECONDS),
                         "turn_started_at": now,
+                        "stockfish_color": stockfish_color,
                         "stockfish_elo": level_elo,
                         "stockfish_skill_level": skill_level,
                         "stockfish_depth": depth,
+                        "stockfish_blunder_rate": blunder_rate,
+                        "stockfish_random_move_prob": random_move_prob,
                         "stockfish_use_clock": use_clock,
+                        "stockfish_think_min": think_min,
+                        "stockfish_think_max": think_max,
                     }
                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+                    # 내가 흑일 때는 Stockfish(백)가 선공이므로 바로 첫 수를 두도록 예약
+                    if stockfish_color == "white":
+                        _chess_pending_task = asyncio.create_task(_play_stockfish_chess_move())
 
                 elif data.get("type") == "chess_undo" and _chess_game and _chess_game.get("status") == "active" and _chess_game.get("mode") == "pvp":
                     board = _chess_game["board"]
@@ -1890,7 +2059,7 @@ async def ws_room(websocket: WebSocket) -> None:
                         _chess_game.pop("pending_undo", None)
                         await _room_broadcast({"type": "chess_undo_rejected", "requested_by": req_by}, exclude_ws=None)
 
-                elif data.get("type") == "chess_pause" and _chess_game and _chess_game.get("status") == "active" and _chess_game.get("mode") == "pvp":
+                elif data.get("type") == "chess_pause" and _chess_game and _chess_game.get("status") == "active" and _chess_game.get("mode") in ("pvp", "stockfish"):
                     if nickname not in (_chess_game.get("white_player"), _chess_game.get("black_player")):
                         continue
                     now = time.time()
@@ -1902,14 +2071,31 @@ async def ws_room(websocket: WebSocket) -> None:
                         _chess_game["black_time_remaining"] = max(0.0, _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS) - elapsed)
                     _chess_game["turn_started_at"] = now
                     _chess_game["paused"] = True
+                    # Stockfish 대국 중이면, 엔진 수 계산 태스크를 중단한다.
+                    if _chess_pending_task and not _chess_pending_task.done():
+                        _chess_pending_task.cancel()
+                        try:
+                            await _chess_pending_task
+                        except asyncio.CancelledError:
+                            pass
+                        _chess_pending_task = None
                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
 
-                elif data.get("type") == "chess_resume" and _chess_game and _chess_game.get("status") == "active" and _chess_game.get("mode") == "pvp":
+                elif data.get("type") == "chess_resume" and _chess_game and _chess_game.get("status") == "active" and _chess_game.get("mode") in ("pvp", "stockfish"):
                     if nickname not in (_chess_game.get("white_player"), _chess_game.get("black_player")):
                         continue
                     _chess_game["paused"] = False
                     _chess_game["turn_started_at"] = time.time()
                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+                    # Stockfish 대국에서 엔진 차례라면 재개 시 바로 다시 수를 두도록 예약
+                    if _chess_game.get("mode") == "stockfish":
+                        try:
+                            board = _chess_game["board"]
+                            engine_color = chess.WHITE if _chess_game.get("stockfish_color") == "white" else chess.BLACK
+                            if board.turn == engine_color and (_chess_pending_task is None or _chess_pending_task.done()):
+                                _chess_pending_task = asyncio.create_task(_play_stockfish_chess_move())
+                        except Exception:
+                            pass
 
                 elif data.get("type") == "chess_legal_moves" and _chess_game:
                     from_sq = (data.get("from") or "").strip().lower()
@@ -1934,10 +2120,14 @@ async def ws_room(websocket: WebSocket) -> None:
                     white_p = _chess_game.get("white_player")
                     black_p = _chess_game.get("black_player")
                     if board.turn == chess.WHITE:
+                        # 백 차례: Stockfish가 백이면 사람이 둘 수 없음
+                        if mode == "stockfish" and white_p == "Stockfish":
+                            continue
                         if nickname != white_p:
                             continue
                     else:
-                        if mode in ("serena", "stockfish"):
+                        # 흑 차례: Stockfish가 흑이면 사람이 둘 수 없음
+                        if mode == "stockfish" and black_p == "Stockfish":
                             continue
                         if nickname != black_p:
                             continue
@@ -2002,11 +2192,12 @@ async def ws_room(websocket: WebSocket) -> None:
                         await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
                         if mode == "stockfish" and status != "active":
                             asyncio.create_task(_close_stockfish_async())
-                        if status == "active" and board.turn == chess.BLACK:
-                            if mode == "serena":
-                                _chess_pending_task = asyncio.create_task(_play_serena_chess_move())
-                            elif mode == "stockfish":
-                                _chess_pending_task = asyncio.create_task(_play_stockfish_chess_move())
+                        if status == "active":
+                            if mode == "stockfish":
+                                # Stockfish는 흑/백 모두 가능하므로 stockfish_color 기준으로 차례 판단
+                                engine_color = chess.WHITE if _chess_game.get("stockfish_color") == "white" else chess.BLACK
+                                if board.turn == engine_color:
+                                    _chess_pending_task = asyncio.create_task(_play_stockfish_chess_move())
                     except (ValueError, chess.InvalidMoveError):
                         pass
 

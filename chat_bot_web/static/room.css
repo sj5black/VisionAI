@@ -1509,6 +1509,20 @@ body {
   gap: 6px;
 }
 
+.chessStockfishLevel {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #1a1a1a;
+  color: #e5e5e5;
+  min-width: 130px;
+  font-size: 13px;
+}
+.chessStockfishLevel option {
+  background: #1a1a1a;
+  color: #e5e5e5;
+}
+
 .chessResignBtn,
 .chessUndoBtn,
 .chessPauseBtn,

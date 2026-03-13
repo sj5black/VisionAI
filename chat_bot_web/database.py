@@ -297,8 +297,8 @@ def get_user_mmr(user_id: int) -> tuple[int, int]:
     )
     row = cur.fetchone()
     if not row:
-        return 1200, 0
-    return int(row["mmr_rating"] or 1200), int(row["mmr_games"] or 0)
+        return 650, 0
+    return int(row["mmr_rating"] or 650), int(row["mmr_games"] or 0)
 
 
 def update_user_mmr(user_id: int, rating: int, games: int) -> None:
@@ -309,6 +309,14 @@ def update_user_mmr(user_id: int, rating: int, games: int) -> None:
         (int(rating), int(games), user_id),
     )
     conn.commit()
+
+
+def reset_all_mmr(rating: int = 650, games: int = 0) -> int:
+    """모든 유저의 MMR을 지정값으로 초기화. 변경된 행 수 반환."""
+    conn = _get_conn()
+    cur = conn.execute("UPDATE users SET mmr_rating = ?, mmr_games = ?", (int(rating), int(games)))
+    conn.commit()
+    return cur.rowcount
 
 
 def get_dm_messages(room_id: int, current_user_id: int, limit: int = 200) -> List[Dict[str, Any]]:

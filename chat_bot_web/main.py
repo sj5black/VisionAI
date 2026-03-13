@@ -122,25 +122,26 @@ CHESS_INCREMENT_SECONDS = 10
 _chess_game: Optional[Dict[str, Any]] = None
 _chess_pending_task: Optional[asyncio.Task] = None
 
-# Stockfish 엔진 (mode "stockfish"일 때만 사용). 서브프로세스이므로 스레드 풀에서 열기/닫기/수 두기.
-_stockfish_engine: Any = None
+# Stockfish 엔진 (mode "stockfish"일 때만 사용). asyncio 네이티브 API 사용.
+_stockfish_protocol: Any = None  # chess.engine.UciProtocol (open 상태일 때만 non-None)
 # 환경변수로 지정된 경로 우선, 없으면 일반적인 경로 순서로 시도
 STOCKFISH_PATH = os.getenv("STOCKFISH_PATH", "").strip()
 STOCKFISH_CANDIDATE_PATHS = (
     [STOCKFISH_PATH] if STOCKFISH_PATH else []
 ) + ["stockfish", "/usr/bin/stockfish", "/usr/games/stockfish"]
-# 난이도: (표시명, ELO). Stockfish UCI_Elo 범위는 대략 1320~3190.
+# 난이도: (표시명, ELO, Skill Level 0~20, Depth, use_clock)
+# use_clock=False: Limit(depth) 고정 (Iron~Gold - 약함 보장)
+# use_clock=True:  Limit(depth + white_clock/black_clock) 병행 (Platinum~GrandMaster - 유동 시간 + 최소 depth 보장)
 STOCKFISH_LEVELS = [
-    ("Iron", 600),
-    ("Bronze", 900),
-    ("Silver", 1200),
-    ("Gold", 1500),
-    ("Platinum", 1800),
-    ("Diamond", 2100),
-    ("Master", 2400),
-    ("GrandMaster", 2700),
+    ("Iron",        600,  1,   1, False),   # depth 1 고정, 즉시 수
+    ("Bronze",      900,  3,   2, False),   # depth 2 고정
+    ("Silver",      1200, 5,   4, False),   # depth 4 고정
+    ("Gold",        1500, 7,   6, False),   # depth 6 고정
+    ("Platinum",    1800, 10, 12, True),    # depth 최대 12, clock 유동
+    ("Diamond",     2100, 13, 15, True),    # depth 최대 15, clock 유동
+    ("Master",      2400, 16, 18, True),    # depth 최대 18, clock 유동
+    ("GrandMaster", 2700, 20, 20, True),    # depth 최대 20, clock 유동 (최고 강도)
 ]
-STOCKFISH_THINK_TIME = 0.5  # 초
 
 # 오목 게임: 15x15, 0=빈칸 1=흑 2=백. 흑 선공.
 # {"board": List[List[int]], "black_player": str, "white_player": str, "mode": "serena"|"pvp", "status": str, "turn": "black"|"white"}
@@ -844,41 +845,39 @@ def _pick_random_legal_move(board: chess.Board) -> Optional[str]:
     return m.uci()
 
 
-def _open_stockfish_engine(elo: int) -> tuple[Any, Optional[str]]:
-    """스레드에서 호출. Stockfish 엔진을 열고 ELO 설정 후 (engine, None) 반환. 실패 시 (None, 오류메시지)."""
+async def _open_stockfish_async(skill_level: int) -> Optional[str]:
+    """Stockfish 엔진을 asyncio 네이티브 API로 열고 Skill Level 설정.
+    성공 시 None 반환, 실패 시 오류 메시지 반환."""
+    global _stockfish_protocol
     if not chess.engine:
-        return None, "chess.engine를 사용할 수 없습니다."
+        return "chess.engine 모듈을 사용할 수 없습니다."
+    await _close_stockfish_async()
+    skill_level = max(0, min(20, skill_level))
     last_err: Optional[str] = None
     for path in STOCKFISH_CANDIDATE_PATHS:
         if not path:
             continue
         try:
-            engine = chess.engine.SimpleEngine.popen_uci(path)
-            engine.configure({"UCI_LimitStrength": True, "UCI_Elo": elo})
-            return engine, None
+            _, protocol = await chess.engine.popen_uci(path)
+            await protocol.configure({
+                "UCI_LimitStrength": False,
+                "Skill Level": skill_level,
+            })
+            _stockfish_protocol = protocol
+            print(f"Stockfish started: {path}, Skill Level={skill_level}")
+            return None
         except FileNotFoundError:
             last_err = f"실행 파일을 찾을 수 없습니다: {path}"
             print(f"Stockfish not found at {path}")
         except Exception as e:
             last_err = str(e)
-            print(f"Stockfish engine open failed at {path}: {e}")
-    return None, last_err or "Stockfish를 찾을 수 없습니다."
+            print(f"Stockfish open failed at {path}: {e}")
+    return last_err or "Stockfish를 찾을 수 없습니다."
 
 
-def _close_stockfish_engine() -> None:
-    """스레드에서 호출. 열려 있는 Stockfish 엔진 종료."""
-    global _stockfish_engine
-    if _stockfish_engine is not None:
-        try:
-            _stockfish_engine.quit()
-        except Exception as e:
-            print(f"Stockfish engine quit error: {e}")
-        _stockfish_engine = None
-
-
-async def _maybe_close_stockfish_async() -> None:
-    """Stockfish 엔진이 열려 있으면 pending 작업 취소 후 executor에서 종료."""
-    global _chess_pending_task
+async def _close_stockfish_async() -> None:
+    """Stockfish 엔진 async 종료. pending 수 계산 태스크도 함께 취소."""
+    global _stockfish_protocol, _chess_pending_task
     if _chess_pending_task and not _chess_pending_task.done():
         _chess_pending_task.cancel()
         try:
@@ -886,32 +885,22 @@ async def _maybe_close_stockfish_async() -> None:
         except asyncio.CancelledError:
             pass
         _chess_pending_task = None
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, _close_stockfish_engine)
-
-
-def _stockfish_play_sync(board: chess.Board) -> Optional[str]:
-    """스레드에서 호출. 현재 보드에서 흑(엔진)의 수를 반환. 실패 시 None."""
-    global _stockfish_engine
-    if _stockfish_engine is None:
-        return None
-    try:
-        result = _stockfish_engine.play(
-            board, chess.engine.Limit(time=STOCKFISH_THINK_TIME)
-        )
-        if result and result.move:
-            return result.move.uci()
-    except Exception as e:
-        print(f"Stockfish play error: {e}")
-    return None
+    if _stockfish_protocol is not None:
+        try:
+            await _stockfish_protocol.quit()
+        except Exception as e:
+            print(f"Stockfish close error: {e}")
+        _stockfish_protocol = None
 
 
 async def _play_stockfish_chess_move() -> None:
-    """Stockfish(흑) 차례일 때 엔진이 수 두고 브로드캐스트. 실패 시 랜덤 수."""
-    global _chess_game, _chess_pending_task
+    """Stockfish(흑) 차례일 때 asyncio 네이티브 API로 엔진이 수 두고 브로드캐스트."""
+    global _chess_game, _chess_pending_task, _stockfish_protocol
     if not _chess_game or _chess_game.get("status") != "active":
         return
     if _chess_game.get("mode") != "stockfish":
+        return
+    if _stockfish_protocol is None:
         return
     board: chess.Board = _chess_game["board"]
     if board.turn != chess.BLACK:
@@ -920,15 +909,42 @@ async def _play_stockfish_chess_move() -> None:
     if not legal_uci:
         return
 
-    loop = asyncio.get_event_loop()
+    depth = _chess_game.get("stockfish_depth", 5)
+    use_clock = _chess_game.get("stockfish_use_clock", False)
+
+    now = time.time()
+    turn_started = _chess_game.get("turn_started_at") or now
+    elapsed = max(0.0, now - turn_started)
+    white_remaining = max(0.01, _chess_game.get("white_time_remaining", CHESS_INITIAL_SECONDS))
+    black_remaining = max(0.01, _chess_game.get("black_time_remaining", CHESS_INITIAL_SECONDS) - elapsed)
+    inc = float(CHESS_INCREMENT_SECONDS)
+
+    if use_clock:
+        limit = chess.engine.Limit(
+            depth=depth,
+            white_clock=white_remaining,
+            black_clock=black_remaining,
+            white_inc=inc,
+            black_inc=inc,
+        )
+    else:
+        limit = chess.engine.Limit(depth=depth)
+
+    timeout_sec = min(180, max(60, black_remaining + 20)) if use_clock else 30.0
     uci: Optional[str] = None
     try:
-        uci = await asyncio.wait_for(
-            loop.run_in_executor(None, lambda: _stockfish_play_sync(board)),
-            timeout=10.0,
+        result = await asyncio.wait_for(
+            _stockfish_protocol.play(board.copy(), limit),
+            timeout=timeout_sec,
         )
+        if result and result.move:
+            uci = result.move.uci()
+        else:
+            print("Stockfish returned no move")
     except asyncio.TimeoutError:
-        uci = _pick_random_legal_move(board)
+        print(f"Stockfish timed out after {timeout_sec}s, using random move")
+    except Exception as e:
+        print(f"Stockfish play error: {e}")
     _chess_pending_task = None
 
     if not uci:
@@ -1651,7 +1667,7 @@ async def ws_room(websocket: WebSocket) -> None:
                             _chess_pending_task.cancel()
                             _chess_pending_task = None
                         if _chess_game and _chess_game.get("mode") == "stockfish":
-                            asyncio.create_task(_maybe_close_stockfish_async())
+                            asyncio.create_task(_close_stockfish_async())
                         _chess_game = None
                         _gomoku_game = None
                         if _gomoku_pending_task and not _gomoku_pending_task.done():
@@ -1760,20 +1776,15 @@ async def ws_room(websocket: WebSocket) -> None:
                     if not chess.engine:
                         await _room_broadcast({"type": "system", "message": "Stockfish를 사용할 수 없습니다. (python-chess 설치 확인)"}, exclude_ws=None)
                         continue
-                    if _chess_pending_task and not _chess_pending_task.done():
-                        _chess_pending_task.cancel()
-                        _chess_pending_task = None
                     elo = int(data.get("elo") or 1200)
-                    for _name, level_elo in STOCKFISH_LEVELS:
-                        if level_elo == elo:
+                    level_name, level_elo, skill_level, depth, use_clock = "Silver", 1200, 5, 4, False
+                    for t in STOCKFISH_LEVELS:
+                        if t[1] == elo:
+                            level_name, level_elo, skill_level, depth, use_clock = t[0], t[1], t[2], t[3], t[4]
                             break
-                    else:
-                        elo = 1200
-                    loop = asyncio.get_event_loop()
                     try:
-                        await loop.run_in_executor(None, _close_stockfish_engine)
-                        eng, err_msg = await asyncio.wait_for(
-                            loop.run_in_executor(None, lambda e=elo: _open_stockfish_engine(e)),
+                        err_msg = await asyncio.wait_for(
+                            _open_stockfish_async(skill_level),
                             timeout=15.0,
                         )
                     except asyncio.TimeoutError:
@@ -1781,16 +1792,12 @@ async def ws_room(websocket: WebSocket) -> None:
                         continue
                     except Exception as e:
                         print(f"Stockfish start failed: {e}")
-                        await _room_broadcast({"type": "system", "message": "Stockfish 엔진을 시작할 수 없습니다. (" + str(e) + ")"}, exclude_ws=None)
+                        await _room_broadcast({"type": "system", "message": f"Stockfish 엔진을 시작할 수 없습니다. ({e})"}, exclude_ws=None)
                         continue
-                    if eng is None:
-                        msg = "Stockfish 엔진을 시작할 수 없습니다."
-                        if err_msg:
-                            msg += " " + err_msg
-                        msg += " (설치: apt install stockfish 또는 STOCKFISH_PATH 환경변수 설정)"
+                    if err_msg:
+                        msg = f"Stockfish 엔진을 시작할 수 없습니다. {err_msg} (설치: apt install stockfish 또는 STOCKFISH_PATH 환경변수 설정)"
                         await _room_broadcast({"type": "system", "message": msg}, exclude_ws=None)
                         continue
-                    _stockfish_engine = eng
                     board = chess.Board()
                     now = time.time()
                     _chess_game = {
@@ -1805,7 +1812,10 @@ async def ws_room(websocket: WebSocket) -> None:
                         "white_time_remaining": float(CHESS_INITIAL_SECONDS),
                         "black_time_remaining": float(CHESS_INITIAL_SECONDS),
                         "turn_started_at": now,
-                        "stockfish_elo": elo,
+                        "stockfish_elo": level_elo,
+                        "stockfish_skill_level": skill_level,
+                        "stockfish_depth": depth,
+                        "stockfish_use_clock": use_clock,
                     }
                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
 
@@ -1950,7 +1960,7 @@ async def ws_room(websocket: WebSocket) -> None:
                                     _apply_chess_mmr_if_needed(_chess_game)
                                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
                                     if mode == "stockfish":
-                                        asyncio.create_task(_maybe_close_stockfish_async())
+                                        asyncio.create_task(_close_stockfish_async())
                                     continue
                                 _chess_game["white_time_remaining"] = w + CHESS_INCREMENT_SECONDS
                             else:
@@ -1964,7 +1974,7 @@ async def ws_room(websocket: WebSocket) -> None:
                                     _apply_chess_mmr_if_needed(_chess_game)
                                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
                                     if mode == "stockfish":
-                                        asyncio.create_task(_maybe_close_stockfish_async())
+                                        asyncio.create_task(_close_stockfish_async())
                                     continue
                                 _chess_game["black_time_remaining"] = b + CHESS_INCREMENT_SECONDS
                         captured = _get_captured_piece(board, move)
@@ -1991,7 +2001,7 @@ async def ws_room(websocket: WebSocket) -> None:
                         _apply_chess_mmr_if_needed(_chess_game)
                         await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
                         if mode == "stockfish" and status != "active":
-                            asyncio.create_task(_maybe_close_stockfish_async())
+                            asyncio.create_task(_close_stockfish_async())
                         if status == "active" and board.turn == chess.BLACK:
                             if mode == "serena":
                                 _chess_pending_task = asyncio.create_task(_play_serena_chess_move())
@@ -2016,7 +2026,7 @@ async def ws_room(websocket: WebSocket) -> None:
                     _apply_chess_mmr_if_needed(_chess_game)
                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
                     if _chess_game.get("mode") == "stockfish":
-                        asyncio.create_task(_maybe_close_stockfish_async())
+                        asyncio.create_task(_close_stockfish_async())
 
                 elif data.get("type") == "chess_end_practice" and _chess_game and _chess_game.get("mode") == "practice":
                     # 싱글플레이 종료: MMR 변동 없이 상태만 종료로 표시

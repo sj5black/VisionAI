@@ -128,6 +128,9 @@
   const chessPvpSelect = document.getElementById('chessPvpSelect');
   const chessPvpOpponent = document.getElementById('chessPvpOpponent');
   const chessPvpConfirm = document.getElementById('chessPvpConfirm');
+  const chessStockfishWrap = document.getElementById('chessStockfishWrap');
+  const chessStockfishLevel = document.getElementById('chessStockfishLevel');
+  const chessStockfishConfirm = document.getElementById('chessStockfishConfirm');
   const chessCapturedLeft = document.getElementById('chessCapturedLeft');
   const chessCapturedRight = document.getElementById('chessCapturedRight');
 
@@ -409,8 +412,11 @@
     if (!titleEl) return;
     if (chessState.whitePlayer) {
       var wp = formatNameWithRating(chessState.whitePlayer, chessState.whiteRating);
-      var bp = chessState.mode === 'serena' ? 'Serena' : formatNameWithRating(chessState.blackPlayer, chessState.blackRating);
-      var title = (chessState.mode === 'serena') ? ('Serena vs ' + wp) : (wp + ' vs ' + bp);
+      var bp;
+      if (chessState.mode === 'serena') bp = 'Serena';
+      else if (chessState.mode === 'stockfish') bp = 'Stockfish';
+      else bp = formatNameWithRating(chessState.blackPlayer, chessState.blackRating);
+      var title = (chessState.mode === 'serena' || chessState.mode === 'stockfish') ? (bp + ' vs ' + wp) : (wp + ' vs ' + bp);
       titleEl.textContent = '♔ ' + title;
     } else {
       titleEl.textContent = '♔ Serena vs (대기 중)';
@@ -436,6 +442,9 @@
     }
     if (chessStartSingleBtn) {
       chessStartSingleBtn.style.display = (!chessState.fen || chessState.status !== 'active') ? 'inline-block' : 'none';
+    }
+    if (chessStockfishWrap) {
+      chessStockfishWrap.style.display = (!chessState.fen || chessState.status !== 'active') ? 'inline-flex' : 'none';
     }
     var isPvpActive = chessState.fen && chessState.status === 'active' && mode === 'pvp';
     var isPlayer = isPvpActive && isChessPlayer;
@@ -524,7 +533,7 @@
     if (!chessStatus) return;
     var s = chessState.status;
     var mode = chessState.mode || 'serena';
-    if (!chessState.fen) { chessStatus.textContent = mode === 'serena' ? 'Serena를 초대한 뒤 새 게임을 시작하세요.' : '1:1 체스 도전을 하거나 대기하세요.'; return; }
+    if (!chessState.fen) { chessStatus.textContent = (mode === 'serena') ? 'Serena를 초대한 뒤 새 게임을 시작하세요.' : (mode === 'stockfish') ? '난이도를 선택하고 대국을 누르세요.' : '1:1 체스 도전을 하거나 대기하세요.'; return; }
     if (s === 'active') {
       if (chessState.paused) { chessStatus.textContent = '일시정지 중'; return; }
       var wp = formatNameWithRating(chessState.whitePlayer, chessState.whiteRating) || '흰색';
@@ -2428,6 +2437,13 @@
           chessPvpSelect.style.display = 'none';
         }
       }
+    });
+  }
+  if (chessStockfishConfirm && chessStockfishLevel) {
+    chessStockfishConfirm.addEventListener('click', function () {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      var elo = parseInt(chessStockfishLevel.value, 10) || 1200;
+      ws.send(JSON.stringify({ type: 'chess_start_stockfish', elo: elo }));
     });
   }
   if (chessResignBtn) {

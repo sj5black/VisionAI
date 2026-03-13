@@ -233,6 +233,20 @@
               <button type="button" id="chessStartBtn" class="chessStartBtn">새 게임 (Serena)</button>
               <button type="button" id="chessStartPvpBtn" class="chessStartBtn chessStartPvpBtn" style="display: none;">1:1 도전</button>
               <button type="button" id="chessStartSingleBtn" class="chessStartBtn chessStartSingleBtn" style="display: none;">싱글플레이</button>
+              <span id="chessStockfishWrap" class="chessStockfishWrap" style="display: none;">
+                <label for="chessStockfishLevel" class="chessPvpLabel">Stockfish</label>
+                <select id="chessStockfishLevel" class="chessPvpOpponent">
+                  <option value="600">Iron (600)</option>
+                  <option value="900">Bronze (900)</option>
+                  <option value="1200" selected>Silver (1200)</option>
+                  <option value="1500">Gold (1500)</option>
+                  <option value="1800">Platinum (1800)</option>
+                  <option value="2100">Diamond (2100)</option>
+                  <option value="2400">Master (2400)</option>
+                  <option value="2700">GrandMaster (2700)</option>
+                </select>
+                <button type="button" id="chessStockfishConfirm" class="chessPvpConfirm">대국</button>
+              </span>
               <button type="button" id="chessUndoBtn" class="chessUndoBtn" style="display: none;">무르기</button>
               <button type="button" id="chessPauseBtn" class="chessPauseBtn" style="display: none;">일시정지</button>
               <button type="button" id="chessResumeBtn" class="chessResumeBtn" style="display: none;">재개</button>

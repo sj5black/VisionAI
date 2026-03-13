@@ -1503,6 +1503,12 @@ body {
   color: white;
 }
 
+.chessStockfishWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .chessResignBtn,
 .chessUndoBtn,
 .chessPauseBtn,

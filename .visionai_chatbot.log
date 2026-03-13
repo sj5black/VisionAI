@@ -1,33 +1,8 @@
 INFO:     Will watch for changes in these directories: ['/home/teddy/VisionAI']
 INFO:     Uvicorn running on http://0.0.0.0:8004 (Press CTRL+C to quit)
-INFO:     Started reloader process [1723087] using WatchFiles
-INFO:     Started server process [1723090]
+INFO:     Started reloader process [1737040] using WatchFiles
+INFO:     Started server process [1737043]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     112.171.67.160:11688 - "GET /room HTTP/1.1" 200 OK
-INFO:     112.171.67.160:11688 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     112.171.67.160:11688 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     112.171.67.160:11688 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     112.171.67.160:9516 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     112.171.67.160:14320 - "GET /favicon.ico HTTP/1.1" 204 No Content
-INFO:     connection closed
-INFO:     112.171.67.160:6221 - "GET /room HTTP/1.1" 200 OK
-INFO:     112.171.67.160:6221 - "GET /static/room.css HTTP/1.1" 200 OK
-INFO:     112.171.67.160:9091 - "GET /static/room.js HTTP/1.1" 200 OK
-INFO:     112.171.67.160:9091 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     112.171.67.160:9091 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     112.171.67.160:6221 - "GET /favicon.ico HTTP/1.1" 204 No Content
-INFO:     112.171.67.160:6221 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     112.171.67.160:3711 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     112.171.67.160:5974 - "GET /room HTTP/1.1" 200 OK
-INFO:     112.171.67.160:5974 - "GET /static/room.css HTTP/1.1" 200 OK
-INFO:     112.171.67.160:4904 - "GET /static/room.js HTTP/1.1" 200 OK
-INFO:     112.171.67.160:4904 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     112.171.67.160:4904 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     112.171.67.160:5974 - "GET /favicon.ico HTTP/1.1" 204 No Content
-INFO:     112.171.67.160:4904 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     112.171.67.160:5375 - "WebSocket /ws/room" [accepted]
+INFO:     112.171.67.160:14332 - "WebSocket /ws/room" [accepted]
 INFO:     connection open

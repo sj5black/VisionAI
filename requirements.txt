@@ -25,4 +25,8 @@ tf-keras  # deepface 의존성
 
 openai>=1.0.0
 python-dotenv>=1.0.0
-python-chess>=1.9
+python-chess>=1.9  # 체스 규칙·UCI 엔진 연동 (Stockfish 대국 모드용)
+
+# Stockfish 엔진 (체스 vs AI): pip 패키지 아님. 시스템에 별도 설치.
+#   Ubuntu/Debian: sudo apt install stockfish
+#   경로 지정: STOCKFISH_PATH 환경변수 (예: /usr/games/stockfish)

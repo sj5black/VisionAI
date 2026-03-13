@@ -5017,3 +5017,12 @@ INFO:     112.171.67.160:6334 - "GET / HTTP/1.1" 200 OK
 INFO:     112.171.67.160:6334 - "GET /static/styles.css HTTP/1.1" 200 OK
 INFO:     112.171.67.160:6334 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
 INFO:     112.171.67.160:2627 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     210.179.94.144:44802 - "GET / HTTP/1.1" 200 OK
+INFO:     210.179.94.144:44804 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:13758 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:5509 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14230 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14230 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14230 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:7349 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3841 - "GET /api/emotion-backend HTTP/1.1" 200 OK

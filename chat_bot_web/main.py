@@ -239,10 +239,8 @@ _dm_message_read_status: Dict[tuple[int, str], Dict[str, Any]] = {}
 
 
 def _apply_chess_mmr_if_needed(game: Dict[str, Any]) -> None:
-    """체스 PvP 게임 종료 시 양 플레이어의 MMR을 업데이트."""
-    if not game or game.get("mode") != "pvp":
-        return
-    if game.get("mmr_applied"):
+    """체스 게임 종료 시 MMR 업데이트 (PvP: 양쪽, Stockfish: 사람만, 해당 단계 Elo 기준)."""
+    if not game or game.get("mmr_applied"):
         return
     status = game.get("status")
     terminal_statuses = {
@@ -256,49 +254,73 @@ def _apply_chess_mmr_if_needed(game: Dict[str, Any]) -> None:
     }
     if status not in terminal_statuses:
         return
+
+    mode = game.get("mode", "pvp")
     white_user_id = game.get("white_user_id")
     black_user_id = game.get("black_user_id")
-    if not white_user_id or not black_user_id:
+
+    # --- Stockfish: 사람 vs 해당 단계 Elo, 사람 MMR만 변동 ---
+    if mode == "stockfish":
+        stockfish_elo = int(game.get("stockfish_elo") or 1500)
+        human_user_id = None
+        human_side = None
+        if white_user_id and game.get("white_player") != "Stockfish":
+            human_user_id = white_user_id
+            human_side = "white"
+        elif black_user_id and game.get("black_player") != "Stockfish":
+            human_user_id = black_user_id
+            human_side = "black"
+        if not human_user_id:
+            return
+        hr, hg = db.get_user_mmr(int(human_user_id))
+        if status in ("checkmate_black", "time_loss_black", "resign_black"):
+            w_human = 1.0 if human_side == "white" else 0.0
+        elif status in ("checkmate_white", "time_loss_white", "resign_white"):
+            w_human = 1.0 if human_side == "black" else 0.0
+        else:
+            w_human = 0.5
+        def expected_score(r_self: float, r_opp: float) -> float:
+            return 1.0 / (1.0 + 10.0 ** ((r_opp - r_self) / 400.0))
+        e_human = expected_score(hr, float(stockfish_elo))
+        K = 40
+        new_hr = int(round(hr + K * (w_human - e_human)))
+        db.update_user_mmr(int(human_user_id), new_hr, hg + 1)
+        game["mmr_applied"] = True
+        if human_side == "white":
+            game["white_mmr_delta"] = new_hr - hr
+            game["black_mmr_delta"] = None
+        else:
+            game["white_mmr_delta"] = None
+            game["black_mmr_delta"] = new_hr - hr
         return
 
-    # 승/패/무 결과: status는 "패배한 쪽"을 가리킴. 승리 진영이 점수 상승하도록 W 부여.
-    # checkmate_black = 흑이 체크메이트당함 → 백 승리 → w_white=1, w_black=0
-    # checkmate_white = 백이 체크메이트당함 → 흑 승리 → w_white=0, w_black=1
+    # --- PvP: 양쪽 MMR 변동 ---
+    if mode != "pvp" or not white_user_id or not black_user_id:
+        return
+
     if status in ("checkmate_black", "time_loss_black", "resign_black"):
-        w_white = 1.0   # 백 승리
+        w_white = 1.0
         w_black = 0.0
     elif status in ("checkmate_white", "time_loss_white", "resign_white"):
-        w_white = 0.0   # 흑 승리
+        w_white = 0.0
         w_black = 1.0
     else:
         w_white = 0.5
         w_black = 0.5
 
-    # 현재 레이팅/경기 수 조회
     ra, ga = db.get_user_mmr(int(white_user_id))
     rb, gb = db.get_user_mmr(int(black_user_id))
 
-    # 예상 승률 계산
     def expected_score(r_self: float, r_opp: float) -> float:
         return 1.0 / (1.0 + 10.0 ** ((r_opp - r_self) / 400.0))
-
     ea = expected_score(ra, rb)
     eb = expected_score(rb, ra)
-
-    # K-값 (40)
-    def k_factor(games: int) -> int:
-        return 40
-
-    ka = k_factor(ga)
-    kb = k_factor(gb)
-
-    # P' = P + K × (W − We), 반올림
-    new_ra = int(round(ra + ka * (w_white - ea)))
-    new_rb = int(round(rb + kb * (w_black - eb)))
+    K = 40
+    new_ra = int(round(ra + K * (w_white - ea)))
+    new_rb = int(round(rb + K * (w_black - eb)))
 
     db.update_user_mmr(int(white_user_id), new_ra, ga + 1)
     db.update_user_mmr(int(black_user_id), new_rb, gb + 1)
-
     game["mmr_applied"] = True
     game["white_mmr_delta"] = new_ra - ra
     game["black_mmr_delta"] = new_rb - rb
@@ -1134,6 +1156,8 @@ async def _play_stockfish_chess_move() -> None:
             _chess_game["status"] = time_loss_status
             _chess_game[engine_time_key] = 0.0
             _chess_game["turn_started_at"] = now
+            # Stockfish가 승부를 냈으므로 여기서 즉시 MMR 반영한다.
+            _apply_chess_mmr_if_needed(_chess_game)
             await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
             return
         _chess_game[engine_time_key] = remaining + CHESS_INCREMENT_SECONDS
@@ -1152,6 +1176,8 @@ async def _play_stockfish_chess_move() -> None:
         elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
             status = "draw"
         _chess_game["status"] = status
+        # Stockfish가 체크메이트/무승부로 게임을 끝냈다면 MMR을 반영한다.
+        _apply_chess_mmr_if_needed(_chess_game)
         await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
     except (ValueError, chess.InvalidMoveError):
         uci_fb = _pick_random_legal_move(board)
@@ -1167,6 +1193,8 @@ async def _play_stockfish_chess_move() -> None:
                     _chess_game["status"] = time_loss_status
                     _chess_game[engine_time_key] = 0.0
                     _chess_game["turn_started_at"] = now
+                    # Stockfish가 승부를 냈으므로 여기서 즉시 MMR 반영한다.
+                    _apply_chess_mmr_if_needed(_chess_game)
                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
                     return
                 _chess_game[engine_time_key] = remaining + CHESS_INCREMENT_SECONDS
@@ -1181,6 +1209,8 @@ async def _play_stockfish_chess_move() -> None:
                 elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
                     status = "draw"
                 _chess_game["status"] = status
+                # Stockfish가 체크메이트/무승부로 게임을 끝냈다면 MMR을 반영한다.
+                _apply_chess_mmr_if_needed(_chess_game)
                 await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
             except Exception:
                 pass
@@ -1961,10 +1991,19 @@ async def ws_room(websocket: WebSocket) -> None:
                         white_player = nickname
                         black_player = "Stockfish"
                         stockfish_color = "black"
+                    human_uid = None
+                    for _ws, u in _room_connections:
+                        if u.get("name") == nickname:
+                            human_uid = u.get("id")
+                            break
+                    white_user_id = human_uid if white_player == nickname else None
+                    black_user_id = human_uid if black_player == nickname else None
                     _chess_game = {
                         "board": board,
                         "white_player": white_player,
                         "black_player": black_player,
+                        "white_user_id": white_user_id,
+                        "black_user_id": black_user_id,
                         "mode": "stockfish",
                         "status": "active",
                         "paused": False,

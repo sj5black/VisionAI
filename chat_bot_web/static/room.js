@@ -1741,6 +1741,8 @@
           return;
         }
         if (data.type === 'chess_state') {
+          var undoModal = document.getElementById('chessUndoRequestModal');
+          if (undoModal && undoModal.style.display === 'flex') undoModal.style.display = 'none';
           var prevStatus = chessState.status;
           var prevInCheck = chessState.inCheck;
           chessState.fen = data.fen || null;

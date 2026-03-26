@@ -54,6 +54,9 @@
   var chessSelected = null;
   var chessLegalTargets = null;
   var chessClockInterval = null;
+  var chessPromotionEl = null;
+  var chessPromotionPending = null;
+  var chessPromotionEscHandler = null;
 
   var gomokuState = { board: null, turn: 'black', status: null, blackPlayer: null, whitePlayer: null, mode: 'serena', lastMove: null };
   var GOMOKU_SIZE = 15;
@@ -212,6 +215,102 @@
       var s = (sym || '').toLowerCase();
       return sum + (CHESS_PIECE_VALUE[s] || 0);
     }, 0);
+  }
+
+  function isPawnPromotionFromTo(fromSq, toSq) {
+    if (!fromSq || !toSq || fromSq.length !== 2 || toSq.length !== 2) return false;
+    var board = fenToBoard(chessState.fen);
+    if (!board) return false;
+    var r = 8 - parseInt(fromSq[1], 10);
+    var c = fromSq.charCodeAt(0) - 97;
+    var piece = board[r] && board[r][c];
+    if (piece === 'P' && toSq[1] === '8') return true;
+    if (piece === 'p' && toSq[1] === '1') return true;
+    return false;
+  }
+
+  function hideChessPromotionPicker() {
+    if (chessPromotionEscHandler) {
+      document.removeEventListener('keydown', chessPromotionEscHandler);
+      chessPromotionEscHandler = null;
+    }
+    if (chessPromotionEl) {
+      var parent = chessPromotionEl.parentElement;
+      if (parent) parent.classList.remove('chessBoardWrap--promotion');
+      chessPromotionEl.remove();
+      chessPromotionEl = null;
+    } else if (chessBoard) {
+      var w = chessBoard.closest('.chessBoardWrap');
+      if (w) w.classList.remove('chessBoardWrap--promotion');
+    }
+    chessPromotionPending = null;
+  }
+
+  function showChessPromotionPicker() {
+    if (!chessPromotionPending || !chessBoard) return;
+    if (chessPromotionEscHandler) {
+      document.removeEventListener('keydown', chessPromotionEscHandler);
+      chessPromotionEscHandler = null;
+    }
+    if (chessPromotionEl) {
+      chessPromotionEl.remove();
+      chessPromotionEl = null;
+    }
+    var wrap = chessBoard.closest('.chessBoardWrap');
+    if (!wrap) return;
+    wrap.classList.add('chessBoardWrap--promotion');
+    var overlay = document.createElement('div');
+    overlay.className = 'chessPromotionOverlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-label', '폰 승급 기물 선택');
+    var panel = document.createElement('div');
+    panel.className = 'chessPromotionPanel';
+    var choices = [
+      { letter: 'q', label: '\u265B', title: '퀸' },
+      { letter: 'r', label: '\u265C', title: '룩' },
+      { letter: 'b', label: '\u265D', title: '비숍' },
+      { letter: 'n', label: '\u265E', title: '나이트' }
+    ];
+    choices.forEach(function (ch) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chessPromotionBtn';
+      btn.textContent = ch.label;
+      btn.title = ch.title;
+      btn.dataset.piece = ch.letter;
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var letter = btn.dataset.piece;
+        if (!letter || !chessPromotionPending) return;
+        var uci = chessPromotionPending.from + chessPromotionPending.to + letter;
+        hideChessPromotionPicker();
+        chessSelected = null;
+        chessLegalTargets = null;
+        if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'chess_move', uci: uci }));
+        renderChessBoard();
+      });
+      panel.appendChild(btn);
+    });
+    overlay.appendChild(panel);
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) {
+        hideChessPromotionPicker();
+        chessSelected = null;
+        chessLegalTargets = null;
+        renderChessBoard();
+      }
+    });
+    wrap.appendChild(overlay);
+    chessPromotionEl = overlay;
+    chessPromotionEscHandler = function (e) {
+      if (e.key === 'Escape') {
+        hideChessPromotionPicker();
+        chessSelected = null;
+        chessLegalTargets = null;
+        renderChessBoard();
+      }
+    };
+    document.addEventListener('keydown', chessPromotionEscHandler);
   }
 
   function fenToBoard(fen) {
@@ -401,6 +500,11 @@
     if (chessSelected) {
       var uci = chessSelected + sq;
       if (uci.length === 4 && chessSelected !== sq) {
+        if (isPawnPromotionFromTo(chessSelected, sq)) {
+          chessPromotionPending = { from: chessSelected, to: sq };
+          showChessPromotionPicker();
+          return;
+        }
         if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'chess_move', uci: uci }));
         chessSelected = null;
         chessLegalTargets = null;
@@ -1763,6 +1867,7 @@
           chessState.blackTime = data.black_time != null ? Number(data.black_time) : CHESS_INITIAL_SECONDS;
           chessState.turnStartedAt = data.turn_started_at != null ? Number(data.turn_started_at) : null;
           chessState.paused = !!data.paused;
+          hideChessPromotionPicker();
           chessSelected = null;
           chessLegalTargets = null;
           renderChessBoard();

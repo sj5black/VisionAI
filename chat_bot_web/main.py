@@ -372,9 +372,9 @@ def _get_captured_piece(board: chess.Board, move: chess.Move) -> Optional[str]:
 
 
 def _normalize_uci_promotion(board: chess.Board, uci: str) -> str:
-    """4자리 UCI가 폰 프로모션인 경우 자동으로 퀸(q) 지정. 폰 진화."""
+    """폰 프로모션: 5번째 글자가 q/r/b/n이면 그대로, 4자만 오면 퀸(q) 기본."""
     uci = (uci or "").strip().lower()[:10]
-    if len(uci) != 4:
+    if len(uci) < 4:
         return uci
     try:
         from_sq = chess.parse_square(uci[:2])
@@ -383,14 +383,17 @@ def _normalize_uci_promotion(board: chess.Board, uci: str) -> str:
         return uci
     piece = board.piece_at(from_sq)
     if piece is None or piece.piece_type != chess.PAWN:
-        return uci
+        return uci[:4]
     to_rank = chess.square_rank(to_sq)
     from_rank = chess.square_rank(from_sq)
-    if piece.color == chess.WHITE and from_rank == 6 and to_rank == 7:
-        return uci + "q"
-    if piece.color == chess.BLACK and from_rank == 1 and to_rank == 0:
-        return uci + "q"
-    return uci
+    is_promotion = (piece.color == chess.WHITE and from_rank == 6 and to_rank == 7) or (
+        piece.color == chess.BLACK and from_rank == 1 and to_rank == 0
+    )
+    if not is_promotion:
+        return uci[:4]
+    if len(uci) >= 5 and uci[4] in "qrbn":
+        return uci[:5]
+    return uci[:4] + "q"
 
 
 def _gomoku_empty_board() -> List[List[int]]:

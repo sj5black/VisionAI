@@ -1266,6 +1266,52 @@ body {
   padding: 14px;
 }
 
+.chessBoardWrap.chessBoardWrap--promotion {
+  position: relative;
+}
+
+.chessPromotionOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+}
+
+.chessPromotionPanel {
+  display: flex;
+  gap: 10px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.chessPromotionBtn {
+  width: 48px;
+  height: 48px;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-secondary, #f3f4f6);
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.chessPromotionBtn:hover {
+  transform: scale(1.06);
+  border-color: var(--accent, #6366f1);
+}
+
 .chessBoardRow {
   display: flex;
   align-items: center;

@@ -257,9 +257,13 @@
                   <option value="white">백 (선공)</option>
                   <option value="black">흑 (후공)</option>
                 </select>
+                <label class="chessStockfishCasualLabel chessPvpLabel" title="MMR 변동 없음, 무르기 가능">
+                  <input type="checkbox" id="chessStockfishCasual" /> 친선
+                </label>
                 <button type="button" id="chessStockfishConfirm" class="chessPvpConfirm">대국</button>
               </span>
               <button type="button" id="chessUndoBtn" class="chessUndoBtn" style="display: none;">무르기</button>
+              <button type="button" id="chessRecordPopupBtn" class="chessRecordPopupBtn" style="display: none;">기보</button>
               <button type="button" id="chessPauseBtn" class="chessPauseBtn" style="display: none;">일시정지</button>
               <button type="button" id="chessResumeBtn" class="chessResumeBtn" style="display: none;">재개</button>
               <button type="button" id="chessResignBtn" class="chessResignBtn">기권</button>
@@ -295,6 +299,26 @@
             <div id="chessCapturedRight" class="chessCaptured chessCapturedRight" title="검은색이 잡은 기물"></div>
           </div>
           <div id="chessMaterialScore" class="chessMaterialScore" aria-live="polite"></div>
+        </div>
+        <div id="chessRecordModal" class="chessRecordModal" style="display: none;" aria-hidden="true">
+          <div class="chessRecordModalBackdrop"></div>
+          <div id="chessRecordModalDialog" class="chessRecordModalDialog" role="dialog" aria-modal="false" aria-label="체스 수 기록 및 리플레이">
+            <div class="chessRecordModalHeader">
+              <span class="chessRecordModalTitle">수 기록 / 리플레이</span>
+              <button type="button" id="chessRecordModalClose" class="chessRecordModalClose" title="닫기">&times;</button>
+            </div>
+            <div id="chessMoveListWrap" class="chessMoveListWrap" style="display: none;" aria-label="기보">
+              <div class="chessMoveListTitle">수 기록</div>
+              <div id="chessMoveList" class="chessMoveList"></div>
+            </div>
+            <div id="chessReplayBar" class="chessReplayBar" style="display: none;" role="group" aria-label="기보 되돌리기">
+              <span class="chessReplayBarLabel">재생</span>
+              <button type="button" id="chessReplayPrev" class="chessReplayBtn" title="이전 수">◀</button>
+              <input type="range" id="chessReplaySlider" class="chessReplaySlider" min="0" max="0" value="0" />
+              <button type="button" id="chessReplayNext" class="chessReplayBtn" title="다음 수">▶</button>
+              <span id="chessReplayPlyText" class="chessReplayPlyText">0 / 0</span>
+            </div>
+          </div>
         </div>
       </div>
       <div id="gomokuPanel" class="gomokuPanel gomokuPanel--vision" style="display: none;">

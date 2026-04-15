@@ -261,6 +261,11 @@ def _apply_chess_mmr_if_needed(game: Dict[str, Any]) -> None:
 
     # --- Stockfish: 사람 vs 해당 단계 Elo, 사람 MMR만 변동 ---
     if mode == "stockfish":
+        if game.get("stockfish_casual"):
+            game["mmr_applied"] = True
+            game["white_mmr_delta"] = None
+            game["black_mmr_delta"] = None
+            return
         stockfish_elo = int(game.get("stockfish_elo") or 1500)
         human_user_id = None
         human_side = None
@@ -354,11 +359,60 @@ def _chess_state_payload(game: Dict[str, Any]) -> Dict[str, Any]:
         "black_time": max(0.0, game.get("black_time_remaining", CHESS_INITIAL_SECONDS)),
         "turn_started_at": game.get("turn_started_at") or time.time(),
     }
+    if game.get("mode") == "stockfish":
+        payload["stockfish_casual"] = bool(game.get("stockfish_casual"))
     if game.get("white_mmr_delta") is not None:
         payload["white_mmr_delta"] = game["white_mmr_delta"]
     if game.get("black_mmr_delta") is not None:
         payload["black_mmr_delta"] = game["black_mmr_delta"]
+    mh_uci = [m.uci() for m in board.move_stack]
+    payload["move_history"] = mh_uci
+    _bsan = chess.Board()
+    mh_san: List[str] = []
+    for _m in board.move_stack:
+        mh_san.append(_bsan.san(_m))
+        _bsan.push(_m)
+    payload["move_history_san"] = mh_san
     return payload
+
+
+# 기보 재생: 종료된 대국만 (진행 중 active 제외)
+CHESS_REPLAY_TERMINAL_STATUSES = frozenset({
+    "checkmate_white",
+    "checkmate_black",
+    "time_loss_white",
+    "time_loss_black",
+    "resign_white",
+    "resign_black",
+    "draw",
+})
+
+
+def _chess_position_at_ply(ucis: List[str], ply: int) -> Dict[str, Any]:
+    """초기 국면에서 UCI 수열 앞 ply개만 적용한 FEN·잡은 말·마지막 수."""
+    b = chess.Board()
+    white_cap: List[str] = []
+    black_cap: List[str] = []
+    last_uci: Optional[str] = None
+    n = max(0, min(int(ply), len(ucis)))
+    for i in range(n):
+        mv = chess.Move.from_uci(ucis[i])
+        cap = _get_captured_piece(b, mv)
+        if cap:
+            if b.turn == chess.WHITE:
+                white_cap.append(cap)
+            else:
+                black_cap.append(cap)
+        b.push(mv)
+        last_uci = ucis[i]
+    return {
+        "fen": b.fen(),
+        "white_captured": white_cap,
+        "black_captured": black_cap,
+        "last_move": last_uci,
+        "turn": "white" if b.turn == chess.WHITE else "black",
+        "in_check": b.is_check(),
+    }
 
 
 def _get_captured_piece(board: chess.Board, move: chess.Move) -> Optional[str]:
@@ -1967,6 +2021,7 @@ async def ws_room(websocket: WebSocket) -> None:
                             level_name, level_elo, skill_level, depth, blunder_rate, random_move_prob, use_clock = t[0], t[1], t[2], t[3], t[4], t[5], t[6]
                             break
                     think_min, think_max = _elo_to_think_range(level_elo)
+                    stockfish_casual = bool(data.get("casual"))
                     try:
                         err_msg = await asyncio.wait_for(
                             _open_stockfish_async(skill_level, level_elo),
@@ -2024,13 +2079,54 @@ async def ws_room(websocket: WebSocket) -> None:
                         "stockfish_use_clock": use_clock,
                         "stockfish_think_min": think_min,
                         "stockfish_think_max": think_max,
+                        "stockfish_casual": stockfish_casual,
                     }
                     await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
                     # 내가 흑일 때는 Stockfish(백)가 선공이므로 바로 첫 수를 두도록 예약
                     if stockfish_color == "white":
                         _chess_pending_task = asyncio.create_task(_play_stockfish_chess_move())
 
-                elif data.get("type") == "chess_undo" and _chess_game and _chess_game.get("status") == "active" and _chess_game.get("mode") == "pvp":
+                elif data.get("type") == "chess_undo" and _chess_game and _chess_game.get("status") == "active":
+                    if _chess_game.get("paused"):
+                        continue
+                    um = _chess_game.get("mode")
+                    if um == "stockfish" and _chess_game.get("stockfish_casual"):
+                        if nickname not in (_chess_game.get("white_player"), _chess_game.get("black_player")):
+                            continue
+                        if nickname == "Stockfish":
+                            continue
+                        if _chess_pending_task and not _chess_pending_task.done():
+                            _chess_pending_task.cancel()
+                            try:
+                                await _chess_pending_task
+                            except asyncio.CancelledError:
+                                pass
+                            _chess_pending_task = None
+                        board = _chess_game["board"]
+                        if len(board.move_stack) < 1:
+                            continue
+                        last_move = board.peek()
+                        cap = _get_captured_piece(board, last_move)
+                        board.pop()
+                        if cap:
+                            if board.turn == chess.BLACK:
+                                lst = _chess_game.get("black_captured") or []
+                                if lst:
+                                    _chess_game["black_captured"] = lst[:-1]
+                            else:
+                                lst = _chess_game.get("white_captured") or []
+                                if lst:
+                                    _chess_game["white_captured"] = lst[:-1]
+                        _chess_game["turn_started_at"] = time.time()
+                        _chess_game.pop("pending_undo", None)
+                        await _room_broadcast(_chess_state_payload(_chess_game), exclude_ws=None)
+                        if _chess_game.get("status") == "active":
+                            engine_color = chess.WHITE if _chess_game.get("stockfish_color") == "white" else chess.BLACK
+                            if board.turn == engine_color and (_chess_pending_task is None or _chess_pending_task.done()):
+                                _chess_pending_task = asyncio.create_task(_play_stockfish_chess_move())
+                        continue
+                    if um != "pvp":
+                        continue
                     board = _chess_game["board"]
                     if len(board.move_stack) < 1:
                         continue
@@ -2149,6 +2245,37 @@ async def ws_room(websocket: WebSocket) -> None:
                             await websocket.send_json({"type": "chess_legal_moves", "from": from_sq, "to_squares": to_squares})
                         except (ValueError, KeyError):
                             pass
+
+                elif data.get("type") == "chess_replay_ply":
+                    if not _chess_game:
+                        continue
+                    st = _chess_game.get("status") or ""
+                    if st not in CHESS_REPLAY_TERMINAL_STATUSES:
+                        continue
+                    board = _chess_game["board"]
+                    mh = [m.uci() for m in board.move_stack]
+                    try:
+                        ply = int(data.get("ply", 0))
+                    except (TypeError, ValueError):
+                        ply = 0
+                    ply = max(0, min(ply, len(mh)))
+                    pos = _chess_position_at_ply(mh, ply)
+                    try:
+                        seq = int(data.get("seq", 0))
+                    except (TypeError, ValueError):
+                        seq = 0
+                    await websocket.send_json({
+                        "type": "chess_replay_view",
+                        "seq": seq,
+                        "ply": ply,
+                        "ply_max": len(mh),
+                        "fen": pos["fen"],
+                        "white_captured": pos["white_captured"],
+                        "black_captured": pos["black_captured"],
+                        "last_move": pos["last_move"],
+                        "turn": pos["turn"],
+                        "in_check": pos["in_check"],
+                    })
 
                 elif data.get("type") == "chess_move" and (data.get("uci") or "").strip():
                     uci = (data["uci"] or "").strip().lower()[:10]

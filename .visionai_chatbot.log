@@ -1,31 +1,15 @@
 INFO:     Will watch for changes in these directories: ['/home/teddy/VisionAI']
 INFO:     Uvicorn running on http://0.0.0.0:8004 (Press CTRL+C to quit)
-INFO:     Started reloader process [14472] using WatchFiles
-INFO:     Started server process [14476]
+INFO:     Started reloader process [701279] using WatchFiles
+INFO:     Started server process [701282]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     112.171.67.160:7966 - "GET /room HTTP/1.1" 200 OK
-INFO:     112.171.67.160:7966 - "GET /static/room.css HTTP/1.1" 200 OK
-INFO:     112.171.67.160:4006 - "GET /static/room.js HTTP/1.1" 200 OK
-INFO:     112.171.67.160:4006 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     112.171.67.160:4006 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     112.171.67.160:4006 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     112.171.67.160:5485 - "WebSocket /ws/room" [accepted]
+INFO:     112.171.67.160:14316 - "GET /room HTTP/1.1" 200 OK
+INFO:     112.171.67.160:14316 - "GET /static/room.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4694 - "GET /static/room.js HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4694 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4694 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
+INFO:     112.171.67.160:4694 - "GET /api/dm/rooms HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3375 - "WebSocket /ws/room" [accepted]
 INFO:     connection open
-INFO:     112.171.67.160:4006 - "GET /favicon.ico HTTP/1.1" 204 No Content
-INFO:     112.171.67.160:11800 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     connection closed
-INFO:     112.171.67.160:1053 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     112.171.67.160:10539 - "GET /room HTTP/1.1" 200 OK
-INFO:     112.171.67.160:10539 - "GET /static/room.css HTTP/1.1" 200 OK
-INFO:     112.171.67.160:10098 - "GET /static/room.js HTTP/1.1" 200 OK
-INFO:     112.171.67.160:10098 - "GET /api/auth/me HTTP/1.1" 200 OK
-INFO:     112.171.67.160:10098 - "GET /api/auth/ws-token HTTP/1.1" 200 OK
-INFO:     112.171.67.160:10539 - "GET /favicon.ico HTTP/1.1" 204 No Content
-INFO:     112.171.67.160:10098 - "GET /api/dm/rooms HTTP/1.1" 200 OK
-INFO:     112.171.67.160:6341 - "WebSocket /ws/room" [accepted]
-INFO:     connection open
+INFO:     112.171.67.160:14316 - "GET /favicon.ico HTTP/1.1" 204 No Content

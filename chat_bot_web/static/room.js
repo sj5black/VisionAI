@@ -50,13 +50,25 @@
   var activeTabId = 'multi';
 
   var CHESS_INITIAL_SECONDS = 15 * 60;
-  var chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, whiteRating: null, blackRating: null, mode: 'pvp', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [], whiteTime: CHESS_INITIAL_SECONDS, blackTime: CHESS_INITIAL_SECONDS, turnStartedAt: null, paused: false };
+  var chessState = { fen: null, turn: null, status: null, whitePlayer: null, blackPlayer: null, whiteRating: null, blackRating: null, mode: 'pvp', lastMove: null, inCheck: false, whiteCaptured: [], blackCaptured: [], whiteTime: CHESS_INITIAL_SECONDS, blackTime: CHESS_INITIAL_SECONDS, turnStartedAt: null, paused: false, stockfishCasual: false, moveHistoryUci: [], moveHistorySan: [] };
+  var chessReplayReqId = 0;
+  var chessReplay = {
+    active: false,
+    viewFen: null,
+    viewLastMove: null,
+    viewWhiteCaptured: null,
+    viewBlackCaptured: null,
+    viewInCheck: false,
+    viewTurn: null
+  };
   var chessSelected = null;
   var chessLegalTargets = null;
   var chessClockInterval = null;
   var chessPromotionEl = null;
   var chessPromotionPending = null;
   var chessPromotionEscHandler = null;
+  var chessRecordModalOpenedForCurrentGame = false;
+  var chessRecordModalDrag = { active: false, dx: 0, dy: 0 };
 
   var gomokuState = { board: null, turn: 'black', status: null, blackPlayer: null, whitePlayer: null, mode: 'serena', lastMove: null };
   var GOMOKU_SIZE = 15;
@@ -127,6 +139,10 @@
   const chessPvpBtn = document.getElementById('chessPvpBtn');
   const chessStartPvpBtn = document.getElementById('chessStartPvpBtn');
   const chessStartSingleBtn = document.getElementById('chessStartSingleBtn');
+  const chessRecordPopupBtn = document.getElementById('chessRecordPopupBtn');
+  const chessRecordModal = document.getElementById('chessRecordModal');
+  const chessRecordModalDialog = document.getElementById('chessRecordModalDialog');
+  const chessRecordModalClose = document.getElementById('chessRecordModalClose');
   const chessPvpSelect = document.getElementById('chessPvpSelect');
   const chessPvpOpponent = document.getElementById('chessPvpOpponent');
   const chessPvpConfirm = document.getElementById('chessPvpConfirm');
@@ -135,6 +151,7 @@
   const chessStockfishTier = document.getElementById('chessStockfishTier');
   const chessStockfishMySide = document.getElementById('chessStockfishMySide');
   const chessStockfishConfirm = document.getElementById('chessStockfishConfirm');
+  const chessStockfishCasual = document.getElementById('chessStockfishCasual');
   var STOCKFISH_RANK_TIER_ELO = {
     bronze:   { '4': 200,  '3': 275,  '2': 350,  '1': 425 },
     silver:   { '4': 500,  '3': 575,  '2': 650,  '1': 725 },
@@ -313,6 +330,95 @@
     document.addEventListener('keydown', chessPromotionEscHandler);
   }
 
+  function isChessTerminalForReplay(status) {
+    var t = ['checkmate_white', 'checkmate_black', 'time_loss_white', 'time_loss_black', 'resign_white', 'resign_black', 'draw'];
+    return t.indexOf(status) !== -1;
+  }
+
+  function exitChessReplayOverlay() {
+    chessReplay.active = false;
+    chessReplay.viewFen = null;
+    chessReplay.viewLastMove = null;
+    chessReplay.viewWhiteCaptured = null;
+    chessReplay.viewBlackCaptured = null;
+    chessReplay.viewInCheck = false;
+    chessReplay.viewTurn = null;
+  }
+
+  function updateChessReplayPlyText(ply, maxPly) {
+    var txt = document.getElementById('chessReplayPlyText');
+    if (txt) txt.textContent = ply + ' / ' + maxPly + ' 수';
+  }
+
+  function requestChessReplayPly(ply) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    chessReplayReqId += 1;
+    ws.send(JSON.stringify({ type: 'chess_replay_ply', ply: ply, seq: chessReplayReqId }));
+  }
+
+  function onChessReplaySliderInput() {
+    var slider = document.getElementById('chessReplaySlider');
+    if (!slider) return;
+    var maxPly = (chessState.moveHistoryUci || []).length;
+    var v = parseInt(slider.value, 10);
+    if (isNaN(v)) v = 0;
+    v = Math.max(0, Math.min(v, maxPly));
+    if (String(v) !== slider.value) slider.value = String(v);
+    updateChessReplayPlyText(v, maxPly);
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (v >= maxPly) {
+      exitChessReplayOverlay();
+      renderChessBoard();
+      renderCapturedPieces();
+      return;
+    }
+    requestChessReplayPly(v);
+  }
+
+  function updateChessMoveList() {
+    var wrap = document.getElementById('chessMoveListWrap');
+    var el = document.getElementById('chessMoveList');
+    if (!wrap || !el) return;
+    var uci = chessState.moveHistoryUci || [];
+    var san = chessState.moveHistorySan || [];
+    if (!chessState.fen || !uci.length) {
+      wrap.style.display = 'none';
+      el.innerHTML = '';
+      return;
+    }
+    wrap.style.display = '';
+    el.innerHTML = '';
+    for (var i = 0; i < uci.length; i += 2) {
+      var row = document.createElement('div');
+      row.className = 'chessMoveListRow';
+      var half = Math.floor(i / 2) + 1;
+      var w = san[i] || uci[i];
+      var b = (i + 1 < uci.length) ? (san[i + 1] || uci[i + 1]) : '';
+      row.textContent = half + '. ' + w + (b ? ' ' + b : '');
+      el.appendChild(row);
+    }
+  }
+
+  function updateChessReplayBar() {
+    var bar = document.getElementById('chessReplayBar');
+    var slider = document.getElementById('chessReplaySlider');
+    if (!bar || !slider) return;
+    var uci = chessState.moveHistoryUci || [];
+    var show = !!chessState.fen && isChessTerminalForReplay(chessState.status) && uci.length > 0;
+    if (!show) {
+      bar.style.display = 'none';
+      exitChessReplayOverlay();
+      return;
+    }
+    bar.style.display = 'flex';
+    var maxPly = uci.length;
+    slider.min = '0';
+    slider.max = String(maxPly);
+    exitChessReplayOverlay();
+    slider.value = String(maxPly);
+    updateChessReplayPlyText(maxPly, maxPly);
+  }
+
   function fenToBoard(fen) {
     if (!fen) return null;
     var parts = fen.split(' ');
@@ -343,8 +449,15 @@
 
   function renderCapturedPieces() {
     if (!chessCapturedLeft || !chessCapturedRight) return;
-    var wc = chessState.whiteCaptured || [];
-    var bc = chessState.blackCaptured || [];
+    var wc;
+    var bc;
+    if (chessReplay.active && chessReplay.viewFen) {
+      wc = chessReplay.viewWhiteCaptured || [];
+      bc = chessReplay.viewBlackCaptured || [];
+    } else {
+      wc = chessState.whiteCaptured || [];
+      bc = chessState.blackCaptured || [];
+    }
     chessCapturedLeft.innerHTML = '';
     chessCapturedRight.innerHTML = '';
     var wCounts = countPieces(wc);
@@ -414,8 +527,10 @@
 
   function renderChessBoard() {
     if (!chessBoard) return;
-    var board = fenToBoard(chessState.fen);
-    var lastMove = chessState.lastMove || '';
+    var inReplay = chessReplay.active && chessReplay.viewFen;
+    var fenForBoard = inReplay ? chessReplay.viewFen : chessState.fen;
+    var board = fenToBoard(fenForBoard);
+    var lastMove = inReplay ? (chessReplay.viewLastMove || '') : (chessState.lastMove || '');
     var active = chessState.status === 'active';
     var mode = chessState.mode || 'serena';
     var isBlackView = (mode !== 'practice') && (chessState.blackPlayer === myNickname);
@@ -452,7 +567,11 @@
         if (lastMove && (sqId === lastMove.slice(0, 2) || sqId === lastMove.slice(2, 4))) el.classList.add('last-move');
         if (chessSelected === sqId) el.classList.add('selected');
         var piece = board && board[r] && board[r][c];
-        if (chessState.inCheck && chessState.status === 'active' && piece) {
+        if (inReplay && chessReplay.viewInCheck && piece) {
+          var tCh = chessReplay.viewTurn;
+          var kingR = (tCh === 'white' && piece === 'K') || (tCh === 'black' && piece === 'k');
+          if (kingR) el.classList.add('chessSquare--check');
+        } else if (chessState.inCheck && chessState.status === 'active' && piece) {
           var kingInCheck = (chessState.turn === 'white' && piece === 'K') || (chessState.turn === 'black' && piece === 'k');
           if (kingInCheck) el.classList.add('chessSquare--check');
         }
@@ -471,7 +590,7 @@
           span.textContent = CHESS_PIECES[piece] || piece;
           el.appendChild(span);
         }
-        var canMove = active && !chessState.paused && ((chessState.turn === 'white' && chessState.whitePlayer === myNickname) || (chessState.turn === 'black' && chessState.blackPlayer === myNickname));
+        var canMove = !inReplay && active && !chessState.paused && ((chessState.turn === 'white' && chessState.whitePlayer === myNickname) || (chessState.turn === 'black' && chessState.blackPlayer === myNickname));
         if (canMove) {
           var isWhiteTurn = chessState.turn === 'white';
           var canSelect = (isWhiteTurn && piece && /[KQRBNP]/.test(piece)) || (!isWhiteTurn && piece && /[kqrbnp]/.test(piece));
@@ -483,7 +602,10 @@
     }
     var checkLabel = document.getElementById('chessCheckLabel');
     if (checkLabel) {
-      if (chessState.inCheck && chessState.status === 'active') {
+      if (inReplay && chessReplay.viewInCheck) {
+        checkLabel.textContent = 'Check';
+        checkLabel.style.display = 'block';
+      } else if (chessState.inCheck && chessState.status === 'active') {
         checkLabel.textContent = 'Check';
         checkLabel.style.display = 'block';
       } else {
@@ -493,6 +615,7 @@
   }
 
   function onChessSquareClick(sq) {
+    if (chessReplay.active) return;
     if (chessState.status !== 'active' || chessState.paused) return;
     var myTurnWhite = chessState.turn === 'white' && chessState.whitePlayer === myNickname;
     var myTurnBlack = chessState.turn === 'black' && chessState.blackPlayer === myNickname;
@@ -561,6 +684,7 @@
         ? 'Stockfish'
         : formatNameWithRating(chessState.blackPlayer, chessState.blackRating, chessState.blackTier);
       var title = (chessState.mode === 'stockfish') ? (bp + ' vs ' + wp) : (wp + ' vs ' + bp);
+      if (chessState.mode === 'stockfish' && chessState.stockfishCasual) title += ' (친선)';
       titleEl.textContent = '♔ ' + title;
     } else {
       titleEl.textContent = '♔ 체스 (대기 중)';
@@ -582,6 +706,9 @@
     if (chessStartSingleBtn) {
       chessStartSingleBtn.style.display = (!chessState.fen || chessState.status !== 'active') ? 'inline-block' : 'none';
     }
+    if (chessRecordPopupBtn) {
+      chessRecordPopupBtn.style.display = chessState.fen ? 'inline-block' : 'none';
+    }
     if (chessStockfishWrap) {
       chessStockfishWrap.style.display = (!chessState.fen || chessState.status !== 'active') ? 'inline-flex' : 'none';
     }
@@ -601,9 +728,10 @@
       }
     } else {
       var canUndo = isPvpActive && chessState.lastMove && ((chessState.whitePlayer === myNickname && chessState.turn === 'black') || (chessState.blackPlayer === myNickname && chessState.turn === 'white'));
+      var canStockfishCasualUndo = isStockfishActive && chessState.stockfishCasual && chessState.lastMove && isChessPlayer && !chessState.paused;
       if (chessUndoBtn) {
-        chessUndoBtn.style.display = canUndo ? 'inline-block' : 'none';
-        chessUndoBtn.disabled = !canUndo;
+        chessUndoBtn.style.display = (canUndo || canStockfishCasualUndo) ? 'inline-block' : 'none';
+        chessUndoBtn.disabled = !(canUndo || canStockfishCasualUndo);
       }
       if (chessPauseBtn) chessPauseBtn.style.display = isPlayer && !chessState.paused ? 'inline-block' : 'none';
       if (chessResumeBtn) chessResumeBtn.style.display = isPlayer && chessState.paused ? 'inline-block' : 'none';
@@ -1867,6 +1995,17 @@
           chessState.blackTime = data.black_time != null ? Number(data.black_time) : CHESS_INITIAL_SECONDS;
           chessState.turnStartedAt = data.turn_started_at != null ? Number(data.turn_started_at) : null;
           chessState.paused = !!data.paused;
+          chessState.stockfishCasual = (data.mode === 'stockfish') ? !!data.stockfish_casual : false;
+          if (!data.fen) {
+            chessState.moveHistoryUci = [];
+            chessState.moveHistorySan = [];
+            exitChessReplayOverlay();
+            chessRecordModalOpenedForCurrentGame = false;
+            closeChessRecordModal();
+          } else {
+            chessState.moveHistoryUci = Array.isArray(data.move_history) ? data.move_history.slice() : [];
+            chessState.moveHistorySan = Array.isArray(data.move_history_san) ? data.move_history_san.slice() : [];
+          }
           hideChessPromotionPicker();
           chessSelected = null;
           chessLegalTargets = null;
@@ -1876,6 +2015,8 @@
           updateChessStatus();
           updateChessButtons();
           updateChessPanelTitle();
+          updateChessMoveList();
+          updateChessReplayBar();
           /* 게임이 방금 종료된 경우(active → terminal)에만 결과 모달 표시. 재접속 시에는 표시하지 않음 */
           var terminalStatuses = ['checkmate_white', 'checkmate_black', 'time_loss_white', 'time_loss_black', 'resign_white', 'resign_black', 'draw'];
           var isParticipant = data.white_player === myNickname || data.black_player === myNickname;
@@ -1910,6 +2051,10 @@
               }
             }
           }
+          if (data.status === 'active' && prevStatus !== 'active' && data.fen && !chessRecordModalOpenedForCurrentGame) {
+            chessRecordModalOpenedForCurrentGame = true;
+            openChessRecordModal();
+          }
           if (data.status === 'ended_practice' && data.mode === 'practice') {
             // 싱글플레이 종료 시 체스 패널을 닫고 라운지 화면으로 복귀
             if (typeof setChessPanelInVisionArea === 'function') {
@@ -1919,6 +2064,22 @@
               if (visionaiFrame) visionaiFrame.classList.remove('room-iframe--hidden');
             }
           }
+          return;
+        }
+        if (data.type === 'chess_replay_view') {
+          if (data.seq != null && Number(data.seq) !== chessReplayReqId) return;
+          chessReplay.active = true;
+          chessReplay.viewFen = data.fen;
+          chessReplay.viewLastMove = data.last_move || null;
+          chessReplay.viewWhiteCaptured = data.white_captured || [];
+          chessReplay.viewBlackCaptured = data.black_captured || [];
+          chessReplay.viewInCheck = !!data.in_check;
+          chessReplay.viewTurn = data.turn || 'white';
+          renderChessBoard();
+          renderCapturedPieces();
+          if (data.ply != null && data.ply_max != null) updateChessReplayPlyText(data.ply, data.ply_max);
+          var rs = document.getElementById('chessReplaySlider');
+          if (rs && data.ply != null) rs.value = String(data.ply);
           return;
         }
         if (data.type === 'chess_legal_moves') {
@@ -2488,6 +2649,40 @@
     }
   }
 
+  function openChessRecordModal() {
+    if (!chessRecordModal) return;
+    chessRecordModal.classList.add('is-open');
+    chessRecordModal.style.display = '';
+    chessRecordModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeChessRecordModal() {
+    if (!chessRecordModal) return;
+    chessRecordModal.classList.remove('is-open');
+    chessRecordModal.style.display = '';
+    chessRecordModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function clampChessRecordModalPosition(left, top) {
+    if (!chessRecordModalDialog) return { left: 14, top: 88 };
+    var margin = 8;
+    var vw = window.innerWidth || document.documentElement.clientWidth || 0;
+    var vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    var maxLeft = Math.max(margin, vw - chessRecordModalDialog.offsetWidth - margin);
+    var maxTop = Math.max(margin, vh - chessRecordModalDialog.offsetHeight - margin);
+    return {
+      left: Math.max(margin, Math.min(left, maxLeft)),
+      top: Math.max(margin, Math.min(top, maxTop))
+    };
+  }
+
+  function setChessRecordModalPosition(left, top) {
+    if (!chessRecordModalDialog) return;
+    var pos = clampChessRecordModalPosition(left, top);
+    chessRecordModalDialog.style.left = pos.left + 'px';
+    chessRecordModalDialog.style.top = pos.top + 'px';
+  }
+
   function setGomokuPanelInVisionArea(visible) {
     if (!gomokuPanel) return;
     if (visible) {
@@ -2529,8 +2724,75 @@
     });
   }
   if (chessPanelClose) {
-    chessPanelClose.addEventListener('click', function () { setChessPanelInVisionArea(false); });
+    chessPanelClose.addEventListener('click', function () {
+      setChessPanelInVisionArea(false);
+      closeChessRecordModal();
+    });
   }
+  if (chessRecordPopupBtn) {
+    chessRecordPopupBtn.addEventListener('click', function () {
+      if (!chessState.fen) return;
+      openChessRecordModal();
+    });
+  }
+  if (chessRecordModalClose) {
+    chessRecordModalClose.addEventListener('click', closeChessRecordModal);
+  }
+  if (chessRecordModal) {
+    chessRecordModal.addEventListener('click', function (e) {
+      if (e.target && e.target.classList && e.target.classList.contains('chessRecordModalBackdrop')) {
+        closeChessRecordModal();
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && chessRecordModal.classList.contains('is-open')) closeChessRecordModal();
+    });
+  }
+  if (chessRecordModalDialog) {
+    var dragHandle = chessRecordModalDialog.querySelector('.chessRecordModalHeader');
+    var startDrag = function (clientX, clientY) {
+      if (!chessRecordModal.classList.contains('is-open')) return;
+      var rect = chessRecordModalDialog.getBoundingClientRect();
+      chessRecordModalDrag.active = true;
+      chessRecordModalDrag.dx = clientX - rect.left;
+      chessRecordModalDrag.dy = clientY - rect.top;
+    };
+    var onDragMove = function (clientX, clientY) {
+      if (!chessRecordModalDrag.active) return;
+      setChessRecordModalPosition(clientX - chessRecordModalDrag.dx, clientY - chessRecordModalDrag.dy);
+    };
+    var stopDrag = function () {
+      chessRecordModalDrag.active = false;
+    };
+    if (dragHandle) {
+      dragHandle.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+        if (e.target && e.target.closest && e.target.closest('.chessRecordModalClose')) return;
+        e.preventDefault();
+        startDrag(e.clientX, e.clientY);
+      });
+      dragHandle.addEventListener('touchstart', function (e) {
+        if (!e.touches || !e.touches.length) return;
+        if (e.target && e.target.closest && e.target.closest('.chessRecordModalClose')) return;
+        startDrag(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+    }
+    document.addEventListener('mousemove', function (e) {
+      onDragMove(e.clientX, e.clientY);
+    });
+    document.addEventListener('touchmove', function (e) {
+      if (!e.touches || !e.touches.length) return;
+      onDragMove(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    document.addEventListener('mouseup', stopDrag);
+    document.addEventListener('touchend', stopDrag);
+    window.addEventListener('resize', function () {
+      if (!chessRecordModal.classList.contains('is-open')) return;
+      var rect = chessRecordModalDialog.getBoundingClientRect();
+      setChessRecordModalPosition(rect.left, rect.top);
+    });
+  }
+  closeChessRecordModal();
   if (chessStartPvpBtn) {
     chessStartPvpBtn.addEventListener('click', function () {
       var showSelect = true;
@@ -2590,12 +2852,43 @@
     });
     chessStockfishRank.dispatchEvent(new Event('change'));
   }
+  var chessReplaySliderEl = document.getElementById('chessReplaySlider');
+  var chessReplayPrevEl = document.getElementById('chessReplayPrev');
+  var chessReplayNextEl = document.getElementById('chessReplayNext');
+  if (chessReplaySliderEl) {
+    chessReplaySliderEl.addEventListener('input', onChessReplaySliderInput);
+    chessReplaySliderEl.addEventListener('change', onChessReplaySliderInput);
+  }
+  if (chessReplayPrevEl) {
+    chessReplayPrevEl.addEventListener('click', function () {
+      var s = document.getElementById('chessReplaySlider');
+      if (!s) return;
+      var v = parseInt(s.value, 10) || 0;
+      if (v > 0) {
+        s.value = String(v - 1);
+        onChessReplaySliderInput();
+      }
+    });
+  }
+  if (chessReplayNextEl) {
+    chessReplayNextEl.addEventListener('click', function () {
+      var s = document.getElementById('chessReplaySlider');
+      if (!s) return;
+      var maxPly = (chessState.moveHistoryUci || []).length;
+      var v = parseInt(s.value, 10) || 0;
+      if (v < maxPly) {
+        s.value = String(v + 1);
+        onChessReplaySliderInput();
+      }
+    });
+  }
   if (chessStockfishConfirm) {
     chessStockfishConfirm.addEventListener('click', function () {
       if (!ws || ws.readyState !== WebSocket.OPEN) return;
       var elo = getStockfishElo();
       var mySide = (chessStockfishMySide && chessStockfishMySide.value) || 'white';
-      ws.send(JSON.stringify({ type: 'chess_start_stockfish', elo: elo, my_side: mySide.toLowerCase() }));
+      var casual = chessStockfishCasual && chessStockfishCasual.checked;
+      ws.send(JSON.stringify({ type: 'chess_start_stockfish', elo: elo, my_side: mySide.toLowerCase(), casual: casual }));
     });
   }
   if (chessResignBtn) {

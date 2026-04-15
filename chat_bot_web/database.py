@@ -63,7 +63,7 @@ def init_db() -> None:
         cur = conn.execute("PRAGMA table_info(users)")
         cols = [r[1] for r in cur.fetchall()]
         if "mmr_rating" not in cols:
-            conn.execute("ALTER TABLE users ADD COLUMN mmr_rating INTEGER NOT NULL DEFAULT 1200")
+            conn.execute("ALTER TABLE users ADD COLUMN mmr_rating INTEGER NOT NULL DEFAULT 650")
         if "mmr_games" not in cols:
             conn.execute("ALTER TABLE users ADD COLUMN mmr_games INTEGER NOT NULL DEFAULT 0")
         conn.commit()
@@ -128,7 +128,7 @@ def create_user(username: str, name: str, password_hash: str) -> int:
         raise ValueError("아이디는 2자 이상이어야 합니다.")
     try:
         cur = conn.execute(
-            "INSERT INTO users (username, name, password_hash) VALUES (?, ?, ?)",
+            "INSERT INTO users (username, name, password_hash, mmr_rating, mmr_games) VALUES (?, ?, ?, 650, 0)",
             (username, name, password_hash)
         )
         conn.commit()
@@ -289,7 +289,7 @@ def save_dm_message(room_id: int, sender_id: int, text: str, image_url: Optional
 
 
 def get_user_mmr(user_id: int) -> tuple[int, int]:
-    """유저의 체스 MMR 및 경기 수 조회. 없으면 (1200, 0)."""
+    """유저의 체스 MMR 및 경기 수 조회. 없으면 (650, 0)."""
     conn = _get_conn()
     cur = conn.execute(
         "SELECT mmr_rating, mmr_games FROM users WHERE id = ?",

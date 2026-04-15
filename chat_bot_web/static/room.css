@@ -1360,6 +1360,136 @@ body {
 .chessMaterialScore--ahead { color: var(--success, #4ade80); }
 .chessMaterialScore--behind { color: var(--danger, #f87171); }
 
+.chessMoveListWrap {
+  margin-top: 8px;
+  width: 100%;
+  max-width: 100%;
+}
+.chessMoveListTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.chessMoveList {
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.2);
+}
+.chessMoveListRow {
+  font-variant-numeric: tabular-nums;
+}
+.chessReplayBar {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  width: 100%;
+  max-width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(99, 102, 241, 0.08);
+}
+.chessReplayBarLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.chessReplayBtn {
+  padding: 4px 10px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface, #1e293b);
+  color: var(--text, #e2e8f0);
+  cursor: pointer;
+}
+.chessReplayBtn:hover { filter: brightness(1.08); }
+.chessReplaySlider {
+  flex: 1;
+  min-width: 100px;
+  accent-color: var(--accent, #6366f1);
+}
+.chessReplayPlyText {
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 4.5em;
+  font-variant-numeric: tabular-nums;
+}
+
+.chessRecordModal {
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  display: none;
+  pointer-events: none;
+}
+
+.chessRecordModal.is-open {
+  display: block !important;
+}
+
+.chessRecordModal:not(.is-open) #chessMoveListWrap,
+.chessRecordModal:not(.is-open) #chessReplayBar {
+  display: none !important;
+}
+
+.chessRecordModalBackdrop {
+  display: none;
+}
+
+.chessRecordModalDialog {
+  position: absolute;
+  top: 88px;
+  left: 14px;
+  width: min(420px, calc(100vw - 24px));
+  max-height: min(70vh, 70dvh);
+  overflow-y: auto;
+  background: rgba(15, 20, 25, 0.98);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+}
+
+.chessRecordModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  cursor: grab;
+  user-select: none;
+}
+
+.chessRecordModalTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chessRecordModalClose {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.chessRecordModalClose:hover {
+  color: var(--text);
+}
+
 .chessBoard {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
@@ -1502,6 +1632,7 @@ body {
 .chessStartBtn,
 .chessResignBtn,
 .chessUndoBtn,
+.chessRecordPopupBtn,
 .chessPauseBtn,
 .chessResumeBtn {
   padding: 6px 14px;
@@ -1571,6 +1702,7 @@ body {
 
 .chessResignBtn,
 .chessUndoBtn,
+.chessRecordPopupBtn,
 .chessPauseBtn,
 .chessResumeBtn {
   background: var(--surface);

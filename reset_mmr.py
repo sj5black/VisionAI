@@ -2,7 +2,7 @@
 """
 모든 회원의 체스 MMR을 초기화하는 스크립트.
 
-- mmr_rating: 1200
+- mmr_rating: 650
 - mmr_games: 0
 """
 
@@ -27,7 +27,7 @@ def reset_mmr(db_path: Path) -> None:
 
         updates = []
         if "mmr_rating" in cols:
-            updates.append("mmr_rating = 1200")
+            updates.append("mmr_rating = 650")
         if "mmr_games" in cols:
             updates.append("mmr_games = 0")
 

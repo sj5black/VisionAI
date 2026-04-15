@@ -5200,3 +5200,28 @@ INFO:     112.171.67.160:4655 - "GET / HTTP/1.1" 200 OK
 INFO:     112.171.67.160:6152 - "GET /api/emotion-backend HTTP/1.1" 200 OK
 INFO:     112.171.67.160:4370 - "GET / HTTP/1.1" 200 OK
 INFO:     112.171.67.160:4948 - "GET /api/emotion-backend HTTP/1.1" 200 OK
+nohup: ignoring input
+INFO:     Started server process [701059]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     112.171.67.160:2938 - "GET / HTTP/1.1" 200 OK
+INFO:     112.171.67.160:2938 - "GET /static/styles.css HTTP/1.1" 200 OK
+INFO:     112.171.67.160:3191 - "GET /static/app.js?v=2 HTTP/1.1" 200 OK
+============================================================
+VisionAI Pipeline 초기화 중...
+============================================================
+
+[1/4] 객체 탐지 모델 로딩 (YOLOv8n-pose, 사람 전용)...
+✓ YOLOv8n·YOLOv8n-pose 모델 로드 완료 (device: cuda)
+
+[2/4] 표정/자세 분석 모델 로딩 (백엔드: openclip)...
+✓ 감정 분석: OpenCLIP (Vision-Language, 16 emotions + 18 poses)
+
+[4/4] 행동 예측 모델 초기화...
+⚠ 학습된 예측 모델이 없어 규칙 기반 예측 사용
+
+============================================================
+✓ VisionAI Pipeline 초기화 완료!
+============================================================
+INFO:     112.171.67.160:13857 - "GET /api/emotion-backend HTTP/1.1" 200 OK
